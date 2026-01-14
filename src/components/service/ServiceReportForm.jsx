@@ -11,6 +11,7 @@ import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 import CatDiagnosticForm from '@/components/service/CatDiagnosticForm';
 import ServiceItemsEditor from '@/components/service/ServiceItemsEditor';
+import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import { format } from 'date-fns';
 
 const EQUIPMENT_TYPES = [
@@ -47,8 +48,15 @@ export default function ServiceReportForm({
     cat_diagnostic: {},
     work_performed: '',
     service_items: [],
-    travel_hours: '',
-    travel_rate: '75',
+    destination_fee: {
+      mileage: '',
+      mileage_rate: '0.65',
+      travel_hours: '',
+      travel_rate: '75',
+      location_condition: 'standard',
+      condition_surcharge: 0,
+      total: 0
+    },
     photos: [],
     customer_signature: '',
     notes: '',
@@ -64,16 +72,14 @@ export default function ServiceReportForm({
     const serviceTotal = (formData.service_items || []).reduce(
       (sum, item) => sum + (item.total || 0), 0
     );
-    const travelTotal = (parseFloat(formData.travel_hours) || 0) * (parseFloat(formData.travel_rate) || 0);
-    return { serviceTotal, travelTotal, grandTotal: serviceTotal + travelTotal };
+    const destinationTotal = formData.destination_fee?.total || 0;
+    return { serviceTotal, destinationTotal, grandTotal: serviceTotal + destinationTotal };
   };
 
   const handleSave = (status = 'draft') => {
     const data = {
       ...formData,
       status,
-      travel_hours: formData.travel_hours ? parseFloat(formData.travel_hours) : null,
-      travel_rate: formData.travel_rate ? parseFloat(formData.travel_rate) : null,
       equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
     };
     
@@ -128,8 +134,8 @@ export default function ServiceReportForm({
           </div>
           <div className="text-slate-600">+</div>
           <div>
-            <p className="text-xs text-slate-400">Travel</p>
-            <p className="text-lg font-semibold">${totals.travelTotal.toFixed(2)}</p>
+            <p className="text-xs text-slate-400">Destination</p>
+            <p className="text-lg font-semibold">${totals.destinationTotal.toFixed(2)}</p>
           </div>
           <div className="text-slate-600">=</div>
         </div>
@@ -273,39 +279,11 @@ export default function ServiceReportForm({
         </CardContent>
       </Card>
 
-      {/* Travel */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Travel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="flex-1 max-w-[150px]">
-              <Label>Travel Hours</Label>
-              <Input 
-                type="number"
-                step="0.25"
-                value={formData.travel_hours}
-                onChange={(e) => handleChange('travel_hours', e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="text-slate-400 pt-6">×</div>
-            <div className="flex-1 max-w-[150px]">
-              <Label>Rate ($/hr)</Label>
-              <Input 
-                type="number"
-                value={formData.travel_rate}
-                onChange={(e) => handleChange('travel_rate', e.target.value)}
-              />
-            </div>
-            <div className="text-slate-400 pt-6">=</div>
-            <div className="pt-6">
-              <span className="text-lg font-semibold">${totals.travelTotal.toFixed(2)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Destination Fee */}
+      <DestinationFeeEditor 
+        fee={formData.destination_fee || {}}
+        onChange={(fee) => handleChange('destination_fee', fee)}
+      />
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Photos */}
