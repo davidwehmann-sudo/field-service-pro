@@ -71,7 +71,7 @@ export default function Invoices() {
           (sum, item) => sum + (item.total || 0), 0
         );
         
-        const travelTotal = (report.travel_hours || 0) * (report.travel_rate || 0);
+        const destinationTotal = report.destination_fee?.total || 0;
         const partsTotal = reportParts.reduce((sum, p) => {
           const cost = (p.unit_cost || 0) * (p.quantity || 1);
           const markup = cost * ((p.markup_percent || 0) / 100);
@@ -84,11 +84,11 @@ export default function Invoices() {
           invoice_date: format(new Date(), 'yyyy-MM-dd'),
           due_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
           labor_total: serviceItemsTotal,
-          travel_total: travelTotal,
+          travel_total: destinationTotal,
           parts_total: partsTotal,
           tax_rate: 0,
           tax_amount: 0,
-          total_amount: serviceItemsTotal + travelTotal + partsTotal,
+          total_amount: serviceItemsTotal + destinationTotal + partsTotal,
           status: 'draft'
         });
         setShowForm(true);
