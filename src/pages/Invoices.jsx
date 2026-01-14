@@ -65,7 +65,12 @@ export default function Invoices() {
       const report = serviceReports.find(r => r.id === fromReportId);
       if (report) {
         const reportParts = partsOrders.filter(p => p.service_report_id === fromReportId);
-        const laborTotal = (report.labor_hours || 0) * (report.labor_rate || 0);
+        
+        // Calculate service items total (new hourly billing structure)
+        const serviceItemsTotal = (report.service_items || []).reduce(
+          (sum, item) => sum + (item.total || 0), 0
+        );
+        
         const travelTotal = (report.travel_hours || 0) * (report.travel_rate || 0);
         const partsTotal = reportParts.reduce((sum, p) => {
           const cost = (p.unit_cost || 0) * (p.quantity || 1);
@@ -78,12 +83,12 @@ export default function Invoices() {
           service_report_id: report.id,
           invoice_date: format(new Date(), 'yyyy-MM-dd'),
           due_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
-          labor_total: laborTotal,
+          labor_total: serviceItemsTotal,
           travel_total: travelTotal,
           parts_total: partsTotal,
           tax_rate: 0,
           tax_amount: 0,
-          total_amount: laborTotal + travelTotal + partsTotal,
+          total_amount: serviceItemsTotal + travelTotal + partsTotal,
           status: 'draft'
         });
         setShowForm(true);
