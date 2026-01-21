@@ -32,6 +32,7 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   bookkeeper: [
+    { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
@@ -46,6 +47,7 @@ const allNavigation = {
     { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
+    { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
   ]
 };
 

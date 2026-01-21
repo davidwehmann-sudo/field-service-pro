@@ -10,6 +10,7 @@ import PayInvoice from './pages/PayInvoice';
 import ServiceReports from './pages/ServiceReports';
 import TechnicianChat from './pages/TechnicianChat';
 import Home from './pages/Home';
+import FinancialExports from './pages/FinancialExports';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "ServiceReports": ServiceReports,
     "TechnicianChat": TechnicianChat,
     "Home": Home,
+    "FinancialExports": FinancialExports,
 }
 
 export const pagesConfig = {
