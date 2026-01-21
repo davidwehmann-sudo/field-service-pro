@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2, Mail } from "lucide-react";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import SignaturePad from '@/components/ui/SignaturePad';
 import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
@@ -55,6 +55,8 @@ export default function AuthorizationForm({
   });
 
   const [isEstimatingCost, setIsEstimatingCost] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => {
@@ -115,7 +117,7 @@ Be realistic and professional. This is an estimate that will be shown to a custo
     }
   };
 
-  const handleSave = (status = 'draft') => {
+  const handleSave = async (status = 'draft') => {
     const data = {
       ...formData,
       status,
@@ -123,9 +125,76 @@ Be realistic and professional. This is an estimate that will be shown to a custo
     };
     
     if (status === 'authorized') {
-      onAuthorize(data);
+      await onAuthorize(data);
+      // Show email prompt after successful authorization
+      if (formData.billing_contact_email) {
+        setShowEmailPrompt(true);
+      }
     } else {
       onSave(data);
+    }
+  };
+
+  const handleSendCopy = async () => {
+    if (!formData.billing_contact_email) {
+      toast.error("No email address provided");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const serviceTypeLabel = SERVICE_TYPES.find(t => t.value === formData.service_type)?.label || formData.service_type;
+      const customer = customers.find(c => c.id === formData.customer_id);
+      
+      await base44.integrations.Core.SendEmail({
+        to: formData.billing_contact_email,
+        subject: `Pre-Repair Authorization - ${customer?.company_name || 'Service'}`,
+        body: `
+Dear ${formData.billing_contact_name},
+
+Thank you for authorizing service work. Please keep this email for your records.
+
+AUTHORIZATION DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Customer: ${customer?.company_name || 'N/A'}
+Service Type: ${serviceTypeLabel}
+${formData.equipment_info ? `Equipment: ${formData.equipment_info}` : ''}
+Authorization Date: ${format(new Date(formData.authorization_date), 'MMMM d, yyyy')}
+${formData.estimated_cost ? `Estimated Cost: $${parseFloat(formData.estimated_cost).toFixed(2)}${formData.cost_is_ai_estimate ? ' (AI-generated estimate)' : ''}` : ''}
+
+NATURE OF SERVICE:
+${formData.nature_of_service}
+
+BILLING CONTACT:
+${formData.billing_contact_name}
+${formData.billing_contact_company || ''}
+${formData.billing_contact_phone || ''}
+${formData.billing_address ? `${formData.billing_address}, ${formData.billing_city}, ${formData.billing_state} ${formData.billing_zip}` : ''}
+
+${formData.on_site_contact_name ? `ON-SITE CONTACT:
+${formData.on_site_contact_name}
+${formData.on_site_contact_phone || ''}` : ''}
+
+${formData.notes ? `NOTES:
+${formData.notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This authorization confirms your approval for the service work described above.
+
+If you have any questions, please contact us.
+
+Thank you for your business.
+        `
+      });
+
+      toast.success(`Authorization sent to ${formData.billing_contact_email}`);
+      setShowEmailPrompt(false);
+    } catch (error) {
+      toast.error("Failed to send email");
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -416,6 +485,51 @@ Be realistic and professional. This is an estimate that will be shown to a custo
           </div>
         </CardContent>
       </Card>
+
+      {/* Email Prompt Dialog */}
+      {showEmailPrompt && (
+        <Card className="fixed bottom-6 right-6 w-96 shadow-2xl border-2 border-green-200 bg-white z-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-900 mb-1">Authorization Complete</h3>
+                <p className="text-sm text-slate-600">
+                  Send a copy to {formData.billing_contact_email}?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailPrompt(false)}
+                className="flex-1"
+              >
+                Skip
+              </Button>
+              <Button
+                onClick={handleSendCopy}
+                disabled={isSendingEmail}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {isSendingEmail ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Copy
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

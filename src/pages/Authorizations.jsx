@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail } from "lucide-react";
 import { format } from 'date-fns';
 import AuthorizationForm from '@/components/authorization/AuthorizationForm';
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ export default function Authorizations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingAuth, setEditingAuth] = useState(null);
+  const [sendingEmailFor, setSendingEmailFor] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -87,6 +88,68 @@ export default function Authorizations() {
   const handleDelete = (id) => {
     if (confirm('Delete this authorization?')) {
       deleteMutation.mutate(id);
+    }
+  };
+
+  const handleSendCopy = async (auth) => {
+    if (!auth.billing_contact_email) {
+      toast.error("No email address on file");
+      return;
+    }
+
+    setSendingEmailFor(auth.id);
+    try {
+      const serviceTypeLabel = serviceTypeLabels[auth.service_type] || auth.service_type;
+      const customer = customers.find(c => c.id === auth.customer_id);
+      
+      await base44.integrations.Core.SendEmail({
+        to: auth.billing_contact_email,
+        subject: `Pre-Repair Authorization - ${customer?.company_name || 'Service'}`,
+        body: `
+Dear ${auth.billing_contact_name},
+
+This is a copy of your pre-repair authorization for your records.
+
+AUTHORIZATION DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Customer: ${customer?.company_name || 'N/A'}
+Service Type: ${serviceTypeLabel}
+${auth.equipment_info ? `Equipment: ${auth.equipment_info}` : ''}
+Authorization Date: ${format(new Date(auth.authorization_date), 'MMMM d, yyyy')}
+${auth.estimated_cost ? `Estimated Cost: $${parseFloat(auth.estimated_cost).toFixed(2)}${auth.cost_is_ai_estimate ? ' (AI-generated estimate)' : ''}` : ''}
+
+NATURE OF SERVICE:
+${auth.nature_of_service}
+
+BILLING CONTACT:
+${auth.billing_contact_name}
+${auth.billing_contact_company || ''}
+${auth.billing_contact_phone || ''}
+${auth.billing_address ? `${auth.billing_address}, ${auth.billing_city}, ${auth.billing_state} ${auth.billing_zip}` : ''}
+
+${auth.on_site_contact_name ? `ON-SITE CONTACT:
+${auth.on_site_contact_name}
+${auth.on_site_contact_phone || ''}` : ''}
+
+${auth.notes ? `NOTES:
+${auth.notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This authorization confirms your approval for the service work described above.
+
+If you have any questions, please contact us.
+
+Thank you for your business.
+        `
+      });
+
+      toast.success(`Sent to ${auth.billing_contact_email}`);
+    } catch (error) {
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmailFor(null);
     }
   };
 
@@ -189,6 +252,17 @@ export default function Authorizations() {
                       </div>
                       
                       <div className="flex gap-2">
+                        {auth.status === 'authorized' && auth.billing_contact_email && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleSendCopy(auth)}
+                            disabled={sendingEmailFor === auth.id}
+                            title="Send copy to customer"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
