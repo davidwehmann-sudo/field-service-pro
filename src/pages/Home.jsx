@@ -25,12 +25,11 @@ export default function Home() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
 
-        // Auto-route based on user type
-        if (currentUser.user_type) {
-          setTimeout(() => {
-            routeUser(currentUser.user_type);
-          }, 1500);
-        }
+        // Auto-route based on user type (default to customer if not set)
+        const userType = currentUser.user_type || 'customer';
+        setTimeout(() => {
+          routeUser(userType);
+        }, 1500);
       } catch (error) {
         // Not logged in or public access
         navigate(createPageUrl('CustomerPortal'));
@@ -56,10 +55,8 @@ export default function Home() {
         navigate(createPageUrl('Dashboard'));
         break;
       case 'customer':
-        navigate(createPageUrl('CustomerPortal'));
-        break;
       default:
-        navigate(createPageUrl('Dashboard'));
+        navigate(createPageUrl('CustomerPortal'));
     }
   };
 
