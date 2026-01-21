@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import SignaturePad from '@/components/ui/SignaturePad';
 import CatDiagnosticForm from '@/components/service/CatDiagnosticForm';
 import ServiceItemsEditor from '@/components/service/ServiceItemsEditor';
 import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
+import OfflineIndicator from '@/components/service/OfflineIndicator';
 import { format } from 'date-fns';
 
 const EQUIPMENT_TYPES = [
@@ -36,33 +37,56 @@ export default function ServiceReportForm({
   onBack,
   isSaving 
 }) {
-  const [formData, setFormData] = useState({
-    customer_id: '',
-    service_date: format(new Date(), 'yyyy-MM-dd'),
-    equipment_type: '',
-    equipment_make: '',
-    equipment_model: '',
-    equipment_serial: '',
-    equipment_hours: '',
-    complaint: '',
-    cat_diagnostic: {},
-    work_performed: '',
-    service_items: [],
-    destination_fee: {
-      mileage: '',
-      mileage_rate: '0.65',
-      travel_hours: '',
-      travel_rate: '75',
-      location_condition: 'standard',
-      condition_surcharge: 0,
-      total: 0
-    },
-    photos: [],
-    customer_signature: '',
-    notes: '',
-    status: 'draft',
-    ...report
+  const storageKey = `service_report_draft_${report?.id || 'new'}`;
+
+  const [formData, setFormData] = useState(() => {
+    // Load from localStorage if available
+    const saved = localStorage.getItem(storageKey);
+    if (saved && !report?.id) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+    
+    return {
+      customer_id: '',
+      service_date: format(new Date(), 'yyyy-MM-dd'),
+      equipment_type: '',
+      equipment_make: '',
+      equipment_model: '',
+      equipment_serial: '',
+      equipment_hours: '',
+      complaint: '',
+      cat_diagnostic: {},
+      work_performed: '',
+      service_items: [],
+      destination_fee: {
+        mileage: '',
+        mileage_rate: '0.65',
+        travel_hours: '',
+        travel_rate: '75',
+        location_condition: 'standard',
+        condition_surcharge: 0,
+        total: 0
+      },
+      photos: [],
+      customer_signature: '',
+      notes: '',
+      status: 'draft',
+      ...report
+    };
   });
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem(storageKey, JSON.stringify(formData));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [formData, storageKey]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -76,17 +100,24 @@ export default function ServiceReportForm({
     return { serviceTotal, destinationTotal, grandTotal: serviceTotal + destinationTotal };
   };
 
-  const handleSave = (status = 'draft') => {
+  const handleSave = async (status = 'draft') => {
     const data = {
       ...formData,
       status,
       equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
     };
     
-    if (status === 'completed') {
-      onComplete(data);
-    } else {
-      onSave(data);
+    try {
+      if (status === 'completed') {
+        await onComplete(data);
+      } else {
+        await onSave(data);
+      }
+      // Clear localStorage after successful save
+      localStorage.removeItem(storageKey);
+    } catch (error) {
+      // Keep in localStorage if save fails
+      console.error('Save failed, data preserved locally');
     }
   };
 
@@ -105,6 +136,7 @@ export default function ServiceReportForm({
           </h2>
           <p className="text-sm text-slate-500">Fill in the service details</p>
         </div>
+        <OfflineIndicator />
         <div className="flex gap-2">
           <Button 
             variant="outline" 
