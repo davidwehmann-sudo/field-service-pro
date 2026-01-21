@@ -29,6 +29,7 @@ export default function FinancialExports() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedCustomerCompany, setSelectedCustomerCompany] = useState('');
   const navigate = useNavigate();
 
   const managedCompanies = (currentUser?.companies_managed || []).filter(Boolean);
