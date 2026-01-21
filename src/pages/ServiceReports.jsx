@@ -28,6 +28,7 @@ export default function ServiceReports() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -45,6 +46,16 @@ export default function ServiceReports() {
     queryKey: ['customers'],
     queryFn: () => base44.entities.Customer.list()
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {}
+    };
+    loadUser();
+  }, []);
 
   useEffect(() => {
     if (shouldOpenNew) {

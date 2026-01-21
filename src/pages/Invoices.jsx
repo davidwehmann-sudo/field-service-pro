@@ -66,6 +66,16 @@ export default function Invoices() {
   });
 
   useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {}
+    };
+    loadUser();
+  }, []);
+
+  useEffect(() => {
     if (fromReportId && serviceReports.length > 0) {
       const report = serviceReports.find(r => r.id === fromReportId);
       if (report) {

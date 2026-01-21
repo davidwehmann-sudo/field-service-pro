@@ -1,29 +1,31 @@
-import Customers from './pages/Customers';
-import Dashboard from './pages/Dashboard';
-import Invoices from './pages/Invoices';
-import PartsOrders from './pages/PartsOrders';
-import ServiceReports from './pages/ServiceReports';
 import Authorizations from './pages/Authorizations';
 import CustomerPortal from './pages/CustomerPortal';
-import TechnicianChat from './pages/TechnicianChat';
-import PartsInventory from './pages/PartsInventory';
-import PayInvoice from './pages/PayInvoice';
+import Customers from './pages/Customers';
+import Dashboard from './pages/Dashboard';
 import FieldTech from './pages/FieldTech';
+import Invoices from './pages/Invoices';
+import PartsInventory from './pages/PartsInventory';
+import PartsOrders from './pages/PartsOrders';
+import PayInvoice from './pages/PayInvoice';
+import ServiceReports from './pages/ServiceReports';
+import TechnicianChat from './pages/TechnicianChat';
+import Home from './pages/Home';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Customers": Customers,
-    "Dashboard": Dashboard,
-    "Invoices": Invoices,
-    "PartsOrders": PartsOrders,
-    "ServiceReports": ServiceReports,
     "Authorizations": Authorizations,
     "CustomerPortal": CustomerPortal,
-    "TechnicianChat": TechnicianChat,
-    "PartsInventory": PartsInventory,
-    "PayInvoice": PayInvoice,
+    "Customers": Customers,
+    "Dashboard": Dashboard,
     "FieldTech": FieldTech,
+    "Invoices": Invoices,
+    "PartsInventory": PartsInventory,
+    "PartsOrders": PartsOrders,
+    "PayInvoice": PayInvoice,
+    "ServiceReports": ServiceReports,
+    "TechnicianChat": TechnicianChat,
+    "Home": Home,
 }
 
 export const pagesConfig = {

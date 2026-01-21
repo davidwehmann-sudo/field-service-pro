@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
+import { base44 } from '@/api/base44Client';
 import { 
   Wrench, 
   FileText, 
@@ -17,19 +18,54 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const navigation = [
-  { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
-  { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
-  { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
-  { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
-  { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
-  { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
-  { name: 'Invoices', href: 'Invoices', icon: Receipt },
-  { name: 'Customers', href: 'Customers', icon: Users },
-];
+const allNavigation = {
+  technician: [
+    { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
+    { name: 'Customers', href: 'Customers', icon: Users },
+  ],
+  parts_specialist: [
+    { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { name: 'Customers', href: 'Customers', icon: Users },
+  ],
+  bookkeeper: [
+    { name: 'Invoices', href: 'Invoices', icon: Receipt },
+    { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { name: 'Customers', href: 'Customers', icon: Users },
+  ],
+  admin: [
+    { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
+    { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
+    { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
+    { name: 'Invoices', href: 'Invoices', icon: Receipt },
+    { name: 'Customers', href: 'Customers', icon: Users },
+  ]
+};
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userType, setUserType] = useState('admin');
+
+  useEffect(() => {
+    const loadUserType = async () => {
+      try {
+        const user = await base44.auth.me();
+        setUserType(user.user_type || 'admin');
+      } catch (error) {
+        setUserType('admin');
+      }
+    };
+    loadUserType();
+  }, []);
+
+  const navigation = allNavigation[userType] || allNavigation.admin;
 
   return (
     <div className="min-h-screen bg-slate-50">
