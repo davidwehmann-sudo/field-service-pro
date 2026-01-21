@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2 } from "lucide-react";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import SignaturePad from '@/components/ui/SignaturePad';
 import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
 import { format } from 'date-fns';
+import { base44 } from '@/api/base44Client';
+import { toast } from "sonner";
 
 const SERVICE_TYPES = [
   { value: 'check_and_advise', label: 'Check and Advise' },
@@ -44,6 +46,7 @@ export default function AuthorizationForm({
     service_type: '',
     equipment_info: '',
     estimated_cost: '',
+    cost_is_ai_estimate: false,
     authorization_signature: '',
     authorization_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
@@ -51,8 +54,65 @@ export default function AuthorizationForm({
     ...authorization
   });
 
+  const [isEstimatingCost, setIsEstimatingCost] = useState(false);
+
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // Clear AI flag if user manually edits the cost
+      if (field === 'estimated_cost' && prev.cost_is_ai_estimate) {
+        updated.cost_is_ai_estimate = false;
+      }
+      return updated;
+    });
+  };
+
+  const handleEstimateCost = async () => {
+    if (!formData.nature_of_service || !formData.service_type) {
+      toast.error("Please fill in service type and description first");
+      return;
+    }
+
+    setIsEstimatingCost(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a diesel field service technician estimating the cost of a repair job.
+
+Service Type: ${serviceTypeLabels[formData.service_type]}
+Equipment: ${formData.equipment_info || 'Not specified'}
+Service Description: ${formData.nature_of_service}
+
+Based on typical field service rates (diagnostic $125/hr, repair $115/hr, PM $95/hr, travel/destination fees, parts markup):
+- Estimate realistic labor hours needed
+- Consider typical parts costs if repairs are mentioned
+- Include travel/destination considerations
+- Factor in the service type
+
+Provide ONLY a single estimated total dollar amount (no dollar sign, no decimals if whole number, just the number).
+Example outputs: 850 or 1250.50
+
+Be realistic and professional. This is an estimate that will be shown to a customer.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            estimated_amount: { type: "number" }
+          }
+        }
+      });
+
+      if (response.estimated_amount) {
+        setFormData(prev => ({
+          ...prev,
+          estimated_cost: response.estimated_amount.toString(),
+          cost_is_ai_estimate: true
+        }));
+        toast.success("Cost estimate generated");
+      }
+    } catch (error) {
+      toast.error("Failed to generate estimate");
+    } finally {
+      setIsEstimatingCost(false);
+    }
   };
 
   const handleSave = (status = 'draft') => {
@@ -154,16 +214,44 @@ export default function AuthorizationForm({
 
             <div>
               <Label>Estimated Cost</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
-                <Input 
-                  type="number"
-                  step="0.01"
-                  value={formData.estimated_cost}
-                  onChange={(e) => handleChange('estimated_cost', e.target.value)}
-                  placeholder="0.00"
-                  className="pl-7"
-                />
+              <div className="space-y-2">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    value={formData.estimated_cost}
+                    onChange={(e) => handleChange('estimated_cost', e.target.value)}
+                    placeholder="0.00"
+                    className={`pl-7 ${formData.cost_is_ai_estimate ? 'border-blue-200 bg-blue-50/30' : ''}`}
+                  />
+                </div>
+                {formData.cost_is_ai_estimate && (
+                  <p className="text-xs text-blue-600 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    AI-generated estimate
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEstimateCost}
+                  disabled={isEstimatingCost || !formData.nature_of_service || !formData.service_type}
+                  className="w-full text-xs"
+                >
+                  {isEstimatingCost ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Estimating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      AI Estimate Cost
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
 
