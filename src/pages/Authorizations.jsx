@@ -11,6 +11,7 @@ import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import AuthorizationForm from '@/components/authorization/AuthorizationForm';
 import { toast } from "sonner";
+import { Eye } from 'lucide-react';
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
