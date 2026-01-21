@@ -30,9 +30,9 @@ export default function PartsInventory() {
         const user = await base44.auth.me();
         setCurrentUser(user);
         
-        // Block customers
+        // Block customers from inventory
         if (user.user_type === 'service_customer') {
-          navigate(createPageUrl('Home'));
+          navigate(createPageUrl('CustomerPortal'));
         }
       } catch (error) {
         navigate(createPageUrl('Home'));
