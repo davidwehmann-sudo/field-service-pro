@@ -28,13 +28,8 @@ export default function FinancialExports() {
       try {
         const user = await base44.auth.me();
         setCurrentUser(user);
-        
-        // Redirect if not authorized
-        if (user.user_type !== 'admin' && user.user_type !== 'bookkeeper') {
-          navigate(createPageUrl('Home'));
-        }
       } catch (error) {
-        navigate(createPageUrl('Home'));
+        setCurrentUser(null);
       }
     };
     loadUser();
@@ -317,6 +312,22 @@ export default function FinancialExports() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-slate-500">Loading...</p>
+      </div>
+    );
+  }
+
+  // Check authorization after user loads
+  if (currentUser.user_type !== 'admin' && currentUser.user_type !== 'bookkeeper') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You don't have permission to access financial exports. This page is only available to administrators and bookkeepers.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
