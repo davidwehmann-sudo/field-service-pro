@@ -451,9 +451,27 @@ export default function FinancialExports() {
                   </Select>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+              {customerCompanies.length > 0 && (
+                <div>
+                  <Label htmlFor="customerCompany">Customer Company</Label>
+                  <Select value={selectedCustomerCompany} onValueChange={setSelectedCustomerCompany}>
+                    <SelectTrigger id="customerCompany" className="mt-1">
+                      <SelectValue placeholder="All customers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>All customers</SelectItem>
+                      {customerCompanies.map((company) => (
+                        <SelectItem key={company} value={company}>
+                          {company}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              </div>
+              </CardContent>
+              </Card>
 
         {/* Export Options */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
