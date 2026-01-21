@@ -136,24 +136,7 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             );
           })}
-
-          <div className="pt-4 mt-4 border-t border-slate-800">
-            <Link
-              to={createPageUrl('TechnicianChat')}
-              onClick={() => setSidebarOpen(false)}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
-                currentPageName === 'TechnicianChat'
-                  ? "bg-amber-500 text-white" 
-                  : "text-slate-400 hover:text-white hover:bg-slate-800"
-              )}
-            >
-              <MessageSquare className="w-5 h-5" />
-              <span className="font-medium">Customer Chat</span>
-              {currentPageName === 'TechnicianChat' && <ChevronRight className="w-4 h-4 ml-auto" />}
-            </Link>
-          </div>
-        </nav>
+          </nav>
       </aside>
 
       {/* Main content */}
