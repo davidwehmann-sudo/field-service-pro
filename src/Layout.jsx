@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const allNavigation = {
-  technician: [
+  service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
@@ -38,7 +38,7 @@ const allNavigation = {
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
-  admin: [
+  service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
@@ -53,21 +53,21 @@ const allNavigation = {
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userType, setUserType] = useState('admin');
+  const [userType, setUserType] = useState('service_admin');
 
   useEffect(() => {
     const loadUserType = async () => {
       try {
         const user = await base44.auth.me();
-        setUserType(user.user_type || 'admin');
+        setUserType(user.user_type || 'service_admin');
       } catch (error) {
-        setUserType('admin');
+        setUserType('service_admin');
       }
     };
     loadUserType();
   }, []);
 
-  const navigation = allNavigation[userType] || allNavigation.admin;
+  const navigation = allNavigation[userType] || allNavigation.service_admin;
 
   return (
     <div className="min-h-screen bg-slate-50">

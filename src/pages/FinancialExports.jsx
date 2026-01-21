@@ -317,7 +317,7 @@ export default function FinancialExports() {
   }
 
   // Check authorization after user loads
-  if (currentUser.user_type !== 'admin' && currentUser.user_type !== 'bookkeeper') {
+  if (currentUser.user_type !== 'service_admin' && currentUser.user_type !== 'bookkeeper') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">

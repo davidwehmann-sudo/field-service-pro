@@ -39,7 +39,7 @@ export default function Customers() {
         setCurrentUser(user);
         
         // Block customers
-        if (user.user_type === 'customer') {
+        if (user.user_type === 'service_customer') {
           navigate(createPageUrl('Home'));
         }
       } catch (error) {
