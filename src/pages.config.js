@@ -11,6 +11,7 @@ import PartsOrders from './pages/PartsOrders';
 import PayInvoice from './pages/PayInvoice';
 import ServiceReports from './pages/ServiceReports';
 import TechnicianChat from './pages/TechnicianChat';
+import Sitemap from './pages/Sitemap';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "PayInvoice": PayInvoice,
     "ServiceReports": ServiceReports,
     "TechnicianChat": TechnicianChat,
+    "Sitemap": Sitemap,
 }
 
 export const pagesConfig = {

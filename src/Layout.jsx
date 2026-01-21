@@ -40,6 +40,7 @@ const allNavigation = {
   ],
   software_engineer: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
@@ -51,6 +52,7 @@ const allNavigation = {
   ],
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
