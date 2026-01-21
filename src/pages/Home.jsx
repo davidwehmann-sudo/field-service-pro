@@ -24,15 +24,8 @@ export default function Home() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-
-        // Auto-route based on user type (default to customer if not set)
-        const userType = currentUser.user_type || 'customer';
-        setTimeout(() => {
-          routeUser(userType);
-        }, 1500);
       } catch (error) {
-        // Not logged in or public access
-        navigate(createPageUrl('CustomerPortal'));
+        // Not logged in
       } finally {
         setLoading(false);
       }
@@ -147,11 +140,7 @@ export default function Home() {
                     <span>Enter</span>
                     <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
-                  {isCurrentRole && (
-                    <div className="mt-3 text-xs text-amber-500">
-                      Redirecting...
-                    </div>
-                  )}
+
                 </CardContent>
               </Card>
             );
