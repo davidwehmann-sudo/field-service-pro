@@ -28,7 +28,17 @@ export default function FinancialExports() {
   const [currentUser, setCurrentUser] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
   const navigate = useNavigate();
+
+  const { data: allCompanies = [] } = useQuery({
+    queryKey: ['allCompanies'],
+    queryFn: async () => {
+      const customers = await base44.entities.Customer.list();
+      const uniqueCompanies = [...new Set(customers.map(c => c.company_name))].filter(Boolean).sort();
+      return uniqueCompanies;
+    }
+  });
 
   useEffect(() => {
     const loadUser = async () => {
