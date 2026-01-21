@@ -19,6 +19,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const allNavigation = {
+  service_customer: [
+    { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
+  ],
   service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },

@@ -10,8 +10,8 @@ import PartsInventory from './pages/PartsInventory';
 import PartsOrders from './pages/PartsOrders';
 import PayInvoice from './pages/PayInvoice';
 import ServiceReports from './pages/ServiceReports';
-import TechnicianChat from './pages/TechnicianChat';
 import Sitemap from './pages/Sitemap';
+import TechnicianChat from './pages/TechnicianChat';
 import __Layout from './Layout.jsx';
 
 
@@ -28,8 +28,8 @@ export const PAGES = {
     "PartsOrders": PartsOrders,
     "PayInvoice": PayInvoice,
     "ServiceReports": ServiceReports,
-    "TechnicianChat": TechnicianChat,
     "Sitemap": Sitemap,
+    "TechnicianChat": TechnicianChat,
 }
 
 export const pagesConfig = {
