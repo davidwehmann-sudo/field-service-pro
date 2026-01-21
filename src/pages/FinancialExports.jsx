@@ -179,10 +179,11 @@ export default function FinancialExports() {
   };
 
   const exportPayments = () => {
-    const paidInvoices = filterByDate(
+    let paidInvoices = filterByDate(
       invoices.filter(inv => inv.status === 'paid' && inv.payment_date),
       'payment_date'
     );
+    paidInvoices = filterByCustomerCompany(paidInvoices, 'customer_id');
     
     const headers = [
       'Payment Date',
