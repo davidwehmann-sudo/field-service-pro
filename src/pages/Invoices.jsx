@@ -23,7 +23,9 @@ import {
   FileText,
   Printer,
   Mail,
-  Send
+  Send,
+  Link as LinkIcon,
+  Copy
 } from "lucide-react";
 import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -210,6 +212,17 @@ export default function Invoices() {
     });
   };
 
+  const handleGeneratePaymentLink = async (invoice) => {
+    const paymentUrl = `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/PayInvoice')}?invoice_id=${invoice.id}`;
+    
+    try {
+      await navigator.clipboard.writeText(paymentUrl);
+      alert('Payment link copied to clipboard!\n\n' + paymentUrl);
+    } catch (error) {
+      alert('Payment link:\n\n' + paymentUrl);
+    }
+  };
+
   const handleSendEmail = async (invoice) => {
     const customer = customers.find(c => c.id === invoice.customer_id);
     if (!customer?.email) {
@@ -266,6 +279,10 @@ CHARGES:
     if (invoice.notes) {
       emailBody += `Notes: ${invoice.notes}\n\n`;
     }
+
+    // Add payment link
+    const paymentUrl = `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/PayInvoice')}?invoice_id=${invoice.id}`;
+    emailBody += `\nPay Online: ${paymentUrl}\n\n`;
 
     emailBody += `Thank you for your business!\n\nDieselTech Field Service`;
 
@@ -418,6 +435,16 @@ CHARGES:
                   </div>
 
                   <div className="flex gap-1">
+                    {invoice.status !== 'paid' && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleGeneratePaymentLink(invoice)}
+                        title="Copy payment link"
+                      >
+                        <LinkIcon className="w-4 h-4 text-purple-500" />
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="icon"
