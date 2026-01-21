@@ -270,7 +270,7 @@ Thank you for your business.
           {currentUser?.user_type === 'software_engineer' && (
             <Button 
               variant="outline"
-              onClick={() => base44.auth.redirectToLogin()}
+              onClick={() => window.open(window.location.origin + '/login', '_blank')}
               title="Preview login page"
             >
               <Eye className="w-4 h-4 mr-2" />
