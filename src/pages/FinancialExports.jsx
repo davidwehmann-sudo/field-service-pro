@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,7 @@ export default function FinancialExports() {
   const [currentUser, setCurrentUser] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -28,10 +31,10 @@ export default function FinancialExports() {
         
         // Redirect if not authorized
         if (user.user_type !== 'admin' && user.user_type !== 'bookkeeper') {
-          window.location.href = '/';
+          navigate(createPageUrl('Home'));
         }
       } catch (error) {
-        window.location.href = '/';
+        navigate(createPageUrl('Home'));
       }
     };
     loadUser();
