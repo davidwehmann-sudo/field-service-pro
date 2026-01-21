@@ -317,14 +317,14 @@ export default function FinancialExports() {
   }
 
   // Check authorization after user loads
-  if (currentUser.user_type !== 'service_admin' && currentUser.user_type !== 'bookkeeper') {
+  if (currentUser.user_type !== 'service_admin' && currentUser.user_type !== 'bookkeeper' && currentUser.user_type !== 'software_engineer') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>Access Denied</CardTitle>
             <CardDescription>
-              You don't have permission to access financial exports. This page is only available to administrators and bookkeepers.
+              You don't have permission to access financial exports.
             </CardDescription>
           </CardHeader>
         </Card>
