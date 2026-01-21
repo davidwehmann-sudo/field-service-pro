@@ -125,11 +125,15 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {currentUser && (
-          <div className="px-6 py-4 border-b border-slate-800">
-            <p className="text-xs text-slate-500 mb-1">Logged in as</p>
-            <p className="text-sm font-medium text-white truncate">{currentUser.full_name || currentUser.email}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{formatUserType(currentUser.user_type)}</p>
-          </div>
+            <div className="px-6 py-4 border-b border-slate-800">
+              <p className="text-xs text-slate-500 mb-1">Logged in as</p>
+              <p className="text-sm font-medium text-white truncate">{currentUser.full_name || currentUser.email}</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {currentUser.role && <span className="capitalize">{currentUser.role}</span>}
+                {currentUser.role && currentUser.user_type && ' • '}
+                {currentUser.user_type && formatUserType(currentUser.user_type)}
+              </p>
+            </div>
           )}
 
           <nav className="p-4 space-y-1">
