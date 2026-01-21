@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from '../utils';
+import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import AuthorizationForm from '@/components/authorization/AuthorizationForm';
 import { toast } from "sonner";
