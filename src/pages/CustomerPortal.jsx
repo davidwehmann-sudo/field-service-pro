@@ -15,8 +15,10 @@ import {
   DollarSign,
   CheckCircle,
   Clock,
-  Loader2
+  Loader2,
+  Filter
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CustomerAuthorizationForm from '@/components/customer/CustomerAuthorizationForm';
 import ChatWindow from '@/components/customer/ChatWindow';
 import { format } from 'date-fns';
@@ -29,6 +31,8 @@ export default function CustomerPortal() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showNewAuthForm, setShowNewAuthForm] = useState(false);
   const [customer, setCustomer] = useState(null);
+  const [filterEquipment, setFilterEquipment] = useState('all');
+  const [sortBy, setSortBy] = useState('-service_date');
 
   const { data: authorizations = [], refetch: refetchAuthorizations } = useQuery({
     queryKey: ['customer-authorizations', customerId],
@@ -38,7 +42,7 @@ export default function CustomerPortal() {
 
   const { data: serviceReports = [] } = useQuery({
     queryKey: ['customer-service-reports', customerId],
-    queryFn: () => base44.entities.ServiceReport.filter({ customer_id: customerId }, '-service_date'),
+    queryFn: () => base44.entities.ServiceReport.filter({ customer_id: customerId }, sortBy),
     enabled: isAuthenticated && !!customerId,
   });
 
@@ -57,18 +61,34 @@ export default function CustomerPortal() {
   });
 
   const handleLogin = async () => {
-    if (!customerEmail) return;
+    // Get token from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!token) {
+      alert('Invalid access link. Please use the link provided by your technician.');
+      return;
+    }
     
     setIsAuthenticating(true);
     try {
-      const customers = await base44.entities.Customer.filter({ email: customerEmail });
-      if (customers.length > 0) {
-        setCustomer(customers[0]);
-        setCustomerId(customers[0].id);
-        setIsAuthenticated(true);
-        localStorage.setItem('customerPortalEmail', customerEmail);
+      const tokens = await base44.entities.CustomerAccessToken.filter({ 
+        token: token,
+        is_active: true 
+      });
+      
+      if (tokens.length > 0) {
+        const accessToken = tokens[0];
+        const customers = await base44.entities.Customer.filter({ id: accessToken.customer_id });
+        
+        if (customers.length > 0) {
+          setCustomer(customers[0]);
+          setCustomerId(customers[0].id);
+          setIsAuthenticated(true);
+          localStorage.setItem('customerPortalToken', token);
+        }
       } else {
-        alert('No account found with this email. Please contact us.');
+        alert('Invalid or expired access token. Please contact us for a new link.');
       }
     } catch (error) {
       alert('Login failed. Please try again.');
@@ -78,11 +98,23 @@ export default function CustomerPortal() {
   };
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('customerPortalEmail');
-    if (savedEmail) {
-      setCustomerEmail(savedEmail);
+    const savedToken = localStorage.getItem('customerPortalToken');
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    
+    if (urlToken || savedToken) {
+      handleLogin();
     }
   }, []);
+
+  const uniqueEquipment = [...new Set(serviceReports.map(r => 
+    `${r.equipment_type} ${r.equipment_make}`.trim()
+  ))].filter(Boolean);
+
+  const filteredReports = serviceReports.filter(report => {
+    if (filterEquipment === 'all') return true;
+    return `${report.equipment_type} ${report.equipment_make}`.trim() === filterEquipment;
+  });
 
   if (!isAuthenticated) {
     return (
@@ -96,30 +128,21 @@ export default function CustomerPortal() {
             <p className="text-sm text-slate-500">Access your service records and requests</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label>Email Address</Label>
-              <Input
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="your@email.com"
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              />
-            </div>
-            <Button 
-              className="w-full bg-amber-500 hover:bg-amber-600"
-              onClick={handleLogin}
-              disabled={isAuthenticating || !customerEmail}
-            >
-              {isAuthenticating ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Logging in...</>
-              ) : (
-                'Access Portal'
-              )}
-            </Button>
-            <p className="text-xs text-slate-500 text-center">
-              Don't have access? Contact us to set up your account.
-            </p>
+            {isAuthenticating ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-amber-500 mb-3" />
+                <p className="text-sm text-slate-500">Verifying access...</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-slate-600 text-center">
+                  Please use the secure access link sent to you by your technician.
+                </p>
+                <p className="text-xs text-slate-500 text-center">
+                  Don't have a link? Contact us to request portal access.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -168,7 +191,8 @@ export default function CustomerPortal() {
               variant="outline"
               onClick={() => {
                 setIsAuthenticated(false);
-                localStorage.removeItem('customerPortalEmail');
+                localStorage.removeItem('customerPortalToken');
+                window.location.href = window.location.pathname;
               }}
             >
               Logout
@@ -266,7 +290,34 @@ export default function CustomerPortal() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            {serviceReports.map(report => (
+            <div className="flex gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-slate-500" />
+                <Select value={filterEquipment} onValueChange={setFilterEquipment}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by equipment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Equipment</SelectItem>
+                    {uniqueEquipment.map(eq => (
+                      <SelectItem key={eq} value={eq}>{eq}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="-service_date">Newest First</SelectItem>
+                  <SelectItem value="service_date">Oldest First</SelectItem>
+                  <SelectItem value="equipment_type">Equipment Type</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filteredReports.map(report => (
               <Card key={report.id} className="border-0 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -300,6 +351,13 @@ export default function CustomerPortal() {
                 </CardContent>
               </Card>
             ))}
+            {filteredReports.length === 0 && serviceReports.length > 0 && (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-12 text-center">
+                  <p className="text-slate-400">No reports match the selected filters</p>
+                </CardContent>
+              </Card>
+            )}
             {serviceReports.length === 0 && (
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-12 text-center">

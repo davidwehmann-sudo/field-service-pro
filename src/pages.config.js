@@ -6,6 +6,7 @@ import ServiceReports from './pages/ServiceReports';
 import Authorizations from './pages/Authorizations';
 import CustomerPortal from './pages/CustomerPortal';
 import TechnicianChat from './pages/TechnicianChat';
+import PartsInventory from './pages/PartsInventory';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "Authorizations": Authorizations,
     "CustomerPortal": CustomerPortal,
     "TechnicianChat": TechnicianChat,
+    "PartsInventory": PartsInventory,
 }
 
 export const pagesConfig = {

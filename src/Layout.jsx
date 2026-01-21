@@ -22,6 +22,7 @@ const navigation = [
   { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
   { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
   { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
+  { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
   { name: 'Invoices', href: 'Invoices', icon: Receipt },
   { name: 'Customers', href: 'Customers', icon: Users },
 ];
