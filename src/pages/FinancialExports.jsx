@@ -425,7 +425,7 @@ export default function FinancialExports() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={null}>All companies</SelectItem>
-                      {allCompanies.map((company) => (
+                      {managedCompanies.map((company) => (
                         <SelectItem key={company} value={company}>
                           {company}
                         </SelectItem>
