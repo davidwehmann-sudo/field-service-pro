@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail } from "lucide-react";
+import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink } from "lucide-react";
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import AuthorizationForm from '@/components/authorization/AuthorizationForm';
 import { toast } from "sonner";
@@ -45,22 +47,76 @@ export default function Authorizations() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.PreRepairAuthorization.create(data),
+    mutationFn: async (data) => {
+      const auth = await base44.entities.PreRepairAuthorization.create(data);
+      
+      // If authorized, create a service report
+      if (data.status === 'authorized') {
+        const serviceReport = await base44.entities.ServiceReport.create({
+          customer_id: data.customer_id,
+          service_date: data.authorization_date,
+          equipment_type: 'Other',
+          equipment_make: '',
+          equipment_model: '',
+          equipment_serial: '',
+          equipment_info: data.equipment_info || '',
+          complaint: data.nature_of_service,
+          service_items: [],
+          destination_fee: {},
+          status: 'draft'
+        });
+        
+        // Link the service report back to the authorization
+        await base44.entities.PreRepairAuthorization.update(auth.id, {
+          service_report_id: serviceReport.id,
+          status: 'service_started'
+        });
+      }
+      
+      return auth;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['authorizations']);
       setShowForm(false);
       setEditingAuth(null);
-      toast.success("Authorization created");
+      toast.success("Authorization created and service report started");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.PreRepairAuthorization.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const auth = await base44.entities.PreRepairAuthorization.update(id, data);
+      
+      // If changing to authorized and no service report exists, create one
+      if (data.status === 'authorized' && !editingAuth?.service_report_id) {
+        const serviceReport = await base44.entities.ServiceReport.create({
+          customer_id: data.customer_id,
+          service_date: data.authorization_date,
+          equipment_type: 'Other',
+          equipment_make: '',
+          equipment_model: '',
+          equipment_serial: '',
+          equipment_info: data.equipment_info || '',
+          complaint: data.nature_of_service,
+          service_items: [],
+          destination_fee: {},
+          status: 'draft'
+        });
+        
+        // Link the service report back to the authorization
+        await base44.entities.PreRepairAuthorization.update(id, {
+          service_report_id: serviceReport.id,
+          status: 'service_started'
+        });
+      }
+      
+      return auth;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['authorizations']);
       setShowForm(false);
       setEditingAuth(null);
-      toast.success("Authorization updated");
+      toast.success("Authorization updated and service report started");
     },
   });
 
@@ -303,6 +359,15 @@ Thank you for your business.
                           <DollarSign className="w-3 h-3" />
                           Estimated: ${auth.estimated_cost.toFixed(2)}
                         </div>
+                      )}
+                      {auth.service_report_id && (
+                        <Link 
+                          to={createPageUrl('ServiceReports')}
+                          className="flex items-center gap-1 text-blue-600 hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          View Service Report
+                        </Link>
                       )}
                     </div>
                   </div>
