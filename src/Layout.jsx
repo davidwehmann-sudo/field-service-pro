@@ -10,13 +10,15 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  ClipboardCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+  { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
   { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
   { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
   { name: 'Invoices', href: 'Invoices', icon: Receipt },

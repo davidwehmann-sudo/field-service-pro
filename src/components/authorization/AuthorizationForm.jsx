@@ -1,0 +1,333 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Save, CheckCircle } from "lucide-react";
+import CustomerSelect from '@/components/customers/CustomerSelect';
+import SignaturePad from '@/components/ui/SignaturePad';
+import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
+import { format } from 'date-fns';
+
+const SERVICE_TYPES = [
+  { value: 'check_and_advise', label: 'Check and Advise' },
+  { value: 'consultation', label: 'Consultation' },
+  { value: 'diagnostic', label: 'Diagnostic' },
+  { value: 'repair', label: 'Repair' },
+  { value: 'preventive_maintenance', label: 'Preventive Maintenance' },
+  { value: 'emergency_service', label: 'Emergency Service' },
+];
+
+export default function AuthorizationForm({ 
+  authorization, 
+  customers, 
+  onSave, 
+  onAuthorize,
+  onBack,
+  isSaving 
+}) {
+  const [formData, setFormData] = useState({
+    customer_id: '',
+    billing_contact_name: '',
+    billing_contact_company: '',
+    billing_contact_phone: '',
+    billing_contact_email: '',
+    billing_address: '',
+    billing_city: '',
+    billing_state: '',
+    billing_zip: '',
+    on_site_contact_name: '',
+    on_site_contact_phone: '',
+    nature_of_service: '',
+    service_type: '',
+    equipment_info: '',
+    estimated_cost: '',
+    authorization_signature: '',
+    authorization_date: format(new Date(), 'yyyy-MM-dd'),
+    notes: '',
+    status: 'draft',
+    ...authorization
+  });
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = (status = 'draft') => {
+    const data = {
+      ...formData,
+      status,
+      estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
+    };
+    
+    if (status === 'authorized') {
+      onAuthorize(data);
+    } else {
+      onSave(data);
+    }
+  };
+
+  const isReadyToAuthorize = formData.customer_id && 
+                             formData.billing_contact_name && 
+                             formData.nature_of_service && 
+                             formData.service_type &&
+                             formData.authorization_signature;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={onBack}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex-1">
+          <h2 className="text-xl font-bold text-slate-900">
+            {authorization?.id ? 'Edit Authorization' : 'New Pre-Repair Authorization'}
+          </h2>
+          <p className="text-sm text-slate-500">Authorization for service work</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => handleSave('draft')}
+            disabled={isSaving}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save Draft
+          </Button>
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => handleSave('authorized')}
+            disabled={isSaving || !isReadyToAuthorize}
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Authorize
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Customer & Service Type */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Customer & Service Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Customer *</Label>
+              <CustomerSelect 
+                customers={customers}
+                value={formData.customer_id}
+                onChange={(val) => handleChange('customer_id', val)}
+              />
+            </div>
+
+            <div>
+              <Label>Service Type *</Label>
+              <Select 
+                value={formData.service_type}
+                onValueChange={(val) => handleChange('service_type', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICE_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Equipment/Unit Information</Label>
+              <Input 
+                value={formData.equipment_info}
+                onChange={(e) => handleChange('equipment_info', e.target.value)}
+                placeholder="E.g., 2018 Caterpillar D6T, SN: XYZ123"
+              />
+            </div>
+
+            <div>
+              <Label>Estimated Cost</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={formData.estimated_cost}
+                  onChange={(e) => handleChange('estimated_cost', e.target.value)}
+                  placeholder="0.00"
+                  className="pl-7"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Authorization Date</Label>
+              <Input 
+                type="date"
+                value={formData.authorization_date}
+                onChange={(e) => handleChange('authorization_date', e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Billing Information */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Billing Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Contact Name (Responsible Party) *</Label>
+              <Input 
+                value={formData.billing_contact_name}
+                onChange={(e) => handleChange('billing_contact_name', e.target.value)}
+                placeholder="John Doe"
+              />
+            </div>
+
+            <div>
+              <Label>Company</Label>
+              <Input 
+                value={formData.billing_contact_company}
+                onChange={(e) => handleChange('billing_contact_company', e.target.value)}
+                placeholder="ABC Company LLC"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Phone</Label>
+                <Input 
+                  type="tel"
+                  value={formData.billing_contact_phone}
+                  onChange={(e) => handleChange('billing_contact_phone', e.target.value)}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  value={formData.billing_contact_email}
+                  onChange={(e) => handleChange('billing_contact_email', e.target.value)}
+                  placeholder="billing@company.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Billing Address</Label>
+              <Input 
+                value={formData.billing_address}
+                onChange={(e) => handleChange('billing_address', e.target.value)}
+                placeholder="123 Main St"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>City</Label>
+                <Input 
+                  value={formData.billing_city}
+                  onChange={(e) => handleChange('billing_city', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Input 
+                  value={formData.billing_state}
+                  onChange={(e) => handleChange('billing_state', e.target.value)}
+                  maxLength={2}
+                  placeholder="CA"
+                />
+              </div>
+              <div>
+                <Label>ZIP</Label>
+                <Input 
+                  value={formData.billing_zip}
+                  onChange={(e) => handleChange('billing_zip', e.target.value)}
+                  placeholder="12345"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* On-Site Contact */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">On-Site Contact</CardTitle>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label>Contact Name</Label>
+            <Input 
+              value={formData.on_site_contact_name}
+              onChange={(e) => handleChange('on_site_contact_name', e.target.value)}
+              placeholder="Site foreman or operator"
+            />
+          </div>
+          <div>
+            <Label>Phone</Label>
+            <Input 
+              type="tel"
+              value={formData.on_site_contact_phone}
+              onChange={(e) => handleChange('on_site_contact_phone', e.target.value)}
+              placeholder="(555) 123-4567"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Nature of Service */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Service Description</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NatureOfServiceInput 
+            value={formData.nature_of_service}
+            onChange={(val) => handleChange('nature_of_service', val)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Authorization */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Authorization</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="mb-2 block">Additional Notes</Label>
+            <Textarea 
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              placeholder="Any special instructions or conditions..."
+              rows={3}
+            />
+          </div>
+          <div>
+            <Label className="mb-2 block">Authorized Signature *</Label>
+            <SignaturePad 
+              initialValue={formData.authorization_signature}
+              onSave={(sig) => handleChange('authorization_signature', sig)}
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              By signing, you authorize the service described above and agree to pay for the work performed.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,17 +1,19 @@
-import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
-import ServiceReports from './pages/ServiceReports';
-import PartsOrders from './pages/PartsOrders';
+import Dashboard from './pages/Dashboard';
 import Invoices from './pages/Invoices';
+import PartsOrders from './pages/PartsOrders';
+import ServiceReports from './pages/ServiceReports';
+import Authorizations from './pages/Authorizations';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
     "Customers": Customers,
-    "ServiceReports": ServiceReports,
-    "PartsOrders": PartsOrders,
+    "Dashboard": Dashboard,
     "Invoices": Invoices,
+    "PartsOrders": PartsOrders,
+    "ServiceReports": ServiceReports,
+    "Authorizations": Authorizations,
 }
 
 export const pagesConfig = {
