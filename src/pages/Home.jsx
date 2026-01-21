@@ -23,7 +23,6 @@ export default function Home() {
           case 'bookkeeper':
             navigate(createPageUrl('FinancialExports'));
             break;
-          case 'owner':
           case 'software_engineer':
           case 'service_admin':
             navigate(createPageUrl('Dashboard'));
