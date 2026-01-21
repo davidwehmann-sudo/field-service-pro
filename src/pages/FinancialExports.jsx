@@ -32,7 +32,7 @@ export default function FinancialExports() {
   const [selectedCustomerCompany, setSelectedCustomerCompany] = useState('');
   const navigate = useNavigate();
 
-  const managedCompanies = (currentUser?.companies_managed || []).filter(Boolean);
+  const managedCompanies = (currentUser?.service_companies || []).filter(Boolean);
 
   useEffect(() => {
     const loadUser = async () => {
