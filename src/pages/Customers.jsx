@@ -17,7 +17,8 @@ import {
   MapPin, 
   Pencil, 
   Trash2,
-  User
+  User,
+  Link as LinkIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -87,6 +88,24 @@ export default function Customers() {
   const handleEdit = (customer) => {
     setEditingCustomer(customer);
     setShowForm(true);
+  };
+
+  const handleGeneratePortalLink = async (customer) => {
+    try {
+      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      await base44.entities.CustomerAccessToken.create({
+        customer_id: customer.id,
+        token: token,
+        is_active: true
+      });
+      
+      const portalUrl = `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/CustomerPortal')}?token=${token}`;
+      await navigator.clipboard.writeText(portalUrl);
+      
+      alert("Portal link copied! Send this link to the customer:\n\n" + portalUrl);
+    } catch (error) {
+      alert("Failed to generate portal link");
+    }
   };
 
   return (
