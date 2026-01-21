@@ -11,7 +11,7 @@ import {
 export default function CompanySelector({ currentUser, onCompanyChange }) {
   const [selectedCompany, setSelectedCompany] = useState(currentUser?.current_company || currentUser?.company);
 
-  if (!currentUser || currentUser.user_type !== 'bookkeeper' || !currentUser.companies_managed?.length) {
+  if (!currentUser || !['bookkeeper', 'software_engineer'].includes(currentUser.user_type) || !currentUser.companies_managed?.length) {
     return null;
   }
 
