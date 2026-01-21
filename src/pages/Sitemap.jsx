@@ -9,13 +9,11 @@ import {
   Users,
   Package,
   Receipt,
-  ClipboardCheck,
-  Home
+  ClipboardCheck
 } from "lucide-react";
 
 export default function Sitemap() {
   const pages = [
-    { name: 'Home', icon: Home },
     { name: 'Dashboard', icon: LayoutDashboard },
     { name: 'FieldTech', icon: Wrench },
     { name: 'Authorizations', icon: ClipboardCheck },
