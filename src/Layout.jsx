@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigation = [
+  { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
   { name: 'Service Reports', href: 'ServiceReports', icon: FileText },

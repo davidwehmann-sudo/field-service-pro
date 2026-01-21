@@ -21,6 +21,7 @@ import {
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import ServiceReportForm from '@/components/service/ServiceReportForm';
+import MobileServiceForm from '@/components/service/MobileServiceForm';
 
 export default function ServiceReports() {
   const [search, setSearch] = useState('');
@@ -32,6 +33,8 @@ export default function ServiceReports() {
   const urlParams = new URLSearchParams(window.location.search);
   const reportId = urlParams.get('id');
   const shouldOpenNew = urlParams.get('new') === 'true';
+  const preselectedCustomer = urlParams.get('customer');
+  const isMobile = window.innerWidth < 768;
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['serviceReports'],
@@ -45,8 +48,9 @@ export default function ServiceReports() {
 
   useEffect(() => {
     if (shouldOpenNew) {
+      const newReport = preselectedCustomer ? { customer_id: preselectedCustomer } : null;
+      setEditingReport(newReport);
       setShowForm(true);
-      setEditingReport(null);
       window.history.replaceState({}, '', window.location.pathname);
     } else if (reportId) {
       const report = reports.find(r => r.id === reportId);
@@ -56,7 +60,7 @@ export default function ServiceReports() {
       }
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [shouldOpenNew, reportId, reports]);
+  }, [shouldOpenNew, reportId, reports, preselectedCustomer]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ServiceReport.create(data),
@@ -129,8 +133,9 @@ export default function ServiceReports() {
   };
 
   if (showForm) {
+    const FormComponent = isMobile ? MobileServiceForm : ServiceReportForm;
     return (
-      <ServiceReportForm 
+      <FormComponent 
         report={editingReport}
         customers={customers}
         onSave={handleSave}

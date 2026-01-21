@@ -8,6 +8,7 @@ import CustomerPortal from './pages/CustomerPortal';
 import TechnicianChat from './pages/TechnicianChat';
 import PartsInventory from './pages/PartsInventory';
 import PayInvoice from './pages/PayInvoice';
+import FieldTech from './pages/FieldTech';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "TechnicianChat": TechnicianChat,
     "PartsInventory": PartsInventory,
     "PayInvoice": PayInvoice,
+    "FieldTech": FieldTech,
 }
 
 export const pagesConfig = {
