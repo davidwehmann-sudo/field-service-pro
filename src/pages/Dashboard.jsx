@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,25 @@ import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+        
+        // Only admin can access dashboard
+        if (user.user_type !== 'admin') {
+          navigate(createPageUrl('Home'));
+        }
+      } catch (error) {
+        navigate(createPageUrl('Home'));
+      }
+    };
+    loadUser();
+  }, [navigate]);
   const { data: serviceReports = [], isLoading: loadingReports } = useQuery({
     queryKey: ['serviceReports'],
     queryFn: () => base44.entities.ServiceReport.list('-created_date', 50)
