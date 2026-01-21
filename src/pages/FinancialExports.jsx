@@ -416,7 +416,7 @@ export default function FinancialExports() {
                   className="mt-1"
                 />
               </div>
-              {(currentUser?.user_type === 'software_engineer' || currentUser?.user_type === 'bookkeeper') && (
+              {(currentUser?.user_type === 'software_engineer' || currentUser?.user_type === 'bookkeeper') && managedCompanies.length > 0 && (
                 <div>
                   <Label htmlFor="company">Service Company</Label>
                   <Select value={selectedCompany} onValueChange={setSelectedCompany}>
