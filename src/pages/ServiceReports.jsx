@@ -105,8 +105,21 @@ export default function ServiceReports() {
     }
   };
 
-  const handleComplete = (data) => {
-    handleSave({ ...data, status: 'completed' });
+  const handleComplete = async (data) => {
+    // First complete the report
+    const completedData = { ...data, status: 'completed' };
+    if (editingReport?.id) {
+      await updateMutation.mutateAsync({ id: editingReport.id, data: completedData });
+    } else {
+      await createMutation.mutateAsync(completedData);
+    }
+    
+    // Then auto-generate invoice
+    const reportId = editingReport?.id || data.id;
+    if (reportId) {
+      const url = createPageUrl('Invoices') + `?from_report=${reportId}&auto_generate=true`;
+      window.location.href = url;
+    }
   };
 
   const statusColors = {

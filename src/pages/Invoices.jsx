@@ -21,7 +21,9 @@ import {
   CreditCard,
   Check,
   FileText,
-  Printer
+  Printer,
+  Mail,
+  Send
 } from "lucide-react";
 import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +41,7 @@ export default function Invoices() {
   const urlParams = new URLSearchParams(window.location.search);
   const fromReportId = urlParams.get('from_report');
   const shouldOpenNew = urlParams.get('new') === 'true';
+  const autoGenerate = urlParams.get('auto_generate') === 'true';
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices'],
@@ -78,7 +81,7 @@ export default function Invoices() {
           return sum + cost + markup;
         }, 0);
 
-        setEditingInvoice({
+        const invoiceData = {
           customer_id: report.customer_id,
           service_report_id: report.id,
           invoice_date: format(new Date(), 'yyyy-MM-dd'),
@@ -90,15 +93,25 @@ export default function Invoices() {
           tax_amount: 0,
           total_amount: serviceItemsTotal + destinationTotal + partsTotal,
           status: 'draft'
-        });
-        setShowForm(true);
+        };
+
+        if (autoGenerate) {
+          // Auto-create the invoice
+          createMutation.mutate({
+            ...invoiceData,
+            invoice_number: generateInvoiceNumber()
+          });
+        } else {
+          setEditingInvoice(invoiceData);
+          setShowForm(true);
+        }
       }
       window.history.replaceState({}, '', window.location.pathname);
     } else if (shouldOpenNew) {
       setShowForm(true);
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [fromReportId, serviceReports, partsOrders, shouldOpenNew]);
+  }, [fromReportId, serviceReports, partsOrders, shouldOpenNew, autoGenerate]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Invoice.create(data),
@@ -195,6 +208,86 @@ export default function Invoices() {
         payment_reference: formData.get('payment_reference')
       }
     });
+  };
+
+  const handleSendEmail = async (invoice) => {
+    const customer = customers.find(c => c.id === invoice.customer_id);
+    if (!customer?.email) {
+      alert('Customer does not have an email address');
+      return;
+    }
+
+    const report = serviceReports.find(r => r.id === invoice.service_report_id);
+    const reportParts = partsOrders.filter(p => p.service_report_id === invoice.service_report_id);
+
+    let emailBody = `
+Dear ${customer.contact_name || customer.company_name},
+
+Please find your invoice details below:
+
+INVOICE: ${invoice.invoice_number}
+Date: ${format(new Date(invoice.invoice_date), 'MMMM d, yyyy')}
+Due Date: ${format(new Date(invoice.due_date), 'MMMM d, yyyy')}
+
+-------------------------------------------
+CHARGES:
+-------------------------------------------
+`;
+
+    if (report) {
+      emailBody += `\nService Date: ${format(new Date(report.service_date), 'MMMM d, yyyy')}\n`;
+      if (report.equipment_type) {
+        emailBody += `Equipment: ${report.equipment_type} ${report.equipment_make || ''} ${report.equipment_model || ''}\n`;
+      }
+      emailBody += `\n`;
+    }
+
+    emailBody += `Labor Total: $${(invoice.labor_total || 0).toFixed(2)}\n`;
+    emailBody += `Travel Total: $${(invoice.travel_total || 0).toFixed(2)}\n`;
+    
+    if (reportParts.length > 0) {
+      emailBody += `\nParts:\n`;
+      reportParts.forEach(part => {
+        const cost = (part.unit_cost || 0) * (part.quantity || 1);
+        const markup = cost * ((part.markup_percent || 0) / 100);
+        emailBody += `  - ${part.part_description} (Qty: ${part.quantity}): $${(cost + markup).toFixed(2)}\n`;
+      });
+    }
+    emailBody += `Parts Total: $${(invoice.parts_total || 0).toFixed(2)}\n`;
+
+    if (invoice.tax_rate > 0) {
+      emailBody += `\nTax (${invoice.tax_rate}%): $${(invoice.tax_amount || 0).toFixed(2)}\n`;
+    }
+
+    emailBody += `\n-------------------------------------------\n`;
+    emailBody += `TOTAL DUE: $${(invoice.total_amount || 0).toFixed(2)}\n`;
+    emailBody += `-------------------------------------------\n\n`;
+
+    if (invoice.notes) {
+      emailBody += `Notes: ${invoice.notes}\n\n`;
+    }
+
+    emailBody += `Thank you for your business!\n\nDieselTech Field Service`;
+
+    try {
+      await base44.integrations.Core.SendEmail({
+        to: customer.email,
+        subject: `Invoice ${invoice.invoice_number} from DieselTech`,
+        body: emailBody
+      });
+
+      // Update invoice status to 'sent' if it was draft
+      if (invoice.status === 'draft') {
+        updateMutation.mutate({
+          id: invoice.id,
+          data: { status: 'sent' }
+        });
+      }
+
+      alert(`Invoice sent to ${customer.email}`);
+    } catch (error) {
+      alert('Failed to send email');
+    }
   };
 
   const statusColors = {
@@ -325,6 +418,14 @@ export default function Invoices() {
                   </div>
 
                   <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleSendEmail(invoice)}
+                      title="Send invoice via email"
+                    >
+                      <Send className="w-4 h-4 text-blue-500" />
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="icon"
