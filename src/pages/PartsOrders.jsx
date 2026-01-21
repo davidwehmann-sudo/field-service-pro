@@ -19,6 +19,7 @@ import {
   DollarSign,
   Hash
 } from "lucide-react";
+import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
@@ -235,6 +236,12 @@ export default function PartsOrders() {
                             For: {getCustomerName(part.customer_id)}
                           </p>
                         )}
+                        <div className="mt-2">
+                          <PartsAvailabilityChecker 
+                            partNumber={part.part_number}
+                            partDescription={part.part_description}
+                          />
+                        </div>
                       </div>
                       
                       <div className="text-right">

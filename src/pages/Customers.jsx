@@ -173,6 +173,15 @@ export default function Customers() {
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8"
+                      onClick={() => handleGeneratePortalLink(customer)}
+                      title="Generate portal link"
+                    >
+                      <LinkIcon className="w-4 h-4 text-blue-400" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
                       onClick={() => handleEdit(customer)}
                     >
                       <Pencil className="w-4 h-4 text-slate-400" />
