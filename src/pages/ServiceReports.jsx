@@ -39,12 +39,24 @@ export default function ServiceReports() {
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['serviceReports'],
-    queryFn: () => base44.entities.ServiceReport.list('-created_date')
+    queryFn: async () => {
+      if (currentUser?.user_type === 'service_customer') {
+        return base44.entities.ServiceReport.filter({ created_by: currentUser.email }, '-created_date');
+      }
+      return base44.entities.ServiceReport.list('-created_date');
+    },
+    enabled: !!currentUser
   });
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list()
+    queryFn: async () => {
+      if (currentUser?.user_type === 'service_customer') {
+        return base44.entities.Customer.filter({ created_by: currentUser.email });
+      }
+      return base44.entities.Customer.list();
+    },
+    enabled: !!currentUser
   });
 
   useEffect(() => {
