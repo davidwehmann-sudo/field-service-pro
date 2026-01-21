@@ -31,8 +31,8 @@ export default function Dashboard() {
         const user = await base44.auth.me();
         setCurrentUser(user);
         
-        // Block customers - only service admin can access
-        if (user.user_type === 'service_customer' || user.user_type !== 'service_admin') {
+        // Block customers from dashboard
+        if (user.user_type === 'service_customer') {
           navigate(createPageUrl('Home'));
         }
       } catch (error) {
