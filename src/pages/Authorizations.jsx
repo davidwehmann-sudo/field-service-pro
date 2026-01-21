@@ -53,7 +53,7 @@ export default function Authorizations() {
       }
     };
     loadUser();
-  }, [navigate]);
+  }, [navigate, queryClient]);
 
   const { data: authorizations = [], isLoading: authLoading } = useQuery({
     queryKey: ['authorizations'],
