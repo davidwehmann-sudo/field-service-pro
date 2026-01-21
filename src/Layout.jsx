@@ -122,7 +122,7 @@ export default function Layout({ children, currentPageName }) {
               <Wrench className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-white text-lg">Wehmann</h1>
+              <h1 className="font-bold text-white text-lg">{currentUser?.company || 'Wehmann'}</h1>
               <p className="text-xs text-slate-400">Field Service Pro</p>
             </div>
           </div>
@@ -188,7 +188,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-slate-900">Wehmann</span>
+              <span className="font-bold text-slate-900">{currentUser?.company || 'Wehmann'}</span>
             </div>
             <div className="w-10" />
           </div>
