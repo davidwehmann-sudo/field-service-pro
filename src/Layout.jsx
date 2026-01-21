@@ -67,12 +67,14 @@ const allNavigation = {
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userType, setUserType] = useState('service_admin');
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const loadUserType = async () => {
       try {
         const user = await base44.auth.me();
         setUserType(user.user_type || 'service_admin');
+        setCurrentUser(user);
       } catch (error) {
         setUserType('service_admin');
       }
@@ -81,6 +83,11 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const navigation = allNavigation[userType] || allNavigation.service_admin;
+
+  const formatUserType = (type) => {
+    if (!type) return 'Unknown';
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -115,9 +122,17 @@ export default function Layout({ children, currentPageName }) {
           >
             <X className="w-5 h-5" />
           </Button>
-        </div>
+          </div>
 
-        <nav className="p-4 space-y-1">
+          {currentUser && (
+          <div className="px-6 py-4 border-b border-slate-800">
+            <p className="text-xs text-slate-500 mb-1">Logged in as</p>
+            <p className="text-sm font-medium text-white truncate">{currentUser.full_name || currentUser.email}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{formatUserType(currentUser.user_type)}</p>
+          </div>
+          )}
+
+          <nav className="p-4 space-y-1">
           {navigation.map((item) => {
             const isActive = currentPageName === item.href;
             return (
