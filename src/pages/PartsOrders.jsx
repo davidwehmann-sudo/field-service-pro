@@ -29,7 +29,26 @@ export default function PartsOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+        
+        // Block customers
+        if (user.user_type === 'customer') {
+          navigate(createPageUrl('Home'));
+        }
+      } catch (error) {
+        navigate(createPageUrl('Home'));
+      }
+    };
+    loadUser();
+  }, [navigate]);
 
   const urlParams = new URLSearchParams(window.location.search);
   const shouldOpenNew = urlParams.get('new') === 'true';

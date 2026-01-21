@@ -65,15 +65,25 @@ export default function Invoices() {
     queryFn: () => base44.entities.PartsOrder.list()
   });
 
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
   useEffect(() => {
     const loadUser = async () => {
       try {
         const user = await base44.auth.me();
         setCurrentUser(user);
-      } catch (error) {}
+        
+        // Block customers
+        if (user.user_type === 'customer') {
+          navigate(createPageUrl('Home'));
+        }
+      } catch (error) {
+        navigate(createPageUrl('Home'));
+      }
     };
     loadUser();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (fromReportId && serviceReports.length > 0) {
