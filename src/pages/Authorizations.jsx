@@ -266,22 +266,10 @@ Thank you for your business.
           <h1 className="text-2xl font-bold text-slate-900">Pre-Repair Authorizations</h1>
           <p className="text-slate-500">Customer authorization forms for service work</p>
         </div>
-        <div className="flex gap-3">
-          {currentUser?.user_type === 'software_engineer' && (
-            <Button 
-              variant="outline"
-              onClick={() => window.open(window.location.origin + '/login', '_blank')}
-              title="Preview login page"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Preview Login
-            </Button>
-          )}
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
-            <Plus className="w-4 h-4 mr-2" />
-            New Authorization
-          </Button>
-        </div>
+        <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
+          <Plus className="w-4 h-4 mr-2" />
+          New Authorization
+        </Button>
       </div>
 
       {/* Search */}
