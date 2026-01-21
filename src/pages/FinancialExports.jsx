@@ -31,14 +31,7 @@ export default function FinancialExports() {
   const [selectedCompany, setSelectedCompany] = useState('');
   const navigate = useNavigate();
 
-  const { data: allCompanies = [] } = useQuery({
-    queryKey: ['allCompanies'],
-    queryFn: async () => {
-      const customers = await base44.entities.Customer.list();
-      const uniqueCompanies = [...new Set(customers.map(c => c.company_name))].filter(Boolean).sort();
-      return uniqueCompanies;
-    }
-  });
+  const managedCompanies = (currentUser?.companies_managed || []).filter(Boolean);
 
   useEffect(() => {
     const loadUser = async () => {
