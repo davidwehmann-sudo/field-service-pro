@@ -89,6 +89,13 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 mt-1">Welcome back, here's what's happening</p>
+          {currentUser && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs font-mono text-blue-900">
+                <strong>Preview User:</strong> {currentUser.email} | <strong>Type:</strong> {currentUser.user_type || 'not set'} | <strong>Name:</strong> {currentUser.full_name || 'not set'}
+              </p>
+            </div>
+          )}
         </div>
         <Link to={createPageUrl('ServiceReports') + '?new=true'}>
           <Button className="bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/25">
