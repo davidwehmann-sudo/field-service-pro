@@ -71,11 +71,21 @@ export default function FinancialExports() {
     queryFn: () => base44.entities.PartsOrder.list()
   });
 
+  const customerCompanies = [...new Set(customers.map(c => c.company_name))].filter(Boolean).sort();
+
   const filterByDate = (items, dateField) => {
     if (!startDate || !endDate) return items;
     return items.filter(item => {
       const itemDate = new Date(item[dateField]);
       return itemDate >= new Date(startDate) && itemDate <= new Date(endDate);
+    });
+  };
+
+  const filterByCustomerCompany = (items, customerIdField) => {
+    if (!selectedCustomerCompany) return items;
+    return items.filter(item => {
+      const customer = customers.find(c => c.id === item[customerIdField]);
+      return customer?.company_name === selectedCustomerCompany;
     });
   };
 
