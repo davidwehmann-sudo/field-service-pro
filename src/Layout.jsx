@@ -49,6 +49,17 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
   ],
+  owner: [
+    { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
+    { name: 'Authorizations', href: 'Authorizations', icon: ClipboardCheck },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
+    { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
+    { name: 'Invoices', href: 'Invoices', icon: Receipt },
+    { name: 'Customers', href: 'Customers', icon: Users },
+    { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
+  ],
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
