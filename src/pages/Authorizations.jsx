@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink } from "lucide-react";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import AuthorizationForm from '@/components/authorization/AuthorizationForm';
@@ -33,8 +33,27 @@ export default function Authorizations() {
   const [showForm, setShowForm] = useState(false);
   const [editingAuth, setEditingAuth] = useState(null);
   const [sendingEmailFor, setSendingEmailFor] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+        
+        // Block customers
+        if (user.user_type === 'customer') {
+          navigate(createPageUrl('Home'));
+        }
+      } catch (error) {
+        navigate(createPageUrl('Home'));
+      }
+    };
+    loadUser();
+  }, [navigate]);
 
   const { data: authorizations = [], isLoading: authLoading } = useQuery({
     queryKey: ['authorizations'],

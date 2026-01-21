@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,25 @@ import OfflineIndicator from '@/components/service/OfflineIndicator';
 
 export default function FieldTech() {
   const [search, setSearch] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+        
+        // Block customers
+        if (user.user_type === 'customer') {
+          navigate(createPageUrl('Home'));
+        }
+      } catch (error) {
+        navigate(createPageUrl('Home'));
+      }
+    };
+    loadUser();
+  }, [navigate]);
 
   const { data: reports = [] } = useQuery({
     queryKey: ['serviceReports'],

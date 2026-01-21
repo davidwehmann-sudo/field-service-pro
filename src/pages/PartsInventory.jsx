@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '../utils';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +21,25 @@ export default function PartsInventory() {
   const [filterLocation, setFilterLocation] = useState('all');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [extractingData, setExtractingData] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+        
+        // Block customers
+        if (user.user_type === 'customer') {
+          navigate(createPageUrl('Home'));
+        }
+      } catch (error) {
+        navigate(createPageUrl('Home'));
+      }
+    };
+    loadUser();
+  }, [navigate]);
 
   const [formData, setFormData] = useState({
     part_number: '',
