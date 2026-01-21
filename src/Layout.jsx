@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
+import CompanySelector from './components/CompanySelector';
 import { 
   Wrench, 
   FileText, 
@@ -80,18 +81,20 @@ export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userType, setUserType] = useState('service_admin');
   const [currentUser, setCurrentUser] = useState(null);
+  const [displayCompany, setDisplayCompany] = useState(null);
 
   useEffect(() => {
     const loadUserType = async () => {
-      try {
-        const user = await base44.auth.me();
-        setUserType(user.user_type || 'service_admin');
-        setCurrentUser(user);
-      } catch (error) {
-        setUserType('service_admin');
-      }
-    };
-    loadUserType();
+        try {
+          const user = await base44.auth.me();
+          setUserType(user.user_type || 'service_admin');
+          setCurrentUser(user);
+          setDisplayCompany(user.current_company || user.company);
+        } catch (error) {
+          setUserType('service_admin');
+        }
+      };
+      loadUserType();
   }, []);
 
   const navigation = allNavigation[userType] || allNavigation.service_admin;
@@ -122,7 +125,7 @@ export default function Layout({ children, currentPageName }) {
               <Wrench className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-white text-lg">{currentUser?.company || 'Wehmann'}</h1>
+              <h1 className="font-bold text-white text-lg">{displayCompany || 'Wehmann'}</h1>
               <p className="text-xs text-slate-400">Field Service Pro</p>
             </div>
           </div>
@@ -147,6 +150,8 @@ export default function Layout({ children, currentPageName }) {
               </p>
             </div>
           )}
+
+          <CompanySelector currentUser={currentUser} onCompanyChange={setDisplayCompany} />
 
           <nav className="p-4 space-y-1">
           {navigation.map((item) => {
@@ -188,7 +193,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-slate-900">{currentUser?.company || 'Wehmann'}</span>
+              <span className="font-bold text-slate-900">{displayCompany || 'Wehmann'}</span>
             </div>
             <div className="w-10" />
           </div>
