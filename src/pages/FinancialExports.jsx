@@ -246,10 +246,8 @@ export default function FinancialExports() {
   };
 
   const exportComprehensive = () => {
-    let filteredInvoices = filterByDate(invoices, 'invoice_date');
-    filteredInvoices = filterByCustomerCompany(filteredInvoices, 'customer_id');
-    let filteredReports = filterByDate(serviceReports, 'service_date');
-    filteredReports = filterByCustomerCompany(filteredReports, 'customer_id');
+    const filteredInvoices = filterByDate(invoices, 'invoice_date');
+    const filteredReports = filterByDate(serviceReports, 'service_date');
     
     // Summary sheet
     const totalRevenue = filteredInvoices
