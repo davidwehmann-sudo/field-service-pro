@@ -29,7 +29,6 @@ export default function Sitemap() {
     { name: 'Customers', icon: Users, description: 'Customer management' },
     { name: 'DataManagement', icon: Download, description: 'Export reports and import data' },
     { name: 'SecurityChecklist', icon: Shield, description: 'Security audit checklist' },
-    { name: 'CustomerPortal', icon: Users, description: 'Customer self-service portal' },
   ];
 
   return (
