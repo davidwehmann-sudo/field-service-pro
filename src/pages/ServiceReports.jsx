@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { 
   Plus, 
   Search, 
@@ -27,6 +29,10 @@ import SMSNotificationButton from '@/components/service/SMSNotificationButton';
 export default function ServiceReports() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [customerFilter, setCustomerFilter] = useState('all');
+  const [equipmentFilter, setEquipmentFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -116,13 +122,27 @@ export default function ServiceReports() {
     return customer?.company_name || 'Unknown Customer';
   };
 
+  const uniqueEquipmentTypes = [...new Set(reports.map(r => r.equipment_type).filter(Boolean))].sort();
+
   const filteredReports = reports.filter(r => {
     const matchesSearch = 
       getCustomerName(r.customer_id).toLowerCase().includes(search.toLowerCase()) ||
       r.equipment_type?.toLowerCase().includes(search.toLowerCase()) ||
-      r.equipment_make?.toLowerCase().includes(search.toLowerCase());
+      r.equipment_make?.toLowerCase().includes(search.toLowerCase()) ||
+      r.equipment_serial?.toLowerCase().includes(search.toLowerCase()) ||
+      r.complaint?.toLowerCase().includes(search.toLowerCase());
+    
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCustomer = customerFilter === 'all' || r.customer_id === customerFilter;
+    const matchesEquipment = equipmentFilter === 'all' || r.equipment_type === equipmentFilter;
+    
+    const matchesDateRange = (!startDate || !endDate) || (
+      r.service_date && 
+      new Date(r.service_date) >= new Date(startDate) && 
+      new Date(r.service_date) <= new Date(endDate)
+    );
+    
+    return matchesSearch && matchesStatus && matchesCustomer && matchesEquipment && matchesDateRange;
   });
 
   const handleSave = (data) => {
@@ -188,24 +208,101 @@ export default function ServiceReports() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            placeholder="Search reports..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input 
+              placeholder="Search reports..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="draft">Draft</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="invoiced">Invoiced</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="invoiced">Invoiced</TabsTrigger>
-          </TabsList>
-        </Tabs>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Customer</Label>
+            <Select value={customerFilter} onValueChange={setCustomerFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Customers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Customers</SelectItem>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.company_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Equipment Type</Label>
+            <Select value={equipmentFilter} onValueChange={setEquipmentFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Equipment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Equipment</SelectItem>
+                {uniqueEquipmentTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Start Date</Label>
+            <Input 
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">End Date</Label>
+            <Input 
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {(customerFilter !== 'all' || equipmentFilter !== 'all' || startDate || endDate) && (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setCustomerFilter('all');
+                setEquipmentFilter('all');
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="text-slate-500 hover:text-slate-700"
+            >
+              Clear Filters
+            </Button>
+            <span className="text-sm text-slate-500">
+              {filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'} found
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Reports List */}
