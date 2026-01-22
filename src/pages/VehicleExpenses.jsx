@@ -25,6 +25,7 @@ export default function VehicleExpenses() {
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedVehicleName, setSelectedVehicleName] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -445,7 +446,7 @@ export default function VehicleExpenses() {
               </div>
               <div>
                 <Label htmlFor="vehicle_name">Vehicle *</Label>
-                <Select name="vehicle_name" defaultValue={editingExpense?.vehicle_name || ''} required>
+                <Select name="vehicle_name" defaultValue={editingExpense?.vehicle_name || ''} onValueChange={setSelectedVehicleName} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a vehicle" />
                   </SelectTrigger>
@@ -556,7 +557,7 @@ export default function VehicleExpenses() {
               )}
             </div>
 
-            {getVehicleOwnership(editingExpense?.vehicle_name || '') === 'personal' && (
+            {getVehicleOwnership(selectedVehicleName || editingExpense?.vehicle_name || '') === 'personal' && (
               <div>
                 <Label htmlFor="paid_by">Who Paid? *</Label>
                 <Select name="paid_by" defaultValue={editingExpense?.paid_by || 'company'}>
