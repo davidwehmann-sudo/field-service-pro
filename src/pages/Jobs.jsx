@@ -63,71 +63,100 @@ export default function Jobs() {
     queryFn: () => base44.entities.Customer.list(),
   });
 
+  const { data: jobsData = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list('-created_date'),
+  });
+
   // Build unified job view
   const jobs = React.useMemo(() => {
-    const jobMap = new Map();
+    const jobsMap = new Map();
 
-    // Add all service reports as jobs
-    serviceReports.forEach(sr => {
-      jobMap.set(sr.id, {
-        id: sr.id,
-        type: 'service_report',
-        customer_id: sr.customer_id,
-        date: sr.service_date,
-        serviceReport: sr,
+    // Start with Job entities
+    jobsData.forEach(job => {
+      jobsMap.set(job.id, {
+        ...job,
+        jobNumber: job.job_number,
+        type: job.job_type || 'service',
+        date: job.created_date,
         authorization: null,
+        serviceReport: null,
         partsOrders: []
       });
     });
 
-    // Link authorizations to service reports or create standalone
+    // Link authorizations
     authorizations.forEach(auth => {
-      if (auth.service_report_id && jobMap.has(auth.service_report_id)) {
-        jobMap.get(auth.service_report_id).authorization = auth;
-      } else {
-        // Standalone authorization (no service report yet)
-        jobMap.set(`auth-${auth.id}`, {
-          id: `auth-${auth.id}`,
-          type: 'authorization',
+      if (auth.job_id && jobsMap.has(auth.job_id)) {
+        jobsMap.get(auth.job_id).authorization = auth;
+      } else if (!auth.job_id) {
+        // Orphaned authorization - no job yet
+        const tempId = `temp-auth-${auth.id}`;
+        jobsMap.set(tempId, {
+          id: tempId,
+          jobNumber: null,
           customer_id: auth.customer_id,
-          date: auth.authorization_date,
-          serviceReport: null,
+          type: 'service',
+          date: auth.authorization_date || auth.created_date,
           authorization: auth,
+          serviceReport: null,
           partsOrders: []
         });
       }
     });
 
-    // Link parts orders to service reports or create standalone
+    // Link service reports
+    serviceReports.forEach(sr => {
+      if (sr.job_id && jobsMap.has(sr.job_id)) {
+        jobsMap.get(sr.job_id).serviceReport = sr;
+      } else if (!sr.job_id) {
+        // Orphaned service report
+        const tempId = `temp-sr-${sr.id}`;
+        jobsMap.set(tempId, {
+          id: tempId,
+          jobNumber: null,
+          customer_id: sr.customer_id,
+          type: 'service',
+          date: sr.service_date,
+          authorization: null,
+          serviceReport: sr,
+          partsOrders: []
+        });
+      }
+    });
+
+    // Link parts orders
     partsOrders.forEach(po => {
-      if (po.service_report_id && jobMap.has(po.service_report_id)) {
-        jobMap.get(po.service_report_id).partsOrders.push(po);
-      } else if (!po.service_report_id) {
-        // Standalone parts order (parts only sale)
-        const existingPartsJob = Array.from(jobMap.values()).find(
-          j => j.type === 'parts_only' && j.customer_id === po.customer_id
+      if (po.job_id && jobsMap.has(po.job_id)) {
+        jobsMap.get(po.job_id).partsOrders.push(po);
+      } else if (!po.job_id) {
+        // Orphaned parts order
+        const tempId = `temp-po-${po.id}`;
+        const existing = Array.from(jobsMap.values()).find(
+          j => j.id.startsWith('temp-po-') && j.customer_id === po.customer_id
         );
         
-        if (existingPartsJob) {
-          existingPartsJob.partsOrders.push(po);
+        if (existing) {
+          existing.partsOrders.push(po);
         } else {
-          jobMap.set(`parts-${po.id}`, {
-            id: `parts-${po.id}`,
-            type: 'parts_only',
+          jobsMap.set(tempId, {
+            id: tempId,
+            jobNumber: null,
             customer_id: po.customer_id,
+            type: 'parts_only',
             date: po.order_date || po.created_date,
-            serviceReport: null,
             authorization: null,
+            serviceReport: null,
             partsOrders: [po]
           });
         }
       }
     });
 
-    return Array.from(jobMap.values()).sort((a, b) => 
+    return Array.from(jobsMap.values()).sort((a, b) => 
       new Date(b.date) - new Date(a.date)
     );
-  }, [authorizations, serviceReports, partsOrders]);
+  }, [jobsData, authorizations, serviceReports, partsOrders]);
 
   const getCustomerName = (customerId) => {
     const customer = customers.find(c => c.id === customerId);
@@ -225,6 +254,15 @@ export default function Jobs() {
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {job.jobNumber ? (
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {job.jobNumber}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">
+                            No Job #
+                          </Badge>
+                        )}
                         <h3 className="font-semibold text-slate-900">
                           {getCustomerName(job.customer_id)}
                         </h3>
