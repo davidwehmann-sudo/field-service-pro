@@ -205,7 +205,8 @@ Return the data in the specified JSON format. If you cannot identify something, 
     storage: 'Storage',
     truck_1: 'Truck 1',
     truck_2: 'Truck 2',
-    truck_3: 'Truck 3'
+    truck_3: 'Truck 3',
+    non_stock: 'Non-Stock'
   };
 
   return (
@@ -247,6 +248,7 @@ Return the data in the specified JSON format. If you cannot identify something, 
                 <SelectItem value="truck_1">Truck 1</SelectItem>
                 <SelectItem value="truck_2">Truck 2</SelectItem>
                 <SelectItem value="truck_3">Truck 3</SelectItem>
+                <SelectItem value="non_stock">Non-Stock</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -509,6 +511,7 @@ Return the data in the specified JSON format. If you cannot identify something, 
                   <SelectItem value="truck_1">Truck 1</SelectItem>
                   <SelectItem value="truck_2">Truck 2</SelectItem>
                   <SelectItem value="truck_3">Truck 3</SelectItem>
+                  <SelectItem value="non_stock">Non-Stock (Order as Needed)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
