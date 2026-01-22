@@ -26,12 +26,14 @@ import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecke
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
+import { toast } from "sonner";
 
 export default function PartsOrders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
+  const [selectedParts, setSelectedParts] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
