@@ -31,7 +31,6 @@ import {
 import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
-import SMSNotificationButton from '@/components/service/SMSNotificationButton';
 
 export default function Invoices() {
   const [search, setSearch] = useState('');
@@ -585,11 +584,6 @@ CHARGES:
                        <LinkIcon className="w-4 h-4 text-purple-500" />
                      </Button>
                    )}
-                   <SMSNotificationButton
-                     invoice_id={invoice.id}
-                     customer_id={invoice.customer_id}
-                     customerPhone={customers.find(c => c.id === invoice.customer_id)?.phone}
-                   />
                    <Button 
                      variant="ghost" 
                      size="icon"
