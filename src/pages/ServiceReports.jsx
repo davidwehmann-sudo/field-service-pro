@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import ServiceReportForm from '@/components/service/ServiceReportForm';
 import MobileServiceForm from '@/components/service/MobileServiceForm';
+import SMSNotificationButton from '@/components/service/SMSNotificationButton';
 
 export default function ServiceReports() {
   const [search, setSearch] = useState('');
@@ -292,6 +293,11 @@ export default function ServiceReports() {
                   </div>
 
                   <div className="flex gap-1">
+                    <SMSNotificationButton
+                      service_report_id={report.id}
+                      customer_id={report.customer_id}
+                      customerPhone={customers.find(c => c.id === report.customer_id)?.phone}
+                    />
                     <Button 
                       variant="ghost" 
                       size="icon"
