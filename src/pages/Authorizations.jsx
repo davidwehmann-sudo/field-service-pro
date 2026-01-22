@@ -438,6 +438,23 @@ Thank you for your business.
           ))
         )}
       </div>
+
+      <DeleteConfirmationDialog
+        open={!!authToDelete}
+        onOpenChange={(open) => !open && setAuthToDelete(null)}
+        title="Delete Authorization?"
+        description={authToDelete?.status === 'authorized' || authToDelete?.status === 'service_started' ?
+          "This authorization is currently active." :
+          "This pre-repair authorization will be permanently deleted."}
+        warning={authToDelete?.status === 'authorized' || authToDelete?.status === 'service_started' ?
+          "⚠️ This authorization is active. Are you sure?" : null}
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (authToDelete) {
+            deleteMutation.mutate(authToDelete.id);
+          }
+        }}
+      />
     </div>
   );
 }
