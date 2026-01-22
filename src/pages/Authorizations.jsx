@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink } from "lucide-react";
+import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink, Link2 } from "lucide-react";
+import GenerateAuthLink from '@/components/authorization/GenerateAuthLink';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -327,6 +328,12 @@ Thank you for your business.
                       </div>
                       
                       <div className="flex gap-2">
+                        {auth.status === 'draft' && (
+                          <GenerateAuthLink 
+                            authorization={auth}
+                            customer={customers.find(c => c.id === auth.customer_id)}
+                          />
+                        )}
                         {auth.status === 'authorized' && auth.billing_contact_email && (
                           <Button
                             variant="ghost"

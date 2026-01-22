@@ -14,6 +14,7 @@ import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import VehicleExpenses from './pages/VehicleExpenses';
 import DataManagement from './pages/DataManagement';
+import AuthorizeService from './pages/AuthorizeService';
 import __Layout from './Layout.jsx';
 
 
@@ -34,6 +35,7 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "VehicleExpenses": VehicleExpenses,
     "DataManagement": DataManagement,
+    "AuthorizeService": AuthorizeService,
 }
 
 export const pagesConfig = {
