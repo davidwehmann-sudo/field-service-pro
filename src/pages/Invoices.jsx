@@ -36,6 +36,9 @@ import SMSNotificationButton from '@/components/service/SMSNotificationButton';
 export default function Invoices() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [customerFilter, setCustomerFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
@@ -181,7 +184,15 @@ export default function Invoices() {
       getCustomerName(i.customer_id).toLowerCase().includes(search.toLowerCase()) ||
       i.invoice_number?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || i.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCustomer = customerFilter === 'all' || i.customer_id === customerFilter;
+    
+    const matchesDateRange = (!startDate || !endDate) || (
+      i.invoice_date && 
+      new Date(i.invoice_date) >= new Date(startDate) && 
+      new Date(i.invoice_date) <= new Date(endDate)
+    );
+    
+    return matchesSearch && matchesStatus && matchesCustomer && matchesDateRange;
   });
 
   const handleSubmit = (e) => {
@@ -372,25 +383,84 @@ CHARGES:
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            placeholder="Search invoices..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input 
+              placeholder="Search invoices..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="draft">Draft</TabsTrigger>
+              <TabsTrigger value="sent">Sent</TabsTrigger>
+              <TabsTrigger value="paid">Paid</TabsTrigger>
+              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
-            <TabsTrigger value="sent">Sent</TabsTrigger>
-            <TabsTrigger value="paid">Paid</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-          </TabsList>
-        </Tabs>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Customer</Label>
+            <Select value={customerFilter} onValueChange={setCustomerFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Customers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Customers</SelectItem>
+                {customers.map(customer => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.company_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Start Date</Label>
+            <Input 
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">End Date</Label>
+            <Input 
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {(customerFilter !== 'all' || startDate || endDate) && (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setCustomerFilter('all');
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="text-slate-500 hover:text-slate-700"
+            >
+              Clear Filters
+            </Button>
+            <span className="text-sm text-slate-500">
+              {filteredInvoices.length} {filteredInvoices.length === 1 ? 'invoice' : 'invoices'} found
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Invoices List */}
