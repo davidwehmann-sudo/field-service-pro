@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink, Link2 } from "lucide-react";
+import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink, Link2, Printer } from "lucide-react";
 import GenerateAuthLink from '@/components/authorization/GenerateAuthLink';
+import UploadAuthorizationForm from '@/components/authorization/UploadAuthorizationForm';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -55,6 +56,18 @@ export default function Authorizations() {
     };
     loadUser();
   }, [navigate, queryClient]);
+
+  const handlePrintBlankForm = async () => {
+    try {
+      const { data } = await base44.functions.invoke('generateBlankAuthorizationPDF');
+      const blob = new Blob([data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to generate form');
+    }
+  };
 
   const { data: authorizations = [], isLoading: authLoading } = useQuery({
     queryKey: ['authorizations'],
@@ -266,10 +279,24 @@ Thank you for your business.
           <h1 className="text-2xl font-bold text-slate-900">Pre-Repair Authorizations</h1>
           <p className="text-slate-500">Customer authorization forms for service work</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
-          <Plus className="w-4 h-4 mr-2" />
-          New Authorization
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handlePrintBlankForm}
+            className="gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Print Blank
+          </Button>
+          <UploadAuthorizationForm 
+            customers={customers}
+            onAuthCreated={() => queryClient.invalidateQueries(['authorizations'])}
+          />
+          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
+            <Plus className="w-4 h-4 mr-2" />
+            New Authorization
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
