@@ -334,6 +334,12 @@ Thank you for your business.
                             customer={customers.find(c => c.id === auth.customer_id)}
                           />
                         )}
+                        {(auth.status === 'authorized' || auth.status === 'service_started' || auth.status === 'completed') && (
+                          <GenerateAuthLink 
+                            authorization={auth}
+                            customer={customers.find(c => c.id === auth.customer_id)}
+                          />
+                        )}
                         {auth.status === 'authorized' && auth.billing_contact_email && (
                           <Button
                             variant="ghost"
