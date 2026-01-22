@@ -104,8 +104,8 @@ export default function OwnVehicles() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Our Vehicles</h1>
-          <p className="text-slate-500 mt-1">Track your fleet and maintenance</p>
+          <h1 className="text-2xl font-bold text-slate-900">Fleet & Work Vehicles</h1>
+          <p className="text-slate-500 mt-1">Track company and personally-owned work vehicles</p>
         </div>
         <Button
           onClick={() => { setEditingVehicle(null); setShowForm(true); }}
@@ -161,12 +161,12 @@ export default function OwnVehicles() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredVehicles.map((vehicle) => (
-            <Card key={vehicle.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card key={vehicle.id} className={`border-0 shadow-sm hover:shadow-md transition-shadow ${vehicle.vehicle_owner === 'personal' ? 'border-l-4 border-blue-400' : ''}`}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <Truck className="w-5 h-5 text-amber-600" />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${vehicle.vehicle_owner === 'personal' ? 'bg-blue-100' : 'bg-amber-100'}`}>
+                      <Truck className={`w-5 h-5 ${vehicle.vehicle_owner === 'personal' ? 'text-blue-600' : 'text-amber-600'}`} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-900">{vehicle.name}</h3>
@@ -196,9 +196,19 @@ export default function OwnVehicles() {
                 </div>
 
                 <div className="space-y-2 text-sm mb-3">
-                  <Badge className={statusColors[vehicle.status]}>
-                    {vehicle.status}
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge className={statusColors[vehicle.status]}>
+                      {vehicle.status}
+                    </Badge>
+                    <Badge className={vehicle.vehicle_owner === 'personal' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}>
+                      {vehicle.vehicle_owner === 'personal' ? 'Personal' : 'Company'}
+                    </Badge>
+                  </div>
+                  {vehicle.vehicle_owner === 'personal' && vehicle.owner_name && (
+                    <p className="text-slate-600">
+                      Owner: <span className="font-medium">{vehicle.owner_name}</span>
+                    </p>
+                  )}
                   {vehicle.license_plate && (
                     <p className="text-slate-600">
                       License: <span className="font-mono">{vehicle.license_plate}</span>
@@ -242,6 +252,19 @@ export default function OwnVehicles() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
+              <Label htmlFor="vehicle_owner">Vehicle Type *</Label>
+              <Select defaultValue={editingVehicle?.vehicle_owner || 'company'} name="vehicle_owner">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">Company-Owned</SelectItem>
+                  <SelectItem value="personal">Personally-Owned (Used for Work)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="name">Vehicle Name *</Label>
               <Input
                 id="name"
@@ -251,6 +274,18 @@ export default function OwnVehicles() {
                 placeholder="Truck 1"
               />
             </div>
+
+            {editingVehicle?.vehicle_owner === 'personal' && (
+              <div>
+                <Label htmlFor="owner_name">Owner Name</Label>
+                <Input
+                  id="owner_name"
+                  name="owner_name"
+                  defaultValue={editingVehicle?.owner_name}
+                  placeholder="Technician name"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
