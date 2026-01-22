@@ -9,21 +9,28 @@ import {
   Users,
   Package,
   Receipt,
-  ClipboardCheck
+  ClipboardCheck,
+  Download,
+  Shield,
+  Truck
 } from "lucide-react";
 
 export default function Sitemap() {
   const pages = [
-    { name: 'Dashboard', icon: LayoutDashboard },
-    { name: 'FieldTech', icon: Wrench },
-    { name: 'Authorizations', icon: ClipboardCheck },
-    { name: 'ServiceReports', icon: FileText },
-    { name: 'PartsOrders', icon: Package },
-    { name: 'PartsInventory', icon: Package },
-    { name: 'Invoices', icon: Receipt },
-    { name: 'Customers', icon: Users },
-    { name: 'FinancialExports', icon: FileText },
-    { name: 'CustomerPortal', icon: Users },
+    { name: 'Dashboard', icon: LayoutDashboard, description: 'Overview and analytics' },
+    { name: 'FieldTech', icon: Wrench, description: 'Mobile field technician view' },
+    { name: 'Authorizations', icon: ClipboardCheck, description: 'Pre-repair authorizations' },
+    { name: 'ServiceReports', icon: FileText, description: 'Service reports and diagnostics' },
+    { name: 'PartsOrders', icon: Package, description: 'Parts ordering and tracking' },
+    { name: 'PartsInventory', icon: Package, description: 'Parts inventory management' },
+    { name: 'VehicleExpenses', icon: Truck, description: 'Vehicle fuel and maintenance' },
+    { name: 'Invoices', icon: Receipt, description: 'Invoice generation and tracking' },
+    { name: 'PaymentLog', icon: Receipt, description: 'Cash/check payment records' },
+    { name: 'Customers', icon: Users, description: 'Customer management' },
+    { name: 'FinancialExports', icon: FileText, description: 'Financial data exports' },
+    { name: 'ImportData', icon: Download, description: 'CSV data import' },
+    { name: 'SecurityChecklist', icon: Shield, description: 'Security audit checklist' },
+    { name: 'CustomerPortal', icon: Users, description: 'Customer self-service portal' },
   ];
 
   return (
@@ -38,17 +45,22 @@ export default function Sitemap() {
           <CardTitle>Application Pages</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {pages.map((page) => {
               const Icon = page.icon;
               return (
                 <Link
                   key={page.name}
                   to={createPageUrl(page.name)}
-                  className="flex items-center gap-3 p-4 rounded-lg border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition-all"
+                  className="flex items-start gap-4 p-5 rounded-xl border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition-all group"
                 >
-                  <Icon className="w-5 h-5 text-slate-500" />
-                  <span className="font-medium text-slate-900">{page.name}</span>
+                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-100 transition-colors">
+                    <Icon className="w-6 h-6 text-slate-600 group-hover:text-amber-600 transition-colors" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-slate-900 mb-1">{page.name}</h3>
+                    <p className="text-sm text-slate-500">{page.description}</p>
+                  </div>
                 </Link>
               );
             })}
