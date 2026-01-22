@@ -31,6 +31,7 @@ import { toast } from "sonner";
 export default function PartsOrders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [reportFilter, setReportFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
   const [selectedParts, setSelectedParts] = useState([]);
@@ -110,13 +111,21 @@ export default function PartsOrders() {
     return customer?.company_name || 'N/A';
   };
 
+  const getServiceReportLabel = (reportId) => {
+    const report = serviceReports.find(r => r.id === reportId);
+    if (!report) return 'N/A';
+    const customer = customers.find(c => c.id === report.customer_id);
+    return `${customer?.company_name || 'Unknown'} - ${format(new Date(report.service_date), 'MMM d, yyyy')}`;
+  };
+
   const filteredParts = parts.filter(p => {
     const matchesSearch = 
       p.part_description?.toLowerCase().includes(search.toLowerCase()) ||
       p.part_number?.toLowerCase().includes(search.toLowerCase()) ||
       p.supplier?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesReport = reportFilter === 'all' || p.service_report_id === reportFilter;
+    return matchesSearch && matchesStatus && matchesReport;
   });
 
   const handleSubmit = (e) => {
@@ -219,6 +228,19 @@ export default function PartsOrders() {
             className="pl-10"
           />
         </div>
+        <Select value={reportFilter} onValueChange={setReportFilter}>
+          <SelectTrigger className="w-full sm:w-64">
+            <SelectValue placeholder="Filter by service report" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Reports</SelectItem>
+            {serviceReports.map((report) => (
+              <SelectItem key={report.id} value={report.id}>
+                {getServiceReportLabel(report.id)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
@@ -307,6 +329,11 @@ export default function PartsOrders() {
                         {part.customer_id && (
                           <p className="text-sm text-slate-400 mt-1">
                             For: {getCustomerName(part.customer_id)}
+                          </p>
+                        )}
+                        {part.service_report_id && (
+                          <p className="text-sm text-blue-600 mt-1">
+                            Report: {getServiceReportLabel(part.service_report_id)}
                           </p>
                         )}
                         <div className="mt-2">
@@ -424,6 +451,23 @@ export default function PartsOrders() {
                   defaultValue={editingPart?.markup_percent || 25}
                 />
               </div>
+            </div>
+
+            <div>
+              <Label>Service Report</Label>
+              <Select name="service_report_id" defaultValue={editingPart?.service_report_id || ''}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Link to service report (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {serviceReports.map((report) => (
+                    <SelectItem key={report.id} value={report.id}>
+                      {getServiceReportLabel(report.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
