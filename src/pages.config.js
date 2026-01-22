@@ -13,6 +13,7 @@ import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import ImportData from './pages/ImportData';
 import SecurityChecklist from './pages/SecurityChecklist';
+import PaymentLog from './pages/PaymentLog';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "ImportData": ImportData,
     "SecurityChecklist": SecurityChecklist,
+    "PaymentLog": PaymentLog,
 }
 
 export const pagesConfig = {
