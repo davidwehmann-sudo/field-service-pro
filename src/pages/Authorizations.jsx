@@ -13,6 +13,7 @@ import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import AuthorizationForm from '@/components/authorization/AuthorizationForm';
 import { toast } from "sonner";
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
@@ -36,6 +37,7 @@ export default function Authorizations() {
   const [editingAuth, setEditingAuth] = useState(null);
   const [sendingEmailFor, setSendingEmailFor] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [authToDelete, setAuthToDelete] = useState(null);
   const navigate = useNavigate();
 
   const queryClient = useQueryClient();
@@ -388,7 +390,7 @@ Thank you for your business.
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(auth.id)}
+                          onClick={() => setAuthToDelete(auth)}
                           className="text-red-400 hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />

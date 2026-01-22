@@ -418,7 +418,24 @@ export default function ServiceReports() {
             </Card>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
+        )}
+
+        <DeleteConfirmationDialog
+        open={!!reportToDelete}
+        onOpenChange={(open) => !open && setReportToDelete(null)}
+        title="Delete Service Report?"
+        description={reportToDelete?.status === 'completed' ? 
+          "This report is completed. Deleting it will affect invoicing." : 
+          "This service report will be permanently deleted."}
+        warning={reportToDelete?.status === 'completed' ? 
+          "⚠️ This report has been completed. Are you sure?" : null}
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (reportToDelete) {
+            deleteMutation.mutate(reportToDelete.id);
+          }
+        }}
+        />
+        </div>
+        );
+        }
