@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -25,7 +26,9 @@ const statusColors = {
 export default function Jobs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -66,6 +69,35 @@ export default function Jobs() {
   const { data: jobsData = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-created_date'),
+  });
+
+  const deleteJobMutation = useMutation({
+    mutationFn: async (jobId) => {
+      const job = jobsData.find(j => j.id === jobId);
+      if (!job) return;
+      
+      // Delete all related entities first
+      if (deleteModal?.authorization?.id) {
+        await base44.entities.PreRepairAuthorization.delete(deleteModal.authorization.id);
+      }
+      if (deleteModal?.serviceReport?.id) {
+        await base44.entities.ServiceReport.delete(deleteModal.serviceReport.id);
+      }
+      if (deleteModal?.partsOrders?.length) {
+        for (const po of deleteModal.partsOrders) {
+          await base44.entities.PartsOrder.delete(po.id);
+        }
+      }
+      
+      // Delete the job itself
+      if (job.id && !job.id.startsWith('temp-')) {
+        await base44.entities.Job.delete(jobId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs', 'authorizations', 'service-reports', 'parts-orders'] });
+      setDeleteModal(null);
+    }
   });
 
   // Build unified job view
@@ -216,6 +248,21 @@ export default function Jobs() {
     return total;
   };
 
+  const isJobActive = (status) => {
+    return ['authorized', 'service_started', 'in_progress'].includes(status);
+  };
+
+  const handleDeleteClick = (job) => {
+    const status = getJobStatus(job);
+    setDeleteModal({
+      job,
+      status,
+      authorization: job.authorization,
+      serviceReport: job.serviceReport,
+      partsOrders: job.partsOrders
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -284,6 +331,18 @@ export default function Jobs() {
                         {format(new Date(job.date), 'MMM d, yyyy')}
                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex justify-end mb-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(job)}
+                      className="text-red-400 hover:text-red-600"
+                      title="Delete job and all related items"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
@@ -388,6 +447,62 @@ export default function Jobs() {
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteModal} onOpenChange={(open) => !open && setDeleteModal(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {isJobActive(deleteModal?.status) && (
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              )}
+              Delete Job?
+            </DialogTitle>
+            <DialogDescription>
+              {isJobActive(deleteModal?.status) 
+                ? "⚠️ This job is currently active. Deleting it will remove all related authorization, service report, and parts records."
+                : "This will permanently delete this job and all its related records:"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 text-sm text-slate-600">
+            {deleteModal?.authorization && (
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-amber-600" />
+                <span>Pre-Repair Authorization ({deleteModal.authorization.status})</span>
+              </div>
+            )}
+            {deleteModal?.serviceReport && (
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Service Report ({deleteModal.serviceReport.status})</span>
+              </div>
+            )}
+            {deleteModal?.partsOrders?.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-amber-600" />
+                <span>{deleteModal.partsOrders.length} Parts Order{deleteModal.partsOrders.length !== 1 ? 's' : ''}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModal(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteJobMutation.mutate(deleteModal.job.id)}
+              disabled={deleteJobMutation.isPending}
+            >
+              {deleteJobMutation.isPending ? 'Deleting...' : 'Delete Job'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
