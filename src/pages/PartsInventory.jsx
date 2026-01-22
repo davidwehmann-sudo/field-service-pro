@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
 export default function PartsInventory() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +25,7 @@ export default function PartsInventory() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [extractingData, setExtractingData] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [partToDelete, setPartToDelete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -364,11 +366,7 @@ Return the data in the specified JSON format. If you cannot identify something, 
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => {
-                      if (confirm('Remove this part from inventory?')) {
-                        deleteMutation.mutate(part.id);
-                      }
-                    }}
+                    onClick={() => setPartToDelete(part)}
                     className="text-red-500"
                   >
                     Delete
@@ -539,6 +537,19 @@ Return the data in the specified JSON format. If you cannot identify something, 
           </div>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmationDialog
+        open={!!partToDelete}
+        onOpenChange={(open) => !open && setPartToDelete(null)}
+        title="Remove Part from Inventory?"
+        description={`Remove "${partToDelete?.part_description || partToDelete?.part_number}"?`}
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (partToDelete) {
+            deleteMutation.mutate(partToDelete.id);
+          }
+        }}
+      />
     </div>
   );
 }
