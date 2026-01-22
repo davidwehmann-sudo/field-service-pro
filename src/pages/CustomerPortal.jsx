@@ -72,23 +72,19 @@ export default function CustomerPortal() {
     
     setIsAuthenticating(true);
     try {
-      const tokens = await base44.entities.CustomerAccessToken.filter({ 
-        token: token,
-        is_active: true 
+      // Validate token via secure backend function
+      const response = await base44.functions.invoke('customerPortalAuth', {
+        action: 'validate_token',
+        token: token
       });
       
-      if (tokens.length > 0) {
-        const accessToken = tokens[0];
-        const customers = await base44.entities.Customer.filter({ id: accessToken.customer_id });
-        
-        if (customers.length > 0) {
-          setCustomer(customers[0]);
-          setCustomerId(customers[0].id);
-          setIsAuthenticated(true);
-          localStorage.setItem('customerPortalToken', token);
-        }
+      if (response.data.valid) {
+        setCustomer(response.data.customer);
+        setCustomerId(response.data.customer_id);
+        setIsAuthenticated(true);
+        localStorage.setItem('customerPortalToken', token);
       } else {
-        alert('Invalid or expired access token. Please contact us for a new link.');
+        alert(response.data.error || 'Invalid or expired access token. Please contact us for a new link.');
       }
     } catch (error) {
       alert('Login failed. Please try again.');
