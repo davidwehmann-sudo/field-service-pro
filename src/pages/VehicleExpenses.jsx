@@ -367,7 +367,7 @@ export default function VehicleExpenses() {
                               <span>{expense.odometer.toLocaleString()} mi</span>
                             </>
                           )}
-                          {getVehicleOwnership(expense.vehicle_name) === 'personal' && expense.paid_by && (
+                          {expense.paid_by && (
                             <>
                               <span className="text-slate-300">•</span>
                               <Badge className={
@@ -561,7 +561,7 @@ export default function VehicleExpenses() {
               )}
             </div>
 
-            {getVehicleOwnership(selectedVehicleName || editingExpense?.vehicle_name || '') === 'personal' && (
+            {(selectedVehicleName || editingExpense?.vehicle_name) && (
               <div>
                 <Label htmlFor="paid_by">Who Paid? *</Label>
                 <Select name="paid_by" defaultValue={editingExpense?.paid_by || 'company'}>
@@ -569,12 +569,20 @@ export default function VehicleExpenses() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="company">Wehmann Paid</SelectItem>
-                    <SelectItem value="owner">Owner Paid</SelectItem>
-                    <SelectItem value="third_party">Third Party Paid</SelectItem>
+                    {getVehicleOwnership(selectedVehicleName || editingExpense?.vehicle_name || '') === 'personal' ? (
+                      <>
+                        <SelectItem value="company">Wehmann Paid</SelectItem>
+                        <SelectItem value="owner">Owner Paid</SelectItem>
+                        <SelectItem value="third_party">Third Party Paid</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="company">Company Paid</SelectItem>
+                        <SelectItem value="third_party">Third Party Paid</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-500 mt-1">This is a personally-owned vehicle</p>
               </div>
             )}
 

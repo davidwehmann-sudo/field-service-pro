@@ -580,7 +580,7 @@ export default function PartsOrders() {
               </Select>
             </div>
 
-            {editingPart?.own_vehicle_id && vehicles.find(v => v.id === editingPart.own_vehicle_id)?.vehicle_owner === 'personal' && (
+            {editingPart?.own_vehicle_id && (
               <div>
                 <Label>Who Paid?</Label>
                 <Select name="paid_by" defaultValue={editingPart?.paid_by || 'company'}>
@@ -588,9 +588,18 @@ export default function PartsOrders() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="company">Wehmann Paid</SelectItem>
-                    <SelectItem value="technician">Technician Paid</SelectItem>
-                    <SelectItem value="third_party">Third Party Paid</SelectItem>
+                    {vehicles.find(v => v.id === editingPart.own_vehicle_id)?.vehicle_owner === 'personal' ? (
+                      <>
+                        <SelectItem value="company">Wehmann Paid</SelectItem>
+                        <SelectItem value="technician">Technician Paid</SelectItem>
+                        <SelectItem value="third_party">Third Party Paid</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="company">Company Paid</SelectItem>
+                        <SelectItem value="third_party">Third Party Paid</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
