@@ -118,8 +118,32 @@ Be realistic and professional. This is an estimate that will be shown to a custo
   };
 
   const handleSave = async (status = 'draft') => {
+    // Generate job number if new authorization
+    let jobId = formData.job_id;
+    if (!authorization?.id) {
+      try {
+        const jobNumberResult = await base44.functions.invoke('generateJobNumber', {});
+        const jobNumber = jobNumberResult.data.job_number;
+        
+        const newJob = await base44.entities.Job.create({
+          job_number: jobNumber,
+          customer_id: formData.customer_id,
+          job_type: 'service',
+          status: status === 'authorized' ? 'in_progress' : 'open',
+          description: formData.nature_of_service?.slice(0, 100) || 'Service authorization'
+        });
+        
+        jobId = newJob.id;
+        toast.success(`Job ${jobNumber} created`);
+      } catch (error) {
+        toast.error("Failed to create job number");
+        return;
+      }
+    }
+    
     const data = {
       ...formData,
+      job_id: jobId,
       status,
       estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
     };
