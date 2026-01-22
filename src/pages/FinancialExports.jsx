@@ -67,8 +67,6 @@ export default function FinancialExports() {
     queryFn: () => base44.entities.PartsOrder.list()
   });
 
-  const customerCompanies = [...new Set(customers.map(c => c.company_name))].filter(Boolean).sort();
-
   const filterByDate = (items, dateField) => {
     if (!startDate || !endDate) return items;
     return items.filter(item => {
