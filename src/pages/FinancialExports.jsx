@@ -75,14 +75,6 @@ export default function FinancialExports() {
     });
   };
 
-  const filterByCustomerCompany = (items, customerIdField) => {
-    if (!selectedCustomerCompany) return items;
-    return items.filter(item => {
-      const customer = customers.find(c => c.id === item[customerIdField]);
-      return customer?.company_name === selectedCustomerCompany;
-    });
-  };
-
   const exportInvoices = () => {
     let filtered = filterByDate(invoices, 'invoice_date');
     filtered = filterByCustomerCompany(filtered, 'customer_id');
