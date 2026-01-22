@@ -54,6 +54,8 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Import Data', href: 'ImportData', icon: Download },
+    { name: 'Security Checklist', href: 'SecurityChecklist', icon: Shield },
+    { name: 'Sitemap', href: 'Sitemap', icon: FileText },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
   ],
   service_admin: [
@@ -68,6 +70,7 @@ const allNavigation = {
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Import Data', href: 'ImportData', icon: Download },
     { name: 'Security Checklist', href: 'SecurityChecklist', icon: Shield },
+    { name: 'Sitemap', href: 'Sitemap', icon: FileText },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
   ]
 };
