@@ -21,15 +21,12 @@ export default function Home() {
             navigate(createPageUrl('PartsInventory'));
             break;
           case 'bookkeeper':
-            navigate(createPageUrl('FinancialExports'));
+            navigate(createPageUrl('Invoices'));
             break;
           case 'software_engineer':
           case 'service_admin':
-            navigate(createPageUrl('Dashboard'));
-            break;
-          case 'service_customer':
           default:
-            navigate(createPageUrl('CustomerPortal'));
+            navigate(createPageUrl('Dashboard'));
         }
       } catch (error) {
         // Not logged in - redirect to login
