@@ -202,8 +202,7 @@ export default function FinancialExports() {
   };
 
   const exportTaxReport = () => {
-    let filtered = filterByDate(invoices, 'invoice_date');
-    filtered = filterByCustomerCompany(filtered, 'customer_id');
+    const filtered = filterByDate(invoices, 'invoice_date');
     const headers = [
       'Invoice Date',
       'Invoice Number',
