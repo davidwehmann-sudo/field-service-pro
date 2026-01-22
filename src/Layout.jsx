@@ -14,7 +14,8 @@ import {
   X,
   ChevronRight,
   ClipboardCheck,
-  MessageSquare
+  MessageSquare,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ const allNavigation = {
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
+    { name: 'Import Data', href: 'ImportData', icon: Download },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
   ],
   service_admin: [
@@ -63,6 +65,7 @@ const allNavigation = {
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
+    { name: 'Import Data', href: 'ImportData', icon: Download },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
   ]
 };
