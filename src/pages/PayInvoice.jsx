@@ -17,15 +17,12 @@ import {
 import { format } from 'date-fns';
 
 export default function PayInvoice() {
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
   const [processing, setProcessing] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const invoiceId = urlParams.get('invoice_id');
+  const success = urlParams.get('success') === 'true';
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['invoice', invoiceId],
@@ -50,22 +47,20 @@ export default function PayInvoice() {
     e.preventDefault();
     setProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Update invoice to paid
     try {
-      await base44.entities.Invoice.update(invoice.id, {
-        status: 'paid',
-        payment_method: paymentMethod,
-        payment_date: format(new Date(), 'yyyy-MM-dd'),
-        payment_reference: `ONLINE-${Date.now()}`
+      // Create Stripe checkout session
+      const response = await base44.functions.invoke('stripeCheckout', {
+        invoice_id: invoice.id
       });
 
-      setPaymentComplete(true);
+      if (response.data.checkout_url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.checkout_url;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
     } catch (error) {
       alert('Payment failed. Please try again.');
-    } finally {
       setProcessing(false);
     }
   };
@@ -91,7 +86,7 @@ export default function PayInvoice() {
     );
   }
 
-  if (invoice.status === 'paid' || paymentComplete) {
+  if (invoice.status === 'paid' || paymentComplete || success) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -187,101 +182,37 @@ export default function PayInvoice() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5" />
-                Payment Information
+                Secure Payment
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePayment} className="space-y-4">
-                <div>
-                  <Label>Payment Method</Label>
-                  <select
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  >
-                    <option value="card">Credit/Debit Card</option>
-                    <option value="ach">Bank Transfer (ACH)</option>
-                  </select>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800">
+                    You'll be redirected to our secure payment processor to complete your transaction.
+                  </p>
                 </div>
-
-                {paymentMethod === 'card' && (
-                  <>
-                    <div>
-                      <Label htmlFor="cardNumber">Card Number</Label>
-                      <Input
-                        id="cardNumber"
-                        placeholder="4242 4242 4242 4242"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="expiry">Expiry Date</Label>
-                        <Input
-                          id="expiry"
-                          placeholder="MM/YY"
-                          value={expiry}
-                          onChange={(e) => setExpiry(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cvc">CVC</Label>
-                        <Input
-                          id="cvc"
-                          placeholder="123"
-                          value={cvc}
-                          onChange={(e) => setCvc(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {paymentMethod === 'ach' && (
-                  <>
-                    <div>
-                      <Label htmlFor="accountNumber">Account Number</Label>
-                      <Input
-                        id="accountNumber"
-                        placeholder="000123456789"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="routingNumber">Routing Number</Label>
-                      <Input
-                        id="routingNumber"
-                        placeholder="110000000"
-                        required
-                      />
-                    </div>
-                  </>
-                )}
 
                 <Button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white h-12"
                   disabled={processing}
                 >
                   {processing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Redirecting to payment...
                     </>
                   ) : (
                     <>
-                      Pay ${(invoice.total_amount || 0).toFixed(2)}
+                      <CreditCard className="w-5 h-5 mr-2" />
+                      Pay ${(invoice.total_amount || 0).toFixed(2)} with Card
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-slate-500">
-                  Secure payment powered by DieselTech
+                  Secure payment powered by Stripe
                 </p>
               </form>
             </CardContent>
