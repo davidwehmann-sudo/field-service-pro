@@ -19,6 +19,7 @@ export default function Sitemap() {
   const pages = [
     { name: 'Dashboard', icon: LayoutDashboard, description: 'Overview and analytics' },
     { name: 'FieldTech', icon: Wrench, description: 'Mobile field technician view' },
+    { name: 'Jobs', icon: ClipboardCheck, description: 'Job management and tracking' },
     { name: 'Authorizations', icon: ClipboardCheck, description: 'Pre-repair authorizations' },
     { name: 'ServiceReports', icon: FileText, description: 'Service reports and diagnostics' },
     { name: 'PartsOrders', icon: Package, description: 'Parts ordering and tracking' },

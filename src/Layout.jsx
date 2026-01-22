@@ -60,6 +60,7 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
+    { name: 'Sitemap', href: 'Sitemap', icon: Download },
   ],
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -75,6 +76,7 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
+    { name: 'Sitemap', href: 'Sitemap', icon: Download },
   ]
 };
 

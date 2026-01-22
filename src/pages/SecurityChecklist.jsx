@@ -47,16 +47,16 @@ export default function SecurityChecklist() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-3">
-            <CheckItem text="Customer access tokens are admin-only (CustomerAccessToken entity secured)" />
-            <CheckItem text="Portal links expire after 90 days and are tracked" />
+            <CheckItem text="All job records have auto-generated job numbers (J-YYYY-###)" />
+            <CheckItem text="Authorizations are linked to Jobs via job_id foreign key" />
+            <CheckItem text="Service Reports are linked to Jobs via job_id" />
+            <CheckItem text="Parts Orders are linked to Jobs via job_id" />
+            <CheckItem text="Invoices reference original job_id for traceability" />
+            <CheckItem text="Job status automatically updates based on related records" />
             <CheckItem text="Service company isolation is enforced (multi-company data separation)" />
-            <CheckItem text="Only admins can generate customer portal links" />
-            <CheckItem text="Customer portal uses secure backend authentication" />
             <CheckItem text="Stripe webhooks validate signatures before processing" />
             <CheckItem text="Payment data never stored in local database" />
             <CheckItem text="Admin functions verify user.role === 'admin' before execution" />
-            <CheckItem text="Customer data (names, addresses, phone) marked as sensitive" />
-            <CheckItem text="Regular backup of critical data (weekly minimum)" />
           </div>
         </CardContent>
       </Card>
@@ -195,10 +195,11 @@ export default function SecurityChecklist() {
             <p className="font-semibold">Key Pages:</p>
             <ul className="list-disc list-inside space-y-1 text-slate-600">
               <li>Dashboard - Overview & metrics</li>
-              <li>Customers - Generate portal links</li>
-              <li>Authorizations - Review requests</li>
-              <li>Service Reports - Complete & invoice</li>
-              <li>Financial Exports - Reports & compliance</li>
+              <li>Jobs - View & track all jobs</li>
+              <li>Authorizations - Review & authorize work</li>
+              <li>Service Reports - Complete & document work</li>
+              <li>Invoices - Generate & track payments</li>
+              <li>Customers - Manage all customer data</li>
             </ul>
           </div>
           <div>
