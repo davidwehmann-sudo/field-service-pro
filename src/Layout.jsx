@@ -22,9 +22,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const allNavigation = {
-  service_customer: [
-    { name: 'Portal', href: 'CustomerPortal', icon: Users },
-  ],
   service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
@@ -59,7 +56,6 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
-    { name: 'Portal', href: 'CustomerPortal', icon: Users },
   ],
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -74,7 +70,6 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
-    { name: 'Portal', href: 'CustomerPortal', icon: Users },
   ]
 };
 

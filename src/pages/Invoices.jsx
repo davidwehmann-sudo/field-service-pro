@@ -78,11 +78,6 @@ export default function Invoices() {
       try {
         const user = await base44.auth.me();
         setCurrentUser(user);
-        
-        // Block customers
-        if (user.user_type === 'service_customer') {
-          navigate(createPageUrl('Home'));
-        }
       } catch (error) {
         navigate(createPageUrl('Home'));
       }
