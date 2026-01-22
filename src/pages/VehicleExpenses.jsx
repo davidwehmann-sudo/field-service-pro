@@ -370,8 +370,12 @@ export default function VehicleExpenses() {
                           {getVehicleOwnership(expense.vehicle_name) === 'personal' && expense.paid_by && (
                             <>
                               <span className="text-slate-300">•</span>
-                              <Badge className={expense.paid_by === 'company' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}>
-                                {expense.paid_by === 'company' ? 'Company Paid' : 'Owner Paid'}
+                              <Badge className={
+                                expense.paid_by === 'company' ? 'bg-green-100 text-green-700' : 
+                                expense.paid_by === 'owner' ? 'bg-blue-100 text-blue-700' : 
+                                'bg-slate-100 text-slate-700'
+                              }>
+                                {expense.paid_by === 'company' ? 'Company Paid' : expense.paid_by === 'owner' ? 'Owner Paid' : 'Third Party'}
                               </Badge>
                             </>
                           )}
@@ -567,6 +571,7 @@ export default function VehicleExpenses() {
                   <SelectContent>
                     <SelectItem value="company">Wehmann Paid</SelectItem>
                     <SelectItem value="owner">Owner Paid</SelectItem>
+                    <SelectItem value="third_party">Third Party Paid</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-slate-500 mt-1">This is a personally-owned vehicle</p>

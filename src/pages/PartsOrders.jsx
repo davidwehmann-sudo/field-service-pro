@@ -590,6 +590,7 @@ export default function PartsOrders() {
                   <SelectContent>
                     <SelectItem value="company">Wehmann Paid</SelectItem>
                     <SelectItem value="technician">Technician Paid</SelectItem>
+                    <SelectItem value="third_party">Third Party Paid</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
