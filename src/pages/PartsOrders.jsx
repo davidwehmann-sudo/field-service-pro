@@ -452,16 +452,28 @@ export default function PartsOrders() {
                   step="0.01"
                   defaultValue={editingPart?.unit_cost}
                   placeholder="0.00"
+                  onChange={(e) => {
+                    const cost = parseFloat(e.target.value) || 0;
+                    const markupField = document.getElementById('markup_percent');
+                    if (markupField && !editingPart) {
+                      markupField.value = calculatePartsMarkup(cost);
+                    }
+                  }}
                 />
               </div>
               <div>
-                <Label htmlFor="markup_percent">Markup (%)</Label>
+                <Label htmlFor="markup_percent">Markup % <span className="text-xs text-slate-400">(auto)</span></Label>
                 <Input 
                   id="markup_percent" 
                   name="markup_percent" 
                   type="number"
+                  step="0.1"
                   defaultValue={editingPart?.markup_percent || 25}
+                  className="bg-blue-50"
                 />
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Adjusts by cost
+                </p>
               </div>
             </div>
 
