@@ -6,6 +6,7 @@ import DataManagement from './pages/DataManagement';
 import FieldTech from './pages/FieldTech';
 import Home from './pages/Home';
 import Invoices from './pages/Invoices';
+import Jobs from './pages/Jobs';
 import PartsInventory from './pages/PartsInventory';
 import PartsOrders from './pages/PartsOrders';
 import PaymentLog from './pages/PaymentLog';
@@ -13,7 +14,6 @@ import SecurityChecklist from './pages/SecurityChecklist';
 import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import VehicleExpenses from './pages/VehicleExpenses';
-import Jobs from './pages/Jobs';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +26,7 @@ export const PAGES = {
     "FieldTech": FieldTech,
     "Home": Home,
     "Invoices": Invoices,
+    "Jobs": Jobs,
     "PartsInventory": PartsInventory,
     "PartsOrders": PartsOrders,
     "PaymentLog": PaymentLog,
@@ -33,7 +34,6 @@ export const PAGES = {
     "ServiceReports": ServiceReports,
     "Sitemap": Sitemap,
     "VehicleExpenses": VehicleExpenses,
-    "Jobs": Jobs,
 }
 
 export const pagesConfig = {

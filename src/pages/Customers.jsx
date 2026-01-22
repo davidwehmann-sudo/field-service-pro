@@ -22,12 +22,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
 export default function Customers() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -199,13 +201,13 @@ export default function Customers() {
                       <Pencil className="w-4 h-4 text-slate-400" />
                     </Button>
                     <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => deleteMutation.mutate(customer.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </Button>
+                       variant="ghost" 
+                       size="icon" 
+                       className="h-8 w-8"
+                       onClick={() => setCustomerToDelete(customer)}
+                     >
+                       <Trash2 className="w-4 h-4 text-red-400" />
+                     </Button>
                   </div>
                 </div>
 
@@ -355,7 +357,21 @@ export default function Customers() {
             </div>
           </form>
         </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+        </Dialog>
+
+        <DeleteConfirmationDialog
+         open={!!customerToDelete}
+         onOpenChange={(open) => !open && setCustomerToDelete(null)}
+         title="Delete Customer?"
+         description="This customer will be permanently deleted along with all associated data."
+         warning="⚠️ All jobs, service reports, and invoices linked to this customer will be affected."
+         isLoading={deleteMutation.isPending}
+         onConfirm={() => {
+           if (customerToDelete) {
+             deleteMutation.mutate(customerToDelete.id);
+           }
+         }}
+        />
+        </div>
+        );
+        }
