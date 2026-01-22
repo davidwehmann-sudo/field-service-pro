@@ -20,6 +20,8 @@ export default function VehicleExpenses() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [vehicleFilter, setVehicleFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -110,7 +112,14 @@ export default function VehicleExpenses() {
       e.vehicle_name?.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === 'all' || e.expense_type === typeFilter;
     const matchesVehicle = vehicleFilter === 'all' || e.vehicle_name === vehicleFilter;
-    return matchesSearch && matchesType && matchesVehicle;
+    
+    const matchesDateRange = (!startDate || !endDate) || (
+      e.expense_date && 
+      new Date(e.expense_date) >= new Date(startDate) && 
+      new Date(e.expense_date) <= new Date(endDate)
+    );
+    
+    return matchesSearch && matchesType && matchesVehicle && matchesDateRange;
   });
 
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
@@ -194,42 +203,93 @@ export default function VehicleExpenses() {
       </Card>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            placeholder="Search expenses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input 
+              placeholder="Search expenses..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-        <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All Vehicles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Vehicles</SelectItem>
-            {uniqueVehicles.map(vehicle => (
-              <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="fuel">Fuel</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
-            <SelectItem value="repair">Repair</SelectItem>
-            <SelectItem value="upgrade">Upgrade</SelectItem>
-            <SelectItem value="insurance">Insurance</SelectItem>
-            <SelectItem value="registration">Registration</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Vehicle</Label>
+            <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Vehicles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Vehicles</SelectItem>
+                {uniqueVehicles.map(vehicle => (
+                  <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Expense Type</Label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="fuel">Fuel</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="repair">Repair</SelectItem>
+                <SelectItem value="upgrade">Upgrade</SelectItem>
+                <SelectItem value="insurance">Insurance</SelectItem>
+                <SelectItem value="registration">Registration</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Start Date</Label>
+            <Input 
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">End Date</Label>
+            <Input 
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {(vehicleFilter !== 'all' || typeFilter !== 'all' || startDate || endDate) && (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setVehicleFilter('all');
+                setTypeFilter('all');
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="text-slate-500 hover:text-slate-700"
+            >
+              Clear Filters
+            </Button>
+            <span className="text-sm text-slate-500">
+              {filteredExpenses.length} {filteredExpenses.length === 1 ? 'expense' : 'expenses'} • ${totalExpenses.toFixed(2)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Expenses List */}

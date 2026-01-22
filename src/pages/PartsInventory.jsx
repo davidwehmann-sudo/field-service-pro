@@ -19,6 +19,8 @@ export default function PartsInventory() {
   const [showForm, setShowForm] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
   const [filterLocation, setFilterLocation] = useState('all');
+  const [filterManufacturer, setFilterManufacturer] = useState('all');
+  const [filterStock, setFilterStock] = useState('all');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [extractingData, setExtractingData] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -179,6 +181,8 @@ Return the data in the specified JSON format. If you cannot identify something, 
     setEditingPart(null);
   };
 
+  const uniqueManufacturers = [...new Set(inventory.map(p => p.manufacturer).filter(Boolean))].sort();
+
   const filteredInventory = inventory.filter(part => {
     const matchesSearch = 
       part.part_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -186,8 +190,15 @@ Return the data in the specified JSON format. If you cannot identify something, 
       part.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesLocation = filterLocation === 'all' || part.location === filterLocation;
+    const matchesManufacturer = filterManufacturer === 'all' || part.manufacturer === filterManufacturer;
     
-    return matchesSearch && matchesLocation;
+    const matchesStock = filterStock === 'all' || (
+      filterStock === 'low' ? (part.reorder_level && part.quantity_on_hand <= part.reorder_level) :
+      filterStock === 'out' ? part.quantity_on_hand === 0 :
+      filterStock === 'in' ? part.quantity_on_hand > 0 : true
+    );
+    
+    return matchesSearch && matchesLocation && matchesManufacturer && matchesStock;
   });
 
   const locationLabels = {
@@ -210,28 +221,86 @@ Return the data in the specified JSON format. If you cannot identify something, 
         </Button>
       </div>
 
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            placeholder="Search parts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+      <div className="space-y-4">
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search parts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
-        <Select value={filterLocation} onValueChange={setFilterLocation}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by location" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Locations</SelectItem>
-            <SelectItem value="storage">Storage</SelectItem>
-            <SelectItem value="truck_1">Truck 1</SelectItem>
-            <SelectItem value="truck_2">Truck 2</SelectItem>
-            <SelectItem value="truck_3">Truck 3</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Location</Label>
+            <Select value={filterLocation} onValueChange={setFilterLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="storage">Storage</SelectItem>
+                <SelectItem value="truck_1">Truck 1</SelectItem>
+                <SelectItem value="truck_2">Truck 2</SelectItem>
+                <SelectItem value="truck_3">Truck 3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Manufacturer</Label>
+            <Select value={filterManufacturer} onValueChange={setFilterManufacturer}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Manufacturers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Manufacturers</SelectItem>
+                {uniqueManufacturers.map(mfr => (
+                  <SelectItem key={mfr} value={mfr}>{mfr}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-slate-500 mb-1">Stock Level</Label>
+            <Select value={filterStock} onValueChange={setFilterStock}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Stock" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stock</SelectItem>
+                <SelectItem value="in">In Stock</SelectItem>
+                <SelectItem value="low">Low Stock</SelectItem>
+                <SelectItem value="out">Out of Stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {(filterLocation !== 'all' || filterManufacturer !== 'all' || filterStock !== 'all') && (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setFilterLocation('all');
+                setFilterManufacturer('all');
+                setFilterStock('all');
+              }}
+              className="text-slate-500 hover:text-slate-700"
+            >
+              Clear Filters
+            </Button>
+            <span className="text-sm text-slate-500">
+              {filteredInventory.length} {filteredInventory.length === 1 ? 'part' : 'parts'} found
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

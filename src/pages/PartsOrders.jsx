@@ -32,6 +32,9 @@ export default function PartsOrders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [reportFilter, setReportFilter] = useState('all');
+  const [supplierFilter, setSupplierFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
   const [selectedParts, setSelectedParts] = useState([]);
