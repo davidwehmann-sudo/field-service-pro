@@ -28,11 +28,7 @@ export default function FinancialExports() {
   const [currentUser, setCurrentUser] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedCustomerCompany, setSelectedCustomerCompany] = useState('');
   const navigate = useNavigate();
-
-  const managedCompanies = (currentUser?.service_companies || []).filter(Boolean);
 
   useEffect(() => {
     const loadUser = async () => {
