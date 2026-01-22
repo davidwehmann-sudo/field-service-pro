@@ -19,7 +19,8 @@ import {
   Pencil,
   Trash2,
   DollarSign,
-  Hash
+  Hash,
+  Printer
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import { format } from 'date-fns';
@@ -146,6 +147,36 @@ export default function PartsOrders() {
     return cost + markup;
   };
 
+  const handlePrintOrders = async () => {
+    if (selectedParts.length === 0) {
+      toast.error('Please select parts to print');
+      return;
+    }
+
+    try {
+      const response = await base44.functions.invoke('generatePartsOrderPDF', { part_ids: selectedParts });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `parts-order-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success('Parts order form downloaded');
+      setSelectedParts([]);
+    } catch (error) {
+      toast.error('Failed to generate order form');
+    }
+  };
+
+  const togglePartSelection = (partId) => {
+    setSelectedParts(prev => 
+      prev.includes(partId) ? prev.filter(id => id !== partId) : [...prev, partId]
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -154,13 +185,25 @@ export default function PartsOrders() {
           <h1 className="text-2xl font-bold text-slate-900">Parts Orders</h1>
           <p className="text-slate-500 mt-1">Track parts and orders</p>
         </div>
-        <Button 
-          onClick={() => { setEditingPart(null); setShowForm(true); }}
-          className="bg-amber-500 hover:bg-amber-600 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Part
-        </Button>
+        <div className="flex gap-2">
+          {selectedParts.length > 0 && (
+            <Button 
+              onClick={handlePrintOrders}
+              variant="outline"
+              className="border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Order ({selectedParts.length})
+            </Button>
+          )}
+          <Button 
+            onClick={() => { setEditingPart(null); setShowForm(true); }}
+            className="bg-amber-500 hover:bg-amber-600 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Part
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -223,12 +266,19 @@ export default function PartsOrders() {
       ) : (
         <div className="space-y-3">
           {filteredParts.map((part) => (
-            <Card key={part.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card key={part.id} className={`border-0 shadow-sm hover:shadow-md transition-all ${selectedParts.includes(part.id) ? 'ring-2 ring-amber-400' : ''}`}>
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Package className="w-6 h-6 text-purple-600" />
-                  </div>
+                  <button
+                    onClick={() => togglePartSelection(part.id)}
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                      selectedParts.includes(part.id) 
+                        ? 'bg-amber-100 ring-2 ring-amber-400' 
+                        : 'bg-purple-100'
+                    }`}
+                  >
+                    <Package className={`w-6 h-6 ${selectedParts.includes(part.id) ? 'text-amber-600' : 'text-purple-600'}`} />
+                  </button>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">

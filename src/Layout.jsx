@@ -40,6 +40,7 @@ const allNavigation = {
   bookkeeper: [
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
+    { name: 'Payment Log', href: 'PaymentLog', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
   ],
@@ -51,6 +52,7 @@ const allNavigation = {
     { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
     { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
+    { name: 'Payment Log', href: 'PaymentLog', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Import Data', href: 'ImportData', icon: Download },
@@ -66,6 +68,7 @@ const allNavigation = {
     { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
     { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
+    { name: 'Payment Log', href: 'PaymentLog', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Import Data', href: 'ImportData', icon: Download },

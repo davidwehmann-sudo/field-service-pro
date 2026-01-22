@@ -245,6 +245,24 @@ export default function Invoices() {
     }
   };
 
+  const handlePrintInvoice = async (invoiceId) => {
+    try {
+      const response = await base44.functions.invoke('generateInvoicePDF', { invoice_id: invoiceId });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoiceId.substring(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      alert('Invoice PDF downloaded');
+    } catch (error) {
+      alert('Failed to generate PDF');
+    }
+  };
+
   const handleSendEmail = async (invoice) => {
     const customer = customers.find(c => c.id === invoice.customer_id);
     if (!customer?.email) {
@@ -457,29 +475,37 @@ CHARGES:
                   </div>
 
                   <div className="flex gap-1">
-                    {invoice.status !== 'paid' && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleGeneratePaymentLink(invoice)}
-                        title="Copy payment link"
-                      >
-                        <LinkIcon className="w-4 h-4 text-purple-500" />
-                      </Button>
-                    )}
-                    <SMSNotificationButton
-                      invoice_id={invoice.id}
-                      customer_id={invoice.customer_id}
-                      customerPhone={customers.find(c => c.id === invoice.customer_id)?.phone}
-                    />
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleSendEmail(invoice)}
-                      title="Send invoice via email"
-                    >
-                      <Send className="w-4 h-4 text-blue-500" />
-                    </Button>
+                   <Button 
+                     variant="ghost" 
+                     size="icon"
+                     onClick={() => handlePrintInvoice(invoice.id)}
+                     title="Download/Print PDF"
+                   >
+                     <Printer className="w-4 h-4 text-slate-600" />
+                   </Button>
+                   {invoice.status !== 'paid' && (
+                     <Button 
+                       variant="ghost" 
+                       size="icon"
+                       onClick={() => handleGeneratePaymentLink(invoice)}
+                       title="Copy payment link"
+                     >
+                       <LinkIcon className="w-4 h-4 text-purple-500" />
+                     </Button>
+                   )}
+                   <SMSNotificationButton
+                     invoice_id={invoice.id}
+                     customer_id={invoice.customer_id}
+                     customerPhone={customers.find(c => c.id === invoice.customer_id)?.phone}
+                   />
+                   <Button 
+                     variant="ghost" 
+                     size="icon"
+                     onClick={() => handleSendEmail(invoice)}
+                     title="Send invoice via email"
+                   >
+                     <Send className="w-4 h-4 text-blue-500" />
+                   </Button>
                     <Button 
                       variant="ghost" 
                       size="icon"
