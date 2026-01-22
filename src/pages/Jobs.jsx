@@ -268,7 +268,12 @@ export default function Jobs() {
                           </Link>
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500">Not created</p>
+                        <Link 
+                          to={createPageUrl('Authorizations')}
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          Create Authorization <ChevronRight className="w-3 h-3" />
+                        </Link>
                       )}
                     </div>
 
@@ -291,7 +296,12 @@ export default function Jobs() {
                           </Link>
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500">Not created</p>
+                        <Link 
+                          to={createPageUrl('FieldTech')}
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          Create Service Report <ChevronRight className="w-3 h-3" />
+                        </Link>
                       )}
                     </div>
 
@@ -314,7 +324,12 @@ export default function Jobs() {
                           </Link>
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500">No parts</p>
+                        <Link 
+                          to={createPageUrl('PartsOrders')}
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          Add Parts <ChevronRight className="w-3 h-3" />
+                        </Link>
                       )}
                     </div>
                   </div>
