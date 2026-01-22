@@ -28,6 +28,11 @@ export default function VehicleExpenses() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['ownVehicles'],
+    queryFn: () => base44.entities.OwnVehicle.list()
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -84,15 +89,20 @@ export default function VehicleExpenses() {
     const receiptInput = e.target.querySelector('#receipt_url');
     const receiptUrl = receiptInput?.getAttribute('data-url') || editingExpense?.receipt_url || '';
     
+    const vehicleName = formData.get('vehicle_name');
+    const vehicle = vehicles.find(v => v.name === vehicleName);
+
     const data = {
       expense_date: formData.get('expense_date'),
-      vehicle_name: formData.get('vehicle_name'),
+      vehicle_name: vehicleName,
+      own_vehicle_id: vehicle?.id || null,
       expense_type: formData.get('expense_type'),
       description: formData.get('description'),
       vendor: formData.get('vendor'),
       amount: parseFloat(formData.get('amount')) || 0,
       odometer: formData.get('odometer') ? parseFloat(formData.get('odometer')) : null,
       receipt_url: receiptUrl,
+      paid_by: formData.get('paid_by') || 'company',
       notes: formData.get('notes')
     };
     
@@ -134,9 +144,14 @@ export default function VehicleExpenses() {
     other: "bg-gray-100 text-gray-700"
   };
 
+  const getVehicleOwnership = (vehicleName) => {
+    const vehicle = vehicles.find(v => v.name === vehicleName);
+    return vehicle?.vehicle_owner || 'company';
+  };
+
   const downloadCSV = () => {
     const csvContent = [
-      ['Date', 'Vehicle', 'Type', 'Description', 'Vendor', 'Amount', 'Odometer', 'Notes'].join(','),
+      ['Date', 'Vehicle', 'Type', 'Description', 'Vendor', 'Amount', 'Paid By', 'Odometer', 'Notes'].join(','),
       ...filteredExpenses.map(e => [
         e.expense_date || '',
         e.vehicle_name || '',
@@ -144,6 +159,7 @@ export default function VehicleExpenses() {
         (e.description || '').replace(/,/g, ' '),
         (e.vendor || '').replace(/,/g, ' '),
         e.amount?.toFixed(2) || '0.00',
+        e.paid_by || 'company',
         e.odometer || '',
         (e.notes || '').replace(/,/g, ' ').replace(/\n/g, ' ')
       ].join(','))
@@ -350,6 +366,14 @@ export default function VehicleExpenses() {
                               <span>{expense.odometer.toLocaleString()} mi</span>
                             </>
                           )}
+                          {getVehicleOwnership(expense.vehicle_name) === 'personal' && expense.paid_by && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <Badge className={expense.paid_by === 'company' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}>
+                                {expense.paid_by === 'company' ? 'Company Paid' : 'Owner Paid'}
+                              </Badge>
+                            </>
+                          )}
                           {expense.receipt_url && (
                             <>
                               <span className="text-slate-300">•</span>
@@ -530,6 +554,22 @@ export default function VehicleExpenses() {
                 </a>
               )}
             </div>
+
+            {getVehicleOwnership(editingExpense?.vehicle_name || '') === 'personal' && (
+              <div>
+                <Label htmlFor="paid_by">Who Paid? *</Label>
+                <Select name="paid_by" defaultValue={editingExpense?.paid_by || 'company'}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="company">Wehmann Paid</SelectItem>
+                    <SelectItem value="owner">Owner Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">This is a personally-owned vehicle</p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="notes">Notes</Label>

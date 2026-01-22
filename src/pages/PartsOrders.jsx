@@ -139,11 +139,21 @@ export default function PartsOrders() {
     return customer?.company_name || 'N/A';
   };
 
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['ownVehicles'],
+    queryFn: () => base44.entities.OwnVehicle.list()
+  });
+
   const getServiceReportLabel = (reportId) => {
     const report = serviceReports.find(r => r.id === reportId);
     if (!report) return 'N/A';
     const customer = customers.find(c => c.id === report.customer_id);
     return `${customer?.company_name || 'Unknown'} - ${format(new Date(report.service_date), 'MMM d, yyyy')}`;
+  };
+
+  const getVehicleName = (vehicleId) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    return vehicle?.name || 'N/A';
   };
 
   const filteredParts = parts.filter(p => {
@@ -381,6 +391,16 @@ export default function PartsOrders() {
                             Report: {getServiceReportLabel(part.service_report_id)}
                           </p>
                         )}
+                        {part.own_vehicle_id && (
+                          <p className="text-sm text-purple-600 mt-1">
+                            Vehicle: {getVehicleName(part.own_vehicle_id)}
+                            {part.paid_by && (
+                              <span className="ml-2 px-2 py-0.5 rounded text-xs bg-purple-100">
+                                {part.paid_by === 'company' ? 'Company Paid' : 'Technician Paid'}
+                              </span>
+                            )}
+                          </p>
+                        )}
                         <div className="mt-2">
                           <PartsAvailabilityChecker 
                             partNumber={part.part_number}
@@ -542,6 +562,38 @@ export default function PartsOrders() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label>Our Vehicle (Internal Repair)</Label>
+              <Select name="own_vehicle_id" defaultValue={editingPart?.own_vehicle_id || ''}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select vehicle (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {vehicles.map((vehicle) => (
+                    <SelectItem key={vehicle.id} value={vehicle.id}>
+                      {vehicle.name} {vehicle.vehicle_owner === 'personal' ? '(Personal)' : '(Company)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {editingPart?.own_vehicle_id && vehicles.find(v => v.id === editingPart.own_vehicle_id)?.vehicle_owner === 'personal' && (
+              <div>
+                <Label>Who Paid?</Label>
+                <Select name="paid_by" defaultValue={editingPart?.paid_by || 'company'}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="company">Wehmann Paid</SelectItem>
+                    <SelectItem value="technician">Technician Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <Label>Status</Label>
