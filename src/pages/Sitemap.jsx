@@ -27,8 +27,7 @@ export default function Sitemap() {
     { name: 'Invoices', icon: Receipt, description: 'Invoice generation and tracking' },
     { name: 'PaymentLog', icon: Receipt, description: 'Cash/check payment records' },
     { name: 'Customers', icon: Users, description: 'Customer management' },
-    { name: 'FinancialExports', icon: FileText, description: 'Financial data exports' },
-    { name: 'ImportData', icon: Download, description: 'CSV data import' },
+    { name: 'DataManagement', icon: Download, description: 'Export reports and import data' },
     { name: 'SecurityChecklist', icon: Shield, description: 'Security audit checklist' },
     { name: 'CustomerPortal', icon: Users, description: 'Customer self-service portal' },
   ];

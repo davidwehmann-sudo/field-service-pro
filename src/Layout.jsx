@@ -43,7 +43,7 @@ const allNavigation = {
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
     { name: 'Vehicles', href: 'VehicleExpenses', icon: Package },
     { name: 'Reports', href: 'ServiceReports', icon: FileText },
-    { name: 'Exports', href: 'FinancialExports', icon: FileText },
+    { name: 'Data', href: 'DataManagement', icon: FileText },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   software_engineer: [
@@ -57,8 +57,7 @@ const allNavigation = {
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Exports', href: 'FinancialExports', icon: FileText },
-    { name: 'Import', href: 'ImportData', icon: Download },
+    { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
     { name: 'Portal', href: 'CustomerPortal', icon: Users },
   ],
@@ -73,8 +72,7 @@ const allNavigation = {
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Exports', href: 'FinancialExports', icon: FileText },
-    { name: 'Import', href: 'ImportData', icon: Download },
+    { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
     { name: 'Portal', href: 'CustomerPortal', icon: Users },
   ]
