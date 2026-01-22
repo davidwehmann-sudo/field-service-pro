@@ -4,10 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileSpreadsheet, Upload, CheckCircle2, AlertCircle, Loader2, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ImportData() {
+  const [csvFile, setCsvFile] = useState(null);
   const [spreadsheets, setSpreadsheets] = useState([]);
   const [selectedSpreadsheet, setSelectedSpreadsheet] = useState(null);
   const [sheetData, setSheetData] = useState(null);
@@ -102,6 +105,44 @@ export default function ImportData() {
     }
   };
 
+  const handleCsvUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const rows = text.split('\n').map(row => 
+        row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''))
+      ).filter(row => row.some(cell => cell));
+
+      if (rows.length < 2) {
+        toast.error('CSV must have at least a header row and one data row');
+        return;
+      }
+
+      setSheetData({ values: rows });
+      setCsvFile(file);
+
+      // Auto-detect columns
+      const headers = rows[0];
+      const mapping = {};
+      headers.forEach((header, index) => {
+        const lower = header.toLowerCase();
+        if (lower.includes('date')) mapping.service_date = index;
+        if (lower.includes('equipment') || lower.includes('machine')) mapping.equipment_type = index;
+        if (lower.includes('make') || lower.includes('manufacturer')) mapping.equipment_make = index;
+        if (lower.includes('model')) mapping.equipment_model = index;
+        if (lower.includes('serial')) mapping.equipment_serial = index;
+        if (lower.includes('complaint') || lower.includes('issue') || lower.includes('problem')) mapping.complaint = index;
+        if (lower.includes('work') || lower.includes('repair') || lower.includes('service')) mapping.work_performed = index;
+      });
+      setColumnMapping(mapping);
+      toast.success('CSV loaded successfully!');
+    };
+    reader.readAsText(file);
+  };
+
   const getColumnOptions = () => {
     if (!sheetData?.values?.[0]) return [];
     return sheetData.values[0].map((header, index) => ({ label: header, value: index }));
@@ -109,27 +150,78 @@ export default function ImportData() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Import Historical Data</h1>
-          <p className="text-slate-600 mt-1">Import past repair records from Google Sheets</p>
-        </div>
-        {!spreadsheets.length && (
-          <Button onClick={loadSpreadsheets} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              <>
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Connect Google Sheets
-              </>
-            )}
-          </Button>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Import Historical Data</h1>
+        <p className="text-slate-600 mt-1">Import past repair records from CSV or Google Sheets</p>
       </div>
+
+      <Tabs defaultValue="csv" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="csv">CSV Upload</TabsTrigger>
+          <TabsTrigger value="sheets">Google Sheets</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="csv" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload CSV File</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
+                  <FileUp className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <Label htmlFor="csv-upload" className="cursor-pointer">
+                    <div className="text-sm text-slate-600 mb-2">
+                      Click to upload or drag and drop
+                    </div>
+                    <div className="text-xs text-slate-500">CSV files only</div>
+                  </Label>
+                  <Input
+                    id="csv-upload"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCsvUpload}
+                    className="hidden"
+                  />
+                  {csvFile && (
+                    <div className="mt-4 text-sm text-green-600 font-medium">
+                      ✓ {csvFile.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sheets" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Connect Google Sheets</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600 mb-4">
+                Authorize access to import data directly from your Google Sheets spreadsheets.
+              </p>
+              {!spreadsheets.length && (
+                <Button onClick={loadSpreadsheets} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      Connect Google Sheets
+                    </>
+                  )}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {spreadsheets.length > 0 && !selectedSpreadsheet && (
         <Card>
