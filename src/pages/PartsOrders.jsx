@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import { toast } from "sonner";
+import { calculatePartsMarkup, calculatePartTotal } from '../components/parts/partsMarkupCalculator';
 
 export default function PartsOrders() {
   const [search, setSearch] = useState('');
@@ -162,9 +163,11 @@ export default function PartsOrders() {
   };
 
   const calculateTotal = (part) => {
-    const cost = (part.unit_cost || 0) * (part.quantity || 1);
-    const markup = cost * ((part.markup_percent || 0) / 100);
-    return cost + markup;
+    return calculatePartTotal(
+      part.unit_cost || 0,
+      part.quantity || 1,
+      part.markup_percent || 0
+    );
   };
 
   const handlePrintOrders = async () => {
