@@ -117,8 +117,7 @@ export default function FinancialExports() {
   };
 
   const exportServiceReports = () => {
-    let filtered = filterByDate(serviceReports, 'service_date');
-    filtered = filterByCustomerCompany(filtered, 'customer_id');
+    const filtered = filterByDate(serviceReports, 'service_date');
     const headers = [
       'Service Date',
       'Customer',
