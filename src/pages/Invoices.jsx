@@ -202,10 +202,25 @@ export default function Invoices() {
     const laborTotal = parseFloat(formData.get('labor_total')) || 0;
     const travelTotal = parseFloat(formData.get('travel_total')) || 0;
     const partsTotal = parseFloat(formData.get('parts_total')) || 0;
+    const discountPercent = parseFloat(formData.get('discount_percent')) || 0;
+    const manualOverride = formData.get('manual_price_override') ? parseFloat(formData.get('manual_price_override')) : null;
     const taxRate = parseFloat(formData.get('tax_rate')) || 0;
-    const subtotal = laborTotal + travelTotal + partsTotal;
-    const taxAmount = subtotal * (taxRate / 100);
-    const totalAmount = subtotal + taxAmount;
+    
+    let totalAmount;
+    let taxAmount;
+    
+    if (manualOverride !== null && manualOverride > 0) {
+      // Manual override bypasses all calculations
+      totalAmount = manualOverride;
+      taxAmount = 0; // Tax included in override
+    } else {
+      // Normal calculation with optional discount
+      const subtotal = laborTotal + travelTotal + partsTotal;
+      const discountAmount = subtotal * (discountPercent / 100);
+      const afterDiscount = subtotal - discountAmount;
+      taxAmount = afterDiscount * (taxRate / 100);
+      totalAmount = afterDiscount + taxAmount;
+    }
 
     const data = {
       invoice_number: formData.get('invoice_number') || generateInvoiceNumber(),
@@ -216,6 +231,8 @@ export default function Invoices() {
       labor_total: laborTotal,
       travel_total: travelTotal,
       parts_total: partsTotal,
+      discount_percent: discountPercent,
+      manual_price_override: manualOverride,
       tax_rate: taxRate,
       tax_amount: taxAmount,
       total_amount: totalAmount,
@@ -540,6 +557,16 @@ CHARGES:
                         <p className="text-xl font-bold text-slate-900 mt-2">
                           ${(invoice.total_amount || 0).toFixed(2)}
                         </p>
+                        {invoice.discount_percent > 0 && (
+                          <p className="text-xs text-green-600">
+                            {invoice.discount_percent}% discount
+                          </p>
+                        )}
+                        {invoice.manual_price_override && (
+                          <p className="text-xs text-purple-600">
+                            Manual override
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -696,6 +723,36 @@ CHARGES:
                     step="0.01"
                     defaultValue={editingInvoice?.parts_total || 0}
                   />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3">Adjustments</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="discount_percent">Discount (%)</Label>
+                  <Input 
+                    id="discount_percent" 
+                    name="discount_percent" 
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingInvoice?.discount_percent || 0}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Applied before tax</p>
+                </div>
+                <div>
+                  <Label htmlFor="manual_price_override">Manual Price Override ($)</Label>
+                  <Input 
+                    id="manual_price_override" 
+                    name="manual_price_override" 
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingInvoice?.manual_price_override || ''}
+                    placeholder="Leave blank for auto-calc"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Overrides all calculations</p>
                 </div>
               </div>
             </div>
