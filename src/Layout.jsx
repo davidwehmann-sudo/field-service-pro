@@ -22,32 +22,24 @@ import { cn } from "@/lib/utils";
 const allNavigation = {
   service_customer: [
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
-    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
   ],
   service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
-    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
   ],
   parts_specialist: [
     { name: 'Parts Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
-    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
   ],
   bookkeeper: [
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
-    { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
-    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
-    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
   ],
   software_engineer: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -60,7 +52,6 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
-    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
   ],
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -73,7 +64,6 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
-    { name: 'Sitemap', href: 'Sitemap', icon: LayoutDashboard },
   ]
 };
 
