@@ -128,14 +128,20 @@ export default function PartsOrders() {
     return matchesSearch && matchesStatus && matchesReport;
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    
+    // Get uploaded receipt URL if exists
+    const receiptInput = e.target.querySelector('#receipt_url');
+    const receiptUrl = receiptInput?.getAttribute('data-url') || editingPart?.receipt_url || '';
+    
     const data = {
       ...Object.fromEntries(formData),
       quantity: parseFloat(formData.get('quantity')) || 1,
       unit_cost: parseFloat(formData.get('unit_cost')) || 0,
-      markup_percent: parseFloat(formData.get('markup_percent')) || 25
+      markup_percent: parseFloat(formData.get('markup_percent')) || 25,
+      receipt_url: receiptUrl
     };
     
     if (editingPart) {
@@ -509,6 +515,37 @@ export default function PartsOrders() {
                 type="date"
                 defaultValue={editingPart?.order_date}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="receipt_url">Receipt Upload</Label>
+              <Input 
+                id="receipt_url" 
+                name="receipt_url" 
+                type="file"
+                accept="image/*,.pdf"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                      e.target.setAttribute('data-url', file_url);
+                    } catch (error) {
+                      toast.error('Failed to upload receipt');
+                    }
+                  }
+                }}
+              />
+              {editingPart?.receipt_url && (
+                <a 
+                  href={editingPart.receipt_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline mt-1 inline-block"
+                >
+                  View current receipt
+                </a>
+              )}
             </div>
 
             <div>
