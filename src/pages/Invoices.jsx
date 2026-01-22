@@ -31,6 +31,7 @@ import {
 import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
 export default function Invoices() {
   const [search, setSearch] = useState('');
@@ -42,6 +43,7 @@ export default function Invoices() {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
   const [payingInvoice, setPayingInvoice] = useState(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const queryClient = useQueryClient();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -611,7 +613,7 @@ CHARGES:
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      onClick={() => deleteMutation.mutate(invoice.id)}
+                      onClick={() => setInvoiceToDelete(invoice)}
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
@@ -883,7 +885,24 @@ CHARGES:
             </form>
           )}
         </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+        </Dialog>
+
+        <DeleteConfirmationDialog
+        open={!!invoiceToDelete}
+        onOpenChange={(open) => !open && setInvoiceToDelete(null)}
+        title="Delete Invoice?"
+        description={invoiceToDelete?.status === 'paid' ?
+          "This invoice has been paid." :
+          "This invoice will be permanently deleted."}
+        warning={invoiceToDelete?.status !== 'draft' ?
+          `⚠️ This invoice is ${invoiceToDelete?.status}. Are you sure?` : null}
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (invoiceToDelete) {
+            deleteMutation.mutate(invoiceToDelete.id);
+          }
+        }}
+        />
+        </div>
+        );
+        }
