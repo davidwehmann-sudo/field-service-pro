@@ -18,7 +18,6 @@ import {
   Pencil, 
   Trash2,
   User,
-  Link as LinkIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from 'react-router-dom';
@@ -111,24 +110,6 @@ export default function Customers() {
     setShowForm(true);
   };
 
-  const handleGeneratePortalLink = async (customer) => {
-    try {
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      await base44.entities.CustomerAccessToken.create({
-        customer_id: customer.id,
-        token: token,
-        is_active: true
-      });
-      
-      const portalUrl = `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/CustomerPortal')}?token=${token}`;
-      await navigator.clipboard.writeText(portalUrl);
-      
-      alert("Portal link copied! Send this link to the customer:\n\n" + portalUrl);
-    } catch (error) {
-      alert("Failed to generate portal link");
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -209,15 +190,6 @@ export default function Customers() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => handleGeneratePortalLink(customer)}
-                      title="Generate portal link"
-                    >
-                      <LinkIcon className="w-4 h-4 text-blue-400" />
-                    </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
