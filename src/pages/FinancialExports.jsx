@@ -76,8 +76,7 @@ export default function FinancialExports() {
   };
 
   const exportInvoices = () => {
-    let filtered = filterByDate(invoices, 'invoice_date');
-    filtered = filterByCustomerCompany(filtered, 'customer_id');
+    const filtered = filterByDate(invoices, 'invoice_date');
     const headers = [
       'Invoice Number',
       'Customer',
