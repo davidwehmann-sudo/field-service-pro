@@ -24,18 +24,21 @@ import { cn } from "@/lib/utils";
 const allNavigation = {
   service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Parts', href: 'PartsOrders', icon: Package },
     { name: 'Vehicles', href: 'VehicleExpenses', icon: Package },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   parts_specialist: [
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Orders', href: 'PartsOrders', icon: Package },
     { name: 'Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   bookkeeper: [
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
     { name: 'Vehicles', href: 'VehicleExpenses', icon: Package },
@@ -46,6 +49,7 @@ const allNavigation = {
   software_engineer: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Field', href: 'FieldTech', icon: Wrench },
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Pre-Auth', href: 'Authorizations', icon: ClipboardCheck },
     { name: 'Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Parts', href: 'PartsOrders', icon: Package },
@@ -60,6 +64,7 @@ const allNavigation = {
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Field', href: 'FieldTech', icon: Wrench },
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Pre-Auth', href: 'Authorizations', icon: ClipboardCheck },
     { name: 'Reports', href: 'ServiceReports', icon: FileText },
     { name: 'Parts', href: 'PartsOrders', icon: Package },
