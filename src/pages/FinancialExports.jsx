@@ -392,7 +392,7 @@ export default function FinancialExports() {
             <CardDescription>Select the period and company for your exports</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="startDate">Start Date</Label>
                 <Input
@@ -413,44 +413,8 @@ export default function FinancialExports() {
                   className="mt-1"
                 />
               </div>
-              {(currentUser?.user_type === 'software_engineer' || currentUser?.user_type === 'bookkeeper') && managedCompanies.length > 0 && (
-                <div>
-                  <Label htmlFor="company">Service Company</Label>
-                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                    <SelectTrigger id="company" className="mt-1">
-                      <SelectValue placeholder="All companies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>All companies</SelectItem>
-                      {managedCompanies.map((company) => (
-                        <SelectItem key={company} value={company}>
-                          {company}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {customerCompanies.length > 0 && (
-                <div>
-                  <Label htmlFor="customerCompany">Customer Company</Label>
-                  <Select value={selectedCustomerCompany} onValueChange={setSelectedCustomerCompany}>
-                    <SelectTrigger id="customerCompany" className="mt-1">
-                      <SelectValue placeholder="All customers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>All customers</SelectItem>
-                      {customerCompanies.map((company) => (
-                        <SelectItem key={company} value={company}>
-                          {company}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              </div>
-              </CardContent>
+            </div>
+          </CardContent>
               </Card>
 
         {/* Export Options */}
