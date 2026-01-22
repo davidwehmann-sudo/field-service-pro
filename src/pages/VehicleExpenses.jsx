@@ -445,17 +445,18 @@ export default function VehicleExpenses() {
               </div>
               <div>
                 <Label htmlFor="vehicle_name">Vehicle *</Label>
-                <Input 
-                  id="vehicle_name" 
-                  name="vehicle_name"
-                  required
-                  defaultValue={editingExpense?.vehicle_name}
-                  placeholder="Truck 1, Van 2, etc."
-                  list="vehicles"
-                />
-                <datalist id="vehicles">
-                  {uniqueVehicles.map(v => <option key={v} value={v} />)}
-                </datalist>
+                <Select name="vehicle_name" defaultValue={editingExpense?.vehicle_name || ''} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a vehicle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.name}>
+                        {vehicle.name} {vehicle.vehicle_owner === 'personal' ? '(Personal)' : '(Company)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
