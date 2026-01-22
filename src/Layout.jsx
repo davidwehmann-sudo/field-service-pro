@@ -4,19 +4,20 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import CompanySelector from './components/CompanySelector';
 import { 
-  Wrench, 
-  FileText, 
-  Users, 
-  Package, 
-  Receipt, 
-  LayoutDashboard,
-  Menu,
-  X,
-  ChevronRight,
-  ClipboardCheck,
-  MessageSquare,
-  Download
-} from "lucide-react";
+        Wrench, 
+        FileText, 
+        Users, 
+        Package, 
+        Receipt, 
+        LayoutDashboard,
+        Menu,
+        X,
+        ChevronRight,
+        ClipboardCheck,
+        MessageSquare,
+        Download,
+        Shield
+      } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,7 @@ const allNavigation = {
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Financial Exports', href: 'FinancialExports', icon: FileText },
     { name: 'Import Data', href: 'ImportData', icon: Download },
+    { name: 'Security Checklist', href: 'SecurityChecklist', icon: Shield },
     { name: 'Customer Portal', href: 'CustomerPortal', icon: Users },
   ]
 };

@@ -12,6 +12,7 @@ import PayInvoice from './pages/PayInvoice';
 import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import ImportData from './pages/ImportData';
+import SecurityChecklist from './pages/SecurityChecklist';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "ServiceReports": ServiceReports,
     "Sitemap": Sitemap,
     "ImportData": ImportData,
+    "SecurityChecklist": SecurityChecklist,
 }
 
 export const pagesConfig = {
