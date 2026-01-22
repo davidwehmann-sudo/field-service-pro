@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import { toast } from "sonner";
 import { calculatePartsMarkup, calculatePartTotal } from '../components/parts/partsMarkupCalculator';
+import { Settings } from "lucide-react";
 
 export default function PartsOrders() {
   const [search, setSearch] = useState('');
@@ -40,6 +41,8 @@ export default function PartsOrders() {
   const [editingPart, setEditingPart] = useState(null);
   const [selectedParts, setSelectedParts] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [markupSettings, setMarkupSettings] = useState({ max_markup: 45, min_markup: 12, decay_rate: 200 });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -85,6 +88,16 @@ export default function PartsOrders() {
     queryFn: () => base44.entities.ServiceReport.list('-created_date')
   });
 
+  const { data: settings = [] } = useQuery({
+    queryKey: ['markupSettings'],
+    queryFn: () => base44.entities.MarkupSettings.list(),
+    onSuccess: (data) => {
+      if (data && data.length > 0) {
+        setMarkupSettings(data[0]);
+      }
+    }
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PartsOrder.create(data),
     onSuccess: () => {
@@ -107,6 +120,22 @@ export default function PartsOrders() {
     mutationFn: (id) => base44.entities.PartsOrder.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partsOrders'] });
+    }
+  });
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: (data) => {
+      const settingsId = settings?.[0]?.id;
+      if (settingsId) {
+        return base44.entities.MarkupSettings.update(settingsId, data);
+      } else {
+        return base44.entities.MarkupSettings.create(data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['markupSettings'] });
+      setShowSettings(false);
+      toast.success('Markup settings updated');
     }
   });
 
@@ -209,6 +238,15 @@ export default function PartsOrders() {
           <p className="text-slate-500 mt-1">Track parts and orders</p>
         </div>
         <div className="flex gap-2">
+          {currentUser?.role === 'admin' && (
+            <Button 
+              onClick={() => setShowSettings(true)}
+              variant="outline"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Markup Settings
+            </Button>
+          )}
           {selectedParts.length > 0 && (
             <Button 
               onClick={handlePrintOrders}
@@ -456,7 +494,7 @@ export default function PartsOrders() {
                     const cost = parseFloat(e.target.value) || 0;
                     const markupField = document.getElementById('markup_percent');
                     if (markupField && !editingPart) {
-                      markupField.value = calculatePartsMarkup(cost);
+                      markupField.value = calculatePartsMarkup(cost, markupSettings);
                     }
                   }}
                 />
@@ -591,6 +629,119 @@ export default function PartsOrders() {
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {editingPart ? 'Save Changes' : 'Add Part'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Markup Settings Dialog (Admin Only) */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Parts Markup Equation Settings</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            saveSettingsMutation.mutate({
+              max_markup: parseFloat(formData.get('max_markup')),
+              min_markup: parseFloat(formData.get('min_markup')),
+              decay_rate: parseFloat(formData.get('decay_rate')),
+              service_company: currentUser?.current_company || currentUser?.company
+            });
+          }} className="space-y-4">
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <p className="text-sm text-slate-600 mb-2">
+                <strong>Formula:</strong> markup = min + (max - min) × e<sup>(-cost/decay)</sup>
+              </p>
+              <p className="text-xs text-slate-500">
+                This creates a smooth curve where cheap parts get higher markup and expensive parts get lower markup.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="max_markup">Maximum Markup %</Label>
+              <Input 
+                id="max_markup" 
+                name="max_markup" 
+                type="number"
+                step="0.1"
+                defaultValue={markupSettings.max_markup}
+                required
+              />
+              <p className="text-xs text-slate-500 mt-1">Applied to very cheap parts (e.g., $10 parts)</p>
+            </div>
+
+            <div>
+              <Label htmlFor="min_markup">Minimum Markup %</Label>
+              <Input 
+                id="min_markup" 
+                name="min_markup" 
+                type="number"
+                step="0.1"
+                defaultValue={markupSettings.min_markup}
+                required
+              />
+              <p className="text-xs text-slate-500 mt-1">Applied to expensive parts (e.g., $2000+ parts)</p>
+            </div>
+
+            <div>
+              <Label htmlFor="decay_rate">Decay Rate</Label>
+              <Input 
+                id="decay_rate" 
+                name="decay_rate" 
+                type="number"
+                step="1"
+                defaultValue={markupSettings.decay_rate}
+                required
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Lower = faster transition from max to min markup. Typical range: 100-300.
+              </p>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm font-medium text-blue-900 mb-2">Example Results:</p>
+              <div className="space-y-1 text-xs text-blue-800">
+                <p>$25 part → {calculatePartsMarkup(25, { 
+                  max_markup: markupSettings.max_markup, 
+                  min_markup: markupSettings.min_markup, 
+                  decay_rate: markupSettings.decay_rate 
+                })}% markup</p>
+                <p>$100 part → {calculatePartsMarkup(100, { 
+                  max_markup: markupSettings.max_markup, 
+                  min_markup: markupSettings.min_markup, 
+                  decay_rate: markupSettings.decay_rate 
+                })}% markup</p>
+                <p>$500 part → {calculatePartsMarkup(500, { 
+                  max_markup: markupSettings.max_markup, 
+                  min_markup: markupSettings.min_markup, 
+                  decay_rate: markupSettings.decay_rate 
+                })}% markup</p>
+                <p>$1500 part → {calculatePartsMarkup(1500, { 
+                  max_markup: markupSettings.max_markup, 
+                  min_markup: markupSettings.min_markup, 
+                  decay_rate: markupSettings.decay_rate 
+                })}% markup</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setShowSettings(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                className="bg-amber-500 hover:bg-amber-600"
+                disabled={saveSettingsMutation.isPending}
+              >
+                Save Settings
               </Button>
             </div>
           </form>

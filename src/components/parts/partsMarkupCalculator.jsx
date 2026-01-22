@@ -10,12 +10,12 @@
  * - Parts around $500: ~20% markup
  * - Parts over $1000: ~15% markup
  */
-export function calculatePartsMarkup(unitCost) {
+export function calculatePartsMarkup(unitCost, settings = null) {
   if (!unitCost || unitCost <= 0) return 25;
   
-  const maxMarkup = 45;  // Maximum markup % for very cheap parts
-  const minMarkup = 12;  // Minimum markup % for expensive parts
-  const decayRate = 200; // How quickly markup decreases with cost
+  const maxMarkup = settings?.max_markup ?? 45;  // Maximum markup % for very cheap parts
+  const minMarkup = settings?.min_markup ?? 12;  // Minimum markup % for expensive parts
+  const decayRate = settings?.decay_rate ?? 200; // How quickly markup decreases with cost
   
   // Smooth exponential decay curve
   const markup = minMarkup + (maxMarkup - minMarkup) * Math.exp(-unitCost / decayRate);
