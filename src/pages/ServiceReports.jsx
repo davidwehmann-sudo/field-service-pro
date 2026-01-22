@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import ServiceReportForm from '@/components/service/ServiceReportForm';
 import MobileServiceForm from '@/components/service/MobileServiceForm';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
 export default function ServiceReports() {
   const [search, setSearch] = useState('');
@@ -35,6 +36,7 @@ export default function ServiceReports() {
   const [showForm, setShowForm] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [reportToDelete, setReportToDelete] = useState(null);
   const queryClient = useQueryClient();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -406,7 +408,7 @@ export default function ServiceReports() {
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      onClick={() => deleteMutation.mutate(report.id)}
+                      onClick={() => setReportToDelete(report)}
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
