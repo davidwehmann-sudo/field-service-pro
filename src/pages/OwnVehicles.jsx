@@ -209,9 +209,9 @@ export default function OwnVehicles() {
                       Mileage: <span className="font-medium">{vehicle.current_mileage.toLocaleString()}</span> mi
                     </p>
                   )}
-                  {vehicle.assigned_technician && (
+                  {vehicle.primary_operator && (
                     <p className="text-slate-600">
-                      Tech: <span className="font-medium">{vehicle.assigned_technician}</span>
+                      Operator: <span className="font-medium">{vehicle.primary_operator}</span>
                     </p>
                   )}
                 </div>
@@ -321,11 +321,11 @@ export default function OwnVehicles() {
             </div>
 
             <div>
-              <Label htmlFor="assigned_technician">Assigned Technician</Label>
+              <Label htmlFor="primary_operator">Primary Operator</Label>
               <Input
-                id="assigned_technician"
-                name="assigned_technician"
-                defaultValue={editingVehicle?.assigned_technician}
+                id="primary_operator"
+                name="primary_operator"
+                defaultValue={editingVehicle?.primary_operator}
                 placeholder="John Smith"
               />
             </div>
