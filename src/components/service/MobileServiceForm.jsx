@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, Camera } from "lucide-react";
+import { ArrowLeft, Save, Send, Camera, Sparkles } from "lucide-react";
 import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
@@ -26,6 +26,8 @@ export default function MobileServiceForm({
 }) {
   const storageKey = `service_report_draft_${report?.id || 'new'}`;
 
+  const [aiProcessing, setAiProcessing] = useState(false);
+
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem(storageKey);
     if (saved && !report?.id) {
@@ -42,6 +44,7 @@ export default function MobileServiceForm({
       equipment_model: '',
       equipment_hours: '',
       complaint: '',
+      technician_notes: '',
       work_performed: '',
       photos: [],
       customer_signature: '',
@@ -60,6 +63,44 @@ export default function MobileServiceForm({
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAIDerive = async () => {
+    if (!formData.technician_notes?.trim()) {
+      alert('Please enter technician notes first');
+      return;
+    }
+
+    setAiProcessing(true);
+    try {
+      const { base44 } = await import('@/api/base44Client');
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a field service technician documentation assistant. Convert these raw technician notes into a clear work performed description.
+
+Technician Notes:
+${formData.technician_notes}
+
+Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}
+Customer Complaint: ${formData.complaint}
+
+Provide a clear, professional work performed description (what repairs/actions were completed). Be technical but clear.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            work_performed: { type: "string" }
+          }
+        }
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        work_performed: result.work_performed
+      }));
+    } catch (error) {
+      alert('AI processing failed: ' + error.message);
+    } finally {
+      setAiProcessing(false);
+    }
   };
 
   const handleSave = async (status = 'draft') => {
@@ -210,6 +251,34 @@ export default function MobileServiceForm({
               placeholder="What's the issue?"
               rows={4}
             />
+          </CardContent>
+        </Card>
+
+        {/* Technician Notes */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs">Technician Notes</Label>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAIDerive}
+                disabled={aiProcessing || !formData.technician_notes?.trim()}
+                className="h-7 text-xs gap-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                {aiProcessing ? 'Processing...' : 'AI Derive'}
+              </Button>
+            </div>
+            <Textarea 
+              value={formData.technician_notes}
+              onChange={(e) => handleChange('technician_notes', e.target.value)}
+              placeholder="Quick notes: what you found, what you did..."
+              rows={4}
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              💡 Type notes, then click AI Derive
+            </p>
           </CardContent>
         </Card>
 

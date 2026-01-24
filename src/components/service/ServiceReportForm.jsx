@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, DollarSign } from "lucide-react";
+import { ArrowLeft, Save, Send, DollarSign, Sparkles } from "lucide-react";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
@@ -39,6 +39,8 @@ export default function ServiceReportForm({
 }) {
   const storageKey = `service_report_draft_${report?.id || 'new'}`;
 
+  const [aiProcessing, setAiProcessing] = useState(false);
+
   const [formData, setFormData] = useState(() => {
     // Load from localStorage if available
     const saved = localStorage.getItem(storageKey);
@@ -59,6 +61,7 @@ export default function ServiceReportForm({
       equipment_serial: '',
       equipment_hours: '',
       complaint: '',
+      technician_notes: '',
       cat_diagnostic: {},
       work_performed: '',
       service_items: [],
@@ -90,6 +93,53 @@ export default function ServiceReportForm({
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAIDerive = async () => {
+    if (!formData.technician_notes?.trim()) {
+      alert('Please enter technician notes first');
+      return;
+    }
+
+    setAiProcessing(true);
+    try {
+      const { base44 } = await import('@/api/base44Client');
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a field service technician documentation assistant. Convert these raw technician notes into structured diagnostic procedure and work performed sections.
+
+Technician Notes:
+${formData.technician_notes}
+
+Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}
+Customer Complaint: ${formData.complaint}
+
+Provide:
+1. A detailed diagnostic procedure following best practices (what tests/checks were performed)
+2. A clear work performed description (what repairs/actions were completed)
+
+Be technical but clear. Use proper terminology.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            diagnostic_procedure: { type: "string" },
+            work_performed: { type: "string" }
+          }
+        }
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        cat_diagnostic: {
+          ...prev.cat_diagnostic,
+          step1_symptom: result.diagnostic_procedure
+        },
+        work_performed: result.work_performed
+      }));
+    } catch (error) {
+      alert('AI processing failed: ' + error.message);
+    } finally {
+      setAiProcessing(false);
+    }
   };
 
   const calculateTotals = () => {
@@ -258,6 +308,36 @@ export default function ServiceReportForm({
           </CardContent>
         </Card>
 
+        {/* Technician Notes */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg">Technician Notes</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleAIDerive}
+              disabled={aiProcessing || !formData.technician_notes?.trim()}
+              className="gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              {aiProcessing ? 'Processing...' : 'AI Derive'}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Textarea 
+              value={formData.technician_notes}
+              onChange={(e) => handleChange('technician_notes', e.target.value)}
+              placeholder="Quick field notes: what you found, what you did, parts used, etc. Click AI Derive to convert to formal diagnostic and work performed sections..."
+              rows={6}
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              💡 Type informal notes here, then use AI to generate structured diagnostic procedure and work performed sections
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
         {/* Customer Complaint */}
         <Card className="border-0 shadow-sm">
           <CardHeader>
