@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2 } from "lucide-react";
+import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2, Edit } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -358,10 +358,10 @@ export default function Jobs() {
                             {job.authorization.service_type?.replace(/_/g, ' ')}
                           </p>
                           <Link 
-                            to={createPageUrl('Authorizations')}
+                            to={`${createPageUrl('Authorizations')}?edit=${job.authorization.id}`}
                             className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                           >
-                            View Details <ChevronRight className="w-3 h-3" />
+                            Edit <Edit className="w-3 h-3" />
                           </Link>
                         </div>
                       ) : (
@@ -386,10 +386,10 @@ export default function Jobs() {
                             {job.serviceReport.equipment_type}
                           </p>
                           <Link 
-                            to={createPageUrl('ServiceReports')}
+                            to={`${createPageUrl('ServiceReports')}?edit=${job.serviceReport.id}`}
                             className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                           >
-                            View Details <ChevronRight className="w-3 h-3" />
+                            Edit <Edit className="w-3 h-3" />
                           </Link>
                         </div>
                       ) : (
@@ -414,10 +414,10 @@ export default function Jobs() {
                             {job.partsOrders.length} {job.partsOrders.length === 1 ? 'part' : 'parts'}
                           </p>
                           <Link 
-                            to={createPageUrl('PartsOrders')}
+                            to={`${createPageUrl('PartsOrders')}?edit=${job.partsOrders[0].id}`}
                             className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                           >
-                            View Details <ChevronRight className="w-3 h-3" />
+                            Edit {job.partsOrders.length === 1 ? 'Part' : 'First Part'} <Edit className="w-3 h-3" />
                           </Link>
                         </div>
                       ) : (
