@@ -305,7 +305,7 @@ IF additional specific information would help, list in suggested_additional_info
               rows={4}
             />
             <p className="text-xs text-slate-500 mt-1">
-              💡 Type notes, then click AI Derive
+              💡 Type notes, then click AI Compile
             </p>
             {aiSuggestions && aiSuggestions.length > 0 && (
               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">

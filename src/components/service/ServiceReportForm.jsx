@@ -362,7 +362,7 @@ Generate the best report possible now, while noting what else would help.`,
               rows={6}
             />
             <p className="text-xs text-slate-500 mt-2">
-              💡 Type informal notes here, then use AI to generate structured diagnostic procedure and work performed sections
+              💡 Type informal notes here, then click AI Compile to generate structured report sections
             </p>
             {aiSuggestions && aiSuggestions.length > 0 && (
               <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
