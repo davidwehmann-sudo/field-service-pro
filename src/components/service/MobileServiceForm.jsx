@@ -85,11 +85,25 @@ Current Information:
 - Photos: ${formData.photos?.length || 0}
 - Equipment Hours: ${formData.equipment_hours || 'Not provided'}
 
-ALWAYS provide work_performed based on current info (even if partial). IF additional specific information would help, list in suggested_additional_info.`,
+ALWAYS provide:
+1. work_performed - description based on current info
+2. billable_service_items - break down work into distinct billable segments with descriptions and estimated hours
+
+IF additional specific information would help, list in suggested_additional_info.`,
         response_json_schema: {
           type: "object",
           properties: {
             work_performed: { type: "string" },
+            billable_service_items: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  description: { type: "string" },
+                  hours: { type: "number" }
+                }
+              }
+            },
             suggested_additional_info: { 
               type: "array",
               items: { type: "string" }
@@ -100,7 +114,13 @@ ALWAYS provide work_performed based on current info (even if partial). IF additi
 
       setFormData(prev => ({
         ...prev,
-        work_performed: result.work_performed
+        work_performed: result.work_performed,
+        service_items: result.billable_service_items?.map(item => ({
+          description: item.description,
+          hours: item.hours,
+          rate: prev.service_items?.[0]?.rate || 0,
+          total: item.hours * (prev.service_items?.[0]?.rate || 0)
+        })) || prev.service_items || []
       }));
       
       setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);

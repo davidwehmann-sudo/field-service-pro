@@ -118,6 +118,11 @@ Current Information:
 ALWAYS provide:
 1. diagnostic_procedure - best diagnostic description based on current info (even if partial)
 2. work_performed - clear description of work done based on current info (even if partial)
+3. billable_service_items - break down the work into distinct billable service segments. Each item should be a specific task/service with a clear description and estimated hours. Examples:
+   - "Initial diagnostic inspection - 1.5 hours"
+   - "Replace hydraulic pump seal - 2.0 hours"
+   - "System pressure test and adjustment - 0.5 hours"
+   - "Clean and lubricate drive components - 1.0 hours"
 
 IF additional specific information would significantly improve the report, list it in suggested_additional_info (e.g., "Photo of error code display would help", "Hydraulic pressure reading", "Photo of damaged component").
 
@@ -127,6 +132,16 @@ Generate the best report possible now, while noting what else would help.`,
           properties: {
             diagnostic_procedure: { type: "string" },
             work_performed: { type: "string" },
+            billable_service_items: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  description: { type: "string" },
+                  hours: { type: "number" }
+                }
+              }
+            },
             suggested_additional_info: { 
               type: "array",
               items: { type: "string" }
@@ -141,7 +156,13 @@ Generate the best report possible now, while noting what else would help.`,
           ...prev.cat_diagnostic,
           step1_symptom: result.diagnostic_procedure
         },
-        work_performed: result.work_performed
+        work_performed: result.work_performed,
+        service_items: result.billable_service_items?.map(item => ({
+          description: item.description,
+          hours: item.hours,
+          rate: prev.service_items?.[0]?.rate || 0,
+          total: item.hours * (prev.service_items?.[0]?.rate || 0)
+        })) || prev.service_items || []
       }));
       
       setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);
