@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Send, DollarSign, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
