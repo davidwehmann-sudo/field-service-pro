@@ -30,7 +30,7 @@ export default function Home() {
         }
       } catch (error) {
         // Not logged in - redirect to login
-        base44.auth.redirectToLogin();
+        base44.auth.redirectToLogin(window.location.origin + createPageUrl('Dashboard'));
       }
     };
     loadAndRoute();
