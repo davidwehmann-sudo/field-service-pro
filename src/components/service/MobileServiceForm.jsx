@@ -94,6 +94,7 @@ ALWAYS provide:
    - "Remove and replace damaged seal" (combines for damaged parts)
    - "Remove, repair, and reinstall component" (all steps together)
    Use combined descriptions to reduce line count whenever removal and reinstallation go together.
+   CRITICAL: Estimate hours for ALL combined steps (e.g., "Remove and reinstall" includes time for both operations).
 
 SELF-AUDIT: Verify all tech notes considered and work performed aligns with all findings mentioned.
 

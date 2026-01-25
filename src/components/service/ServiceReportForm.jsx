@@ -133,6 +133,7 @@ ALWAYS provide:
    - "Remove and replace damaged cylinder seal" (combines remove + replace for damaged part)
    - "Remove, repair, and reinstall fuel injector" (combines all steps)
    Use combined descriptions whenever removal and reinstallation go together. Only separate if truly independent tasks.
+   CRITICAL: When combining operations, estimate hours for ALL combined steps (e.g., "Remove and reinstall pump" should include time for both removal AND reinstallation).
 
 SELF-AUDIT: Before finalizing, verify:
 - All tech notes have been considered
