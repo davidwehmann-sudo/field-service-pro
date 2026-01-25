@@ -76,7 +76,7 @@ export default function MobileServiceForm({
     try {
       const { base44 } = await import('@/api/base44Client');
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a field service technician documentation assistant. Analyze the provided information and either generate complete documentation or request specific additional information.
+        prompt: `You are a field service technician documentation assistant. Generate work performed description based on available info AND identify what would improve it.
 
 Current Information:
 - Technician Notes: ${formData.technician_notes}
@@ -85,29 +85,25 @@ Current Information:
 - Photos: ${formData.photos?.length || 0}
 - Equipment Hours: ${formData.equipment_hours || 'Not provided'}
 
-If sufficient, provide a clear work performed description. If critical info is missing, set needs_more_info to true and list specific requests.`,
+ALWAYS provide work_performed based on current info (even if partial). IF additional specific information would help, list in suggested_additional_info.`,
         response_json_schema: {
           type: "object",
           properties: {
-            needs_more_info: { type: "boolean" },
-            requested_info: { 
+            work_performed: { type: "string" },
+            suggested_additional_info: { 
               type: "array",
               items: { type: "string" }
-            },
-            work_performed: { type: "string" }
+            }
           }
         }
       });
 
-      if (result.needs_more_info) {
-        setAiSuggestions(result.requested_info);
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          work_performed: result.work_performed
-        }));
-        setAiSuggestions(null);
-      }
+      setFormData(prev => ({
+        ...prev,
+        work_performed: result.work_performed
+      }));
+      
+      setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);
     } catch (error) {
       alert('AI processing failed: ' + error.message);
     } finally {
@@ -292,18 +288,18 @@ If sufficient, provide a clear work performed description. If critical info is m
               💡 Type notes, then click AI Derive
             </p>
             {aiSuggestions && aiSuggestions.length > 0 && (
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="w-3 h-3 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="w-3 h-3 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-amber-900 mb-1">AI needs more info:</p>
-                    <ul className="space-y-1 text-xs text-amber-800">
+                    <p className="text-xs font-medium text-blue-900 mb-1">✓ Generated! More info would help:</p>
+                    <ul className="space-y-1 text-xs text-blue-800">
                       {aiSuggestions.map((suggestion, idx) => (
                         <li key={idx}>• {suggestion}</li>
                       ))}
                     </ul>
-                    <p className="text-xs text-amber-700 mt-1">
-                      Add details above, then try again
+                    <p className="text-xs text-blue-700 mt-1">
+                      Check work performed below. Add details & re-run to improve.
                     </p>
                   </div>
                 </div>

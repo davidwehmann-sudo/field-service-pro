@@ -106,9 +106,7 @@ export default function ServiceReportForm({
     try {
       const { base44 } = await import('@/api/base44Client');
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a field service technician documentation assistant. Analyze the provided information and either:
-1. Generate complete documentation if sufficient information is available
-2. Request specific additional information if critical details are missing
+        prompt: `You are a field service technician documentation assistant. Generate a report based on available information AND identify what additional data would improve it.
 
 Current Information:
 - Technician Notes: ${formData.technician_notes}
@@ -117,38 +115,36 @@ Current Information:
 - Photos Provided: ${formData.photos?.length || 0}
 - Equipment Hours: ${formData.equipment_hours || 'Not provided'}
 
-If information is sufficient, provide:
-1. A detailed diagnostic procedure following best practices
-2. A clear work performed description
+ALWAYS provide:
+1. diagnostic_procedure - best diagnostic description based on current info (even if partial)
+2. work_performed - clear description of work done based on current info (even if partial)
 
-If critical information is missing, set needs_more_info to true and list specific requests (e.g., "Need photo of error code display", "What was the hydraulic pressure reading?", "Need closer photo of damaged component").`,
+IF additional specific information would significantly improve the report, list it in suggested_additional_info (e.g., "Photo of error code display would help", "Hydraulic pressure reading", "Photo of damaged component").
+
+Generate the best report possible now, while noting what else would help.`,
         response_json_schema: {
           type: "object",
           properties: {
-            needs_more_info: { type: "boolean" },
-            requested_info: { 
+            diagnostic_procedure: { type: "string" },
+            work_performed: { type: "string" },
+            suggested_additional_info: { 
               type: "array",
               items: { type: "string" }
-            },
-            diagnostic_procedure: { type: "string" },
-            work_performed: { type: "string" }
+            }
           }
         }
       });
 
-      if (result.needs_more_info) {
-        setAiSuggestions(result.requested_info);
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          cat_diagnostic: {
-            ...prev.cat_diagnostic,
-            step1_symptom: result.diagnostic_procedure
-          },
-          work_performed: result.work_performed
-        }));
-        setAiSuggestions(null);
-      }
+      setFormData(prev => ({
+        ...prev,
+        cat_diagnostic: {
+          ...prev.cat_diagnostic,
+          step1_symptom: result.diagnostic_procedure
+        },
+        work_performed: result.work_performed
+      }));
+      
+      setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);
     } catch (error) {
       alert('AI processing failed: ' + error.message);
     } finally {
@@ -348,21 +344,21 @@ If critical information is missing, set needs_more_info to true and list specifi
               💡 Type informal notes here, then use AI to generate structured diagnostic procedure and work performed sections
             </p>
             {aiSuggestions && aiSuggestions.length > 0 && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-600 mt-0.5" />
+                  <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-900 mb-2">AI needs more information:</p>
-                    <ul className="space-y-1 text-sm text-amber-800">
+                    <p className="text-sm font-medium text-blue-900 mb-2">✓ Report generated! Additional info would help:</p>
+                    <ul className="space-y-1 text-sm text-blue-800">
                       {aiSuggestions.map((suggestion, idx) => (
                         <li key={idx} className="flex items-start gap-2">
-                          <span className="text-amber-600">•</span>
+                          <span className="text-blue-600">•</span>
                           <span>{suggestion}</span>
                         </li>
                       ))}
                     </ul>
-                    <p className="text-xs text-amber-700 mt-2">
-                      Add the requested info to your notes or photos, then click AI Derive again
+                    <p className="text-xs text-blue-700 mt-2">
+                      Report sections populated below. Add suggested details and re-run AI to improve.
                     </p>
                   </div>
                 </div>
