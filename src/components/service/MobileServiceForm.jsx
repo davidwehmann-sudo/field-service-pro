@@ -76,18 +76,22 @@ export default function MobileServiceForm({
     try {
       const { base44 } = await import('@/api/base44Client');
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a field service technician documentation assistant. Generate work performed description based on available info AND identify what would improve it.
+        prompt: `You are a field service technician documentation assistant. Generate work performed description based on ALL available info.
+
+IMPORTANT: Review ALL technician notes comprehensively. Consider the complete context from all notes entered.
 
 Current Information:
-- Technician Notes: ${formData.technician_notes}
+- ALL Technician Notes: ${formData.technician_notes}
 - Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}
 - Customer Complaint: ${formData.complaint}
 - Photos: ${formData.photos?.length || 0}
 - Equipment Hours: ${formData.equipment_hours || 'Not provided'}
 
 ALWAYS provide:
-1. work_performed - description based on current info
+1. work_performed - description based on ALL notes
 2. billable_service_items - break down work into distinct billable segments with descriptions and estimated hours
+
+SELF-AUDIT: Verify all tech notes considered and work performed aligns with all findings mentioned.
 
 IF additional specific information would help, list in suggested_additional_info.`,
         response_json_schema: {

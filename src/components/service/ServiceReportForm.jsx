@@ -108,15 +108,18 @@ export default function ServiceReportForm({
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a field service technician documentation assistant. Generate a complete service report using the Caterpillar 7-Step Diagnostic Process.
 
+IMPORTANT: Review ALL technician notes comprehensively. Consider the complete context from all notes entered, not just the latest addition.
+
 Current Information:
-- Technician Notes: ${formData.technician_notes}
+- ALL Technician Notes: ${formData.technician_notes}
 - Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}
 - Customer Complaint: ${formData.complaint}
 - Photos Provided: ${formData.photos?.length || 0}
 - Equipment Hours: ${formData.equipment_hours || 'Not provided'}
+- Existing Diagnostic Work: ${Object.values(formData.cat_diagnostic || {}).filter(v => v).length > 0 ? 'Yes - update/refine existing entries' : 'No - generate fresh'}
 
 ALWAYS provide:
-1. step1_symptom - Describe the symptom/problem observed
+1. step1_symptom - Describe the symptom/problem observed (based on ALL notes)
 2. step2_research - Service bulletins, manuals, or prior history consulted
 3. step3_visual_inspection - What was visually inspected (leaks, damage, wear, etc.)
 4. step4_operational_tests - Tests performed (function tests, cycling, etc.)
@@ -125,6 +128,13 @@ ALWAYS provide:
 7. step7_root_cause - Root cause identified and corrective action
 8. work_performed - Detailed description of repairs/work completed
 9. billable_service_items - Break down work into distinct billable segments with descriptions and estimated hours
+
+SELF-AUDIT: Before finalizing, verify:
+- All tech notes have been considered
+- Diagnostic steps logically flow and connect
+- Work performed aligns with diagnostic findings
+- Billable items cover all work mentioned
+- No contradictions in the report
 
 IF additional information would significantly improve the report, list it in suggested_additional_info.
 
@@ -353,10 +363,13 @@ Generate the best report possible with available information.`,
           </CardContent>
         </Card>
 
-        {/* Technician Notes */}
-        <Card className="border-0 shadow-sm">
+        {/* Technician Notes - Always Visible */}
+        <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Technician Notes</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Technician Notes
+              <Badge variant="outline" className="text-xs font-normal">Keep adding notes as you work</Badge>
+            </CardTitle>
             <Button
               size="sm"
               variant="outline"
@@ -372,18 +385,19 @@ Generate the best report possible with available information.`,
             <Textarea 
               value={formData.technician_notes}
               onChange={(e) => handleChange('technician_notes', e.target.value)}
-              placeholder="Quick field notes: what you found, what you did, parts used, etc. Click AI Derive to convert to formal diagnostic and work performed sections..."
-              rows={6}
+              placeholder="Keep adding notes as you work: observations, measurements, parts used, tests performed, etc. AI will consider ALL notes when compiling the report..."
+              rows={8}
+              className="font-mono text-sm"
             />
             <p className="text-xs text-slate-500 mt-2">
-              💡 Type informal notes here, then click AI Compile to generate structured report sections
+              💡 Add notes continuously. Click AI Compile anytime to update report sections based on ALL accumulated notes
             </p>
             {aiSuggestions && aiSuggestions.length > 0 && (
               <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 mb-2">✓ Report generated! Additional info would help:</p>
+                    <p className="text-sm font-medium text-blue-900 mb-2">✓ Report compiled! Additional info would help:</p>
                     <ul className="space-y-1 text-sm text-blue-800">
                       {aiSuggestions.map((suggestion, idx) => (
                         <li key={idx} className="flex items-start gap-2">
@@ -393,7 +407,7 @@ Generate the best report possible with available information.`,
                       ))}
                     </ul>
                     <p className="text-xs text-blue-700 mt-2">
-                      Report sections populated below. Add suggested details and re-run AI to improve.
+                      Report sections updated below. Add more notes and re-compile to refine.
                     </p>
                   </div>
                 </div>
