@@ -89,7 +89,11 @@ Current Information:
 
 ALWAYS provide:
 1. work_performed - description based on ALL notes
-2. billable_service_items - break down work into distinct billable segments with descriptions and estimated hours
+2. billable_service_items - break down work into distinct billable segments. IMPORTANT: Combine related operations on the SAME line:
+   - "Remove and reinstall hydraulic pump" (not separate lines)
+   - "Remove and replace damaged seal" (combines for damaged parts)
+   - "Remove, repair, and reinstall component" (all steps together)
+   Use combined descriptions to reduce line count whenever removal and reinstallation go together.
 
 SELF-AUDIT: Verify all tech notes considered and work performed aligns with all findings mentioned.
 

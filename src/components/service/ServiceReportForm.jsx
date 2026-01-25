@@ -128,7 +128,11 @@ ALWAYS provide:
 6. step6_measurements - Measurements taken (pressure, voltage, resistance, etc.)
 7. step7_root_cause - Root cause identified and corrective action
 8. work_performed - Detailed description of repairs/work completed
-9. billable_service_items - Break down work into distinct billable segments with descriptions and estimated hours
+9. billable_service_items - Break down work into distinct billable segments. IMPORTANT: Combine related operations on the SAME line to reduce line count:
+   - "Remove and reinstall hydraulic pump" (not separate remove/install lines)
+   - "Remove and replace damaged cylinder seal" (combines remove + replace for damaged part)
+   - "Remove, repair, and reinstall fuel injector" (combines all steps)
+   Use combined descriptions whenever removal and reinstallation go together. Only separate if truly independent tasks.
 
 SELF-AUDIT: Before finalizing, verify:
 - All tech notes have been considered
