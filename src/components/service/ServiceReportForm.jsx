@@ -351,7 +351,7 @@ Generate the best report possible now, while noting what else would help.`,
               className="gap-2"
             >
               <Sparkles className="w-4 h-4" />
-              {aiProcessing ? 'Processing...' : 'AI Derive'}
+              {aiProcessing ? 'Processing...' : 'AI Compile'}
             </Button>
           </CardHeader>
           <CardContent>

@@ -295,7 +295,7 @@ IF additional specific information would help, list in suggested_additional_info
                 className="h-7 text-xs gap-1"
               >
                 <Sparkles className="w-3 h-3" />
-                {aiProcessing ? 'Processing...' : 'AI Derive'}
+                {aiProcessing ? 'Processing...' : 'AI Compile'}
               </Button>
             </div>
             <Textarea 
