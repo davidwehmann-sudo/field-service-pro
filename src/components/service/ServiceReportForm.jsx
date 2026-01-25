@@ -106,7 +106,7 @@ export default function ServiceReportForm({
     try {
       const { base44 } = await import('@/api/base44Client');
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a field service technician documentation assistant. Generate a report based on available information AND identify what additional data would improve it.
+        prompt: `You are a field service technician documentation assistant. Generate a complete service report using the Caterpillar 7-Step Diagnostic Process.
 
 Current Information:
 - Technician Notes: ${formData.technician_notes}
@@ -116,21 +116,29 @@ Current Information:
 - Equipment Hours: ${formData.equipment_hours || 'Not provided'}
 
 ALWAYS provide:
-1. diagnostic_procedure - best diagnostic description based on current info (even if partial)
-2. work_performed - clear description of work done based on current info (even if partial)
-3. billable_service_items - break down the work into distinct billable service segments. Each item should be a specific task/service with a clear description and estimated hours. Examples:
-   - "Initial diagnostic inspection - 1.5 hours"
-   - "Replace hydraulic pump seal - 2.0 hours"
-   - "System pressure test and adjustment - 0.5 hours"
-   - "Clean and lubricate drive components - 1.0 hours"
+1. step1_symptom - Describe the symptom/problem observed
+2. step2_research - Service bulletins, manuals, or prior history consulted
+3. step3_visual_inspection - What was visually inspected (leaks, damage, wear, etc.)
+4. step4_operational_tests - Tests performed (function tests, cycling, etc.)
+5. step5_diagnostic_codes - Error codes retrieved or diagnostic tool results
+6. step6_measurements - Measurements taken (pressure, voltage, resistance, etc.)
+7. step7_root_cause - Root cause identified and corrective action
+8. work_performed - Detailed description of repairs/work completed
+9. billable_service_items - Break down work into distinct billable segments with descriptions and estimated hours
 
-IF additional specific information would significantly improve the report, list it in suggested_additional_info (e.g., "Photo of error code display would help", "Hydraulic pressure reading", "Photo of damaged component").
+IF additional information would significantly improve the report, list it in suggested_additional_info.
 
-Generate the best report possible now, while noting what else would help.`,
+Generate the best report possible with available information.`,
         response_json_schema: {
           type: "object",
           properties: {
-            diagnostic_procedure: { type: "string" },
+            step1_symptom: { type: "string" },
+            step2_research: { type: "string" },
+            step3_visual_inspection: { type: "string" },
+            step4_operational_tests: { type: "string" },
+            step5_diagnostic_codes: { type: "string" },
+            step6_measurements: { type: "string" },
+            step7_root_cause: { type: "string" },
             work_performed: { type: "string" },
             billable_service_items: {
               type: "array",
@@ -154,7 +162,13 @@ Generate the best report possible now, while noting what else would help.`,
         ...prev,
         cat_diagnostic: {
           ...prev.cat_diagnostic,
-          step1_symptom: result.diagnostic_procedure
+          step1_symptom: result.step1_symptom,
+          step2_research: result.step2_research,
+          step3_visual_inspection: result.step3_visual_inspection,
+          step4_operational_tests: result.step4_operational_tests,
+          step5_diagnostic_codes: result.step5_diagnostic_codes,
+          step6_measurements: result.step6_measurements,
+          step7_root_cause: result.step7_root_cause
         },
         work_performed: result.work_performed,
         service_items: result.billable_service_items?.map(item => ({
