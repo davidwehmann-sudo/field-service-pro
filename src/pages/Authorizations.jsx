@@ -134,7 +134,6 @@ export default function Authorizations() {
       toast.error(error.message || 'Failed to create authorization');
     }
   });
-  });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
@@ -176,7 +175,6 @@ export default function Authorizations() {
     onError: (error) => {
       toast.error(error.message || 'Failed to update authorization');
     }
-  });
   });
 
   const deleteMutation = useMutation({
