@@ -185,19 +185,19 @@ export default function PartsOrders() {
     return matchesSearch && matchesStatus && matchesReport;
   });
 
+  const [assignmentType, setAssignmentType] = useState('service_report');
+
+  useEffect(() => {
+    if (editingPart) {
+      setAssignmentType(editingPart.assignment_type || 'service_report');
+    } else {
+      setAssignmentType('service_report');
+    }
+  }, [editingPart]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    
-    // Validate: part must be assigned to something
-    const serviceReportId = formData.get('service_report_id');
-    const customerId = formData.get('customer_id');
-    const ownVehicleId = formData.get('own_vehicle_id');
-    
-    if (!serviceReportId && !customerId && !ownVehicleId) {
-      toast.error('Part must be assigned to a service report, customer, or internal vehicle');
-      return;
-    }
     
     // Get uploaded receipt URL if exists
     const receiptInput = e.target.querySelector('#receipt_url');
@@ -205,10 +205,15 @@ export default function PartsOrders() {
     
     const data = {
       ...Object.fromEntries(formData),
+      assignment_type: assignmentType,
       quantity: parseFloat(formData.get('quantity')) || 1,
       unit_cost: parseFloat(formData.get('unit_cost')) || 0,
       markup_percent: parseFloat(formData.get('markup_percent')) || 25,
-      receipt_url: receiptUrl
+      receipt_url: receiptUrl,
+      // Clear fields that don't apply to this assignment type
+      service_report_id: assignmentType === 'service_report' ? formData.get('service_report_id') : null,
+      customer_id: assignmentType === 'counter_sale' ? formData.get('customer_id') : null,
+      own_vehicle_id: assignmentType === 'internal_vehicle' ? formData.get('own_vehicle_id') : null,
     };
     
     if (editingPart) {
