@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle } from "lucide-react";
+import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
@@ -26,6 +26,9 @@ export default function PartsInventory() {
   const [extractingData, setExtractingData] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [partToDelete, setPartToDelete] = useState(null);
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiFilteredParts, setAiFilteredParts] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -196,7 +199,49 @@ Return the data in the specified JSON format. If you cannot identify something, 
 
   const uniqueManufacturers = [...new Set(inventory.map(p => p.manufacturer).filter(Boolean))].sort();
 
-  const filteredInventory = inventory.filter(part => {
+  const handleAiSearch = async () => {
+    if (!aiQuery.trim()) {
+      setAiFilteredParts(null);
+      return;
+    }
+
+    setAiProcessing(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Given this natural language query about parts: "${aiQuery}"
+
+Available parts inventory:
+${inventory.map(p => `- ${p.part_number || 'N/A'}: ${p.part_description} (${p.manufacturer || 'Unknown'}), Stock: ${p.quantity_on_hand}, Location: ${p.location}`).join('\n')}
+
+Return an array of part IDs that match the query. Consider:
+- Part descriptions, numbers, manufacturers
+- Stock levels (e.g., "out of stock", "low stock", "in stock")
+- Locations (storage, truck_1, truck_2, truck_3, non_stock)
+- Any other relevant criteria
+
+Return ONLY the IDs of matching parts.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            part_ids: {
+              type: "array",
+              items: { type: "string" }
+            }
+          }
+        }
+      });
+
+      const matchedParts = inventory.filter(p => response.part_ids.includes(p.id));
+      setAiFilteredParts(matchedParts);
+      toast.success(`Found ${matchedParts.length} parts`);
+    } catch (error) {
+      toast.error('AI search failed');
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
+  const filteredInventory = (aiFilteredParts || inventory).filter(part => {
     const matchesSearch = 
       part.part_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       part.part_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -236,7 +281,7 @@ Return the data in the specified JSON format. If you cannot identify something, 
       </div>
 
       <div className="space-y-4">
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
@@ -246,6 +291,50 @@ Return the data in the specified JSON format. If you cannot identify something, 
               className="pl-9"
             />
           </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-xl border border-purple-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-purple-600" />
+            <Label className="text-sm font-medium text-purple-900">AI Smart Search</Label>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Try: 'filters for Caterpillar' or 'low stock items on Truck 1'"
+              value={aiQuery}
+              onChange={(e) => setAiQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAiSearch()}
+              className="bg-white"
+            />
+            <Button 
+              onClick={handleAiSearch}
+              disabled={aiProcessing || !aiQuery.trim()}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {aiProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+            </Button>
+            {aiFilteredParts && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setAiFilteredParts(null);
+                  setAiQuery('');
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          {aiFilteredParts && (
+            <p className="text-xs text-purple-700 mt-2">
+              AI found {aiFilteredParts.length} matching parts
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
