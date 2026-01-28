@@ -20,7 +20,8 @@ import {
   Trash2,
   DollarSign,
   Hash,
-  Printer
+  Printer,
+  Settings
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import { format } from 'date-fns';
@@ -28,7 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import { toast } from "sonner";
 import { calculatePartsMarkup, calculatePartTotal } from '../components/parts/partsMarkupCalculator';
-import { Settings } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function PartsOrders() {
   const [search, setSearch] = useState('');
@@ -85,13 +86,14 @@ export default function PartsOrders() {
 
   const { data: settings = [] } = useQuery({
     queryKey: ['markupSettings'],
-    queryFn: () => base44.entities.MarkupSettings.list(),
-    onSuccess: (data) => {
-      if (data && data.length > 0) {
-        setMarkupSettings(data[0]);
-      }
-    }
+    queryFn: () => base44.entities.MarkupSettings.list()
   });
+
+  useEffect(() => {
+    if (settings && settings.length > 0) {
+      setMarkupSettings(settings[0]);
+    }
+  }, [settings]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PartsOrder.create(data),
@@ -760,28 +762,50 @@ export default function PartsOrders() {
             </div>
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <p className="text-sm font-medium text-blue-900 mb-2">Example Results:</p>
-              <div className="space-y-1 text-xs text-blue-800">
-                <p>$25 part → {calculatePartsMarkup(25, { 
-                  max_markup: markupSettings.max_markup, 
-                  min_markup: markupSettings.min_markup, 
-                  decay_rate: markupSettings.decay_rate 
-                })}% markup</p>
-                <p>$100 part → {calculatePartsMarkup(100, { 
-                  max_markup: markupSettings.max_markup, 
-                  min_markup: markupSettings.min_markup, 
-                  decay_rate: markupSettings.decay_rate 
-                })}% markup</p>
-                <p>$500 part → {calculatePartsMarkup(500, { 
-                  max_markup: markupSettings.max_markup, 
-                  min_markup: markupSettings.min_markup, 
-                  decay_rate: markupSettings.decay_rate 
-                })}% markup</p>
-                <p>$1500 part → {calculatePartsMarkup(1500, { 
-                  max_markup: markupSettings.max_markup, 
-                  min_markup: markupSettings.min_markup, 
-                  decay_rate: markupSettings.decay_rate 
-                })}% markup</p>
+              <p className="text-sm font-medium text-blue-900 mb-2">Markup Curve Preview:</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart
+                  data={[0, 25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000].map(cost => ({
+                    cost,
+                    markup: calculatePartsMarkup(cost, {
+                      max_markup: markupSettings.max_markup,
+                      min_markup: markupSettings.min_markup,
+                      decay_rate: markupSettings.decay_rate
+                    })
+                  }))}
+                  margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
+                  <XAxis 
+                    dataKey="cost" 
+                    stroke="#64748b" 
+                    fontSize={10}
+                    tickFormatter={(value) => `$${value}`}
+                  />
+                  <YAxis 
+                    stroke="#64748b" 
+                    fontSize={10}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value) => `${value}% markup`}
+                    labelFormatter={(label) => `$${label} part`}
+                    contentStyle={{ fontSize: '12px' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="markup" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-2 space-y-1 text-xs text-blue-800">
+                <p>$25 → {calculatePartsMarkup(25, markupSettings)}%</p>
+                <p>$100 → {calculatePartsMarkup(100, markupSettings)}%</p>
+                <p>$500 → {calculatePartsMarkup(500, markupSettings)}%</p>
+                <p>$1500 → {calculatePartsMarkup(1500, markupSettings)}%</p>
               </div>
             </div>
 
