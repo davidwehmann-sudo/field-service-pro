@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
@@ -118,33 +118,40 @@ export default function ServiceReports() {
     }
   });
 
-  const getCustomerName = (customerId) => {
+  const getCustomerName = useCallback((customerId) => {
     const customer = customers.find(c => c.id === customerId);
     return customer?.company_name || 'Unknown Customer';
-  };
+  }, [customers]);
 
-  const uniqueEquipmentTypes = [...new Set(reports.map(r => r.equipment_type).filter(Boolean))].sort();
+  const uniqueEquipmentTypes = useMemo(() => 
+    [...new Set(reports.map(r => r.equipment_type).filter(Boolean))].sort(),
+    [reports]
+  );
 
-  const filteredReports = reports.filter(r => {
-    const matchesSearch = 
-      getCustomerName(r.customer_id).toLowerCase().includes(search.toLowerCase()) ||
-      r.equipment_type?.toLowerCase().includes(search.toLowerCase()) ||
-      r.equipment_make?.toLowerCase().includes(search.toLowerCase()) ||
-      r.equipment_serial?.toLowerCase().includes(search.toLowerCase()) ||
-      r.complaint?.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    const matchesCustomer = customerFilter === 'all' || r.customer_id === customerFilter;
-    const matchesEquipment = equipmentFilter === 'all' || r.equipment_type === equipmentFilter;
-    
-    const matchesDateRange = (!startDate || !endDate) || (
-      r.service_date && 
-      new Date(r.service_date) >= new Date(startDate) && 
-      new Date(r.service_date) <= new Date(endDate)
-    );
-    
-    return matchesSearch && matchesStatus && matchesCustomer && matchesEquipment && matchesDateRange;
-  });
+  const filteredReports = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return reports.filter(r => {
+      const matchesSearch = !search || (
+        getCustomerName(r.customer_id).toLowerCase().includes(lowerSearch) ||
+        r.equipment_type?.toLowerCase().includes(lowerSearch) ||
+        r.equipment_make?.toLowerCase().includes(lowerSearch) ||
+        r.equipment_serial?.toLowerCase().includes(lowerSearch) ||
+        r.complaint?.toLowerCase().includes(lowerSearch)
+      );
+      
+      const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+      const matchesCustomer = customerFilter === 'all' || r.customer_id === customerFilter;
+      const matchesEquipment = equipmentFilter === 'all' || r.equipment_type === equipmentFilter;
+      
+      const matchesDateRange = (!startDate || !endDate) || (
+        r.service_date && 
+        new Date(r.service_date) >= new Date(startDate) && 
+        new Date(r.service_date) <= new Date(endDate)
+      );
+      
+      return matchesSearch && matchesStatus && matchesCustomer && matchesEquipment && matchesDateRange;
+    });
+  }, [reports, search, statusFilter, customerFilter, equipmentFilter, startDate, endDate, getCustomerName]);
 
   const handleSave = (data) => {
     if (editingReport?.id) {

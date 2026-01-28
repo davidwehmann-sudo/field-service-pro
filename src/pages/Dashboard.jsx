@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -63,18 +63,22 @@ export default function Dashboard() {
 
   const isLoading = loadingReports || loadingInvoices || loadingParts;
 
-  // Calculate stats
-  const draftReports = serviceReports.filter(r => r.status === 'draft').length;
-  const unpaidInvoices = invoices.filter(i => i.status !== 'paid');
-  const unpaidTotal = unpaidInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
-  const pendingParts = partsOrders.filter(p => p.status === 'needed' || p.status === 'ordered').length;
+  // Calculate stats with memoization
+  const stats = useMemo(() => {
+    const draftReports = serviceReports.filter(r => r.status === 'draft').length;
+    const unpaidInvoices = invoices.filter(i => i.status !== 'paid');
+    const unpaidTotal = unpaidInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
+    const pendingParts = partsOrders.filter(p => p.status === 'needed' || p.status === 'ordered').length;
+    
+    return { draftReports, unpaidInvoices: unpaidInvoices.length, unpaidTotal, pendingParts };
+  }, [serviceReports, invoices, partsOrders]);
 
-  const recentReports = serviceReports.slice(0, 5);
+  const recentReports = useMemo(() => serviceReports.slice(0, 5), [serviceReports]);
 
-  const getCustomerName = (customerId) => {
+  const getCustomerName = useCallback((customerId) => {
     const customer = customers.find(c => c.id === customerId);
     return customer?.company_name || 'Unknown';
-  };
+  }, [customers]);
 
   const statusColors = {
     draft: "bg-slate-100 text-slate-700",
@@ -119,21 +123,21 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard 
             title="Draft Reports" 
-            value={draftReports}
+            value={stats.draftReports}
             subtitle="Need completion"
             icon={FileText}
             color="orange"
           />
           <StatsCard 
             title="Unpaid Invoices" 
-            value={`$${unpaidTotal.toLocaleString()}`}
-            subtitle={`${unpaidInvoices.length} invoices`}
+            value={`$${stats.unpaidTotal.toLocaleString()}`}
+            subtitle={`${stats.unpaidInvoices} invoices`}
             icon={DollarSign}
             color="green"
           />
           <StatsCard 
             title="Pending Parts" 
-            value={pendingParts}
+            value={stats.pendingParts}
             subtitle="Orders to track"
             icon={Package}
             color="purple"

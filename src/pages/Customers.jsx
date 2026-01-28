@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,10 +90,13 @@ export default function Customers() {
     }
   });
 
-  const filteredCustomers = customers.filter(c => 
-    c.company_name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.contact_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCustomers = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return customers.filter(c => 
+      c.company_name?.toLowerCase().includes(lowerSearch) ||
+      c.contact_name?.toLowerCase().includes(lowerSearch)
+    );
+  }, [customers, search]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

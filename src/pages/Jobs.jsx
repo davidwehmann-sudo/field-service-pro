@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
@@ -190,23 +190,25 @@ export default function Jobs() {
     );
   }, [jobsData, authorizations, serviceReports, partsOrders]);
 
-  const getCustomerName = (customerId) => {
+  const getCustomerName = useCallback((customerId) => {
     const customer = customers.find(c => c.id === customerId);
     return customer?.company_name || 'Unknown';
-  };
+  }, [customers]);
 
-  const filteredJobs = jobs.filter(job => {
-    const customerName = getCustomerName(job.customer_id).toLowerCase();
+  const filteredJobs = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    const srMatch = job.serviceReport?.equipment_type?.toLowerCase().includes(query) ||
-                    job.serviceReport?.complaint?.toLowerCase().includes(query);
-    const authMatch = job.authorization?.nature_of_service?.toLowerCase().includes(query);
-    const partsMatch = job.partsOrders.some(po => 
-      po.part_description?.toLowerCase().includes(query)
-    );
-    
-    return customerName.includes(query) || srMatch || authMatch || partsMatch;
-  });
+    return jobs.filter(job => {
+      const customerName = getCustomerName(job.customer_id).toLowerCase();
+      const srMatch = job.serviceReport?.equipment_type?.toLowerCase().includes(query) ||
+                      job.serviceReport?.complaint?.toLowerCase().includes(query);
+      const authMatch = job.authorization?.nature_of_service?.toLowerCase().includes(query);
+      const partsMatch = job.partsOrders.some(po => 
+        po.part_description?.toLowerCase().includes(query)
+      );
+      
+      return customerName.includes(query) || srMatch || authMatch || partsMatch;
+    });
+  }, [jobs, searchQuery, getCustomerName]);
 
   const getJobStatus = (job) => {
     if (job.serviceReport) {

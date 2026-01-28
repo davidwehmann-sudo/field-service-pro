@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
@@ -163,33 +163,37 @@ export default function Invoices() {
     }
   });
 
-  const getCustomerName = (customerId) => {
+  const getCustomerName = useCallback((customerId) => {
     const customer = customers.find(c => c.id === customerId);
     return customer?.company_name || 'Unknown Customer';
-  };
+  }, [customers]);
 
-  const generateInvoiceNumber = () => {
+  const generateInvoiceNumber = useCallback(() => {
     const prefix = 'INV';
     const date = format(new Date(), 'yyyyMMdd');
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `${prefix}-${date}-${random}`;
-  };
+  }, []);
 
-  const filteredInvoices = invoices.filter(i => {
-    const matchesSearch = 
-      getCustomerName(i.customer_id).toLowerCase().includes(search.toLowerCase()) ||
-      i.invoice_number?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || i.status === statusFilter;
-    const matchesCustomer = customerFilter === 'all' || i.customer_id === customerFilter;
-    
-    const matchesDateRange = (!startDate || !endDate) || (
-      i.invoice_date && 
-      new Date(i.invoice_date) >= new Date(startDate) && 
-      new Date(i.invoice_date) <= new Date(endDate)
-    );
-    
-    return matchesSearch && matchesStatus && matchesCustomer && matchesDateRange;
-  });
+  const filteredInvoices = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return invoices.filter(i => {
+      const matchesSearch = !search || (
+        getCustomerName(i.customer_id).toLowerCase().includes(lowerSearch) ||
+        i.invoice_number?.toLowerCase().includes(lowerSearch)
+      );
+      const matchesStatus = statusFilter === 'all' || i.status === statusFilter;
+      const matchesCustomer = customerFilter === 'all' || i.customer_id === customerFilter;
+      
+      const matchesDateRange = (!startDate || !endDate) || (
+        i.invoice_date && 
+        new Date(i.invoice_date) >= new Date(startDate) && 
+        new Date(i.invoice_date) <= new Date(endDate)
+      );
+      
+      return matchesSearch && matchesStatus && matchesCustomer && matchesDateRange;
+    });
+  }, [invoices, search, statusFilter, customerFilter, startDate, endDate, getCustomerName]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
