@@ -49,8 +49,17 @@ export default function PartsOrders() {
   const [markupSettings, setMarkupSettings] = useState({ max_markup: 45, min_markup: 12, decay_rate: 200 });
   const [aiQuery, setAiQuery] = useState('');
   const [aiSearching, setAiSearching] = useState(false);
+  const [jobsList, setJobsList] = useState([]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadJobsList = async () => {
+      const fetchedJobs = await base44.entities.Job.list('-created_date');
+      setJobsList(fetchedJobs);
+    };
+    loadJobsList();
+  }, []);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -303,6 +312,7 @@ export default function PartsOrders() {
       unit_cost: parseFloat(formData.get('unit_cost')) || 0,
       markup_percent: parseFloat(formData.get('markup_percent')) || 25,
       receipt_url: receiptUrl,
+      job_id: formData.get('job_id') === 'none' ? null : formData.get('job_id'),
       // Clear fields that don't apply to this assignment type
       service_report_id: assignmentType === 'service_report' ? formData.get('service_report_id') : null,
       customer_id: assignmentType === 'counter_sale' ? formData.get('customer_id') : null,
@@ -789,6 +799,23 @@ If no match possible, return "NO_MATCH".`,
                   <SelectItem value="cash_sale">Cash Sale</SelectItem>
                   <SelectItem value="inventory">Inventory (Stock)</SelectItem>
                   <SelectItem value="internal_vehicle">Internal Vehicle Repair</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Link to Job (Optional)</Label>
+              <Select name="job_id" defaultValue={editingPart?.job_id || 'none'}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None or link to job" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Job Link</SelectItem>
+                  {jobsList.map(job => (
+                    <SelectItem key={job.id} value={job.id}>
+                      {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
