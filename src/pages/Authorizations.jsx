@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Building2, Calendar, DollarSign, Trash2, Mail, ExternalLink, Link2, Printer } from "lucide-react";
+import { Plus, Search, FileText, Building2, Calendar, DollarSign, Trash2, Mail, ExternalLink, Printer } from "lucide-react";
 import GenerateAuthLink from '@/components/authorization/GenerateAuthLink';
 import UploadAuthorizationForm from '@/components/authorization/UploadAuthorizationForm';
 import { Link, useNavigate } from 'react-router-dom';
@@ -59,7 +59,7 @@ export default function Authorizations() {
     loadUser();
   }, [navigate]);
 
-  const handlePrintBlankForm = async () => {
+  const handlePrintBlankForm = useCallback(async () => {
     try {
       const { data } = await base44.functions.invoke('generateBlankAuthorizationPDF');
       const blob = new Blob([data], { type: 'application/pdf' });
@@ -69,7 +69,7 @@ export default function Authorizations() {
     } catch (error) {
       toast.error('Failed to generate form');
     }
-  };
+  }, []);
 
   const { data: authorizations = [], isLoading: authLoading } = useQuery({
     queryKey: ['authorizations'],
@@ -198,14 +198,14 @@ export default function Authorizations() {
     }
   };
 
-  const handleEdit = (auth) => {
+  const handleEdit = useCallback((auth) => {
     setEditingAuth(auth);
     setShowForm(true);
-  };
+  }, []);
 
 
 
-  const handleSendCopy = async (auth) => {
+  const handleSendCopy = useCallback(async (auth) => {
     if (!auth.billing_contact_email) {
       toast.error("No email address on file");
       return;
@@ -265,20 +265,30 @@ Thank you for your business.
     } finally {
       setSendingEmailFor(null);
     }
-  };
+  }, [customers]);
 
-  const getCustomerName = (customerId) => {
-    const customer = customers.find(c => c.id === customerId);
-    return customer?.company_name || 'Unknown';
-  };
+  const customerMap = useMemo(() => {
+    return customers.reduce((map, customer) => {
+      map[customer.id] = customer.company_name || 'Unknown';
+      return map;
+    }, {});
+  }, [customers]);
 
-  const filteredAuths = authorizations.filter(auth => {
-    const customerName = getCustomerName(auth.customer_id).toLowerCase();
+  const getCustomerName = useCallback((customerId) => {
+    return customerMap[customerId] || 'Unknown';
+  }, [customerMap]);
+
+  const filteredAuths = useMemo(() => {
+    if (!searchQuery) return authorizations;
+    
     const query = searchQuery.toLowerCase();
-    return customerName.includes(query) || 
-           auth.billing_contact_name?.toLowerCase().includes(query) ||
-           auth.nature_of_service?.toLowerCase().includes(query);
-  });
+    return authorizations.filter(auth => {
+      const customerName = (customerMap[auth.customer_id] || '').toLowerCase();
+      return customerName.includes(query) || 
+             auth.billing_contact_name?.toLowerCase().includes(query) ||
+             auth.nature_of_service?.toLowerCase().includes(query);
+    });
+  }, [authorizations, searchQuery, customerMap]);
 
   if (showForm) {
     return (
