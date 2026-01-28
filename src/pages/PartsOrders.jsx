@@ -508,7 +508,7 @@ export default function PartsOrders() {
                   onChange={(e) => {
                     const cost = parseFloat(e.target.value) || 0;
                     const markupField = document.getElementById('markup_percent');
-                    if (markupField && !editingPart) {
+                    if (markupField) {
                       markupField.value = calculatePartsMarkup(cost, markupSettings);
                     }
                   }}
