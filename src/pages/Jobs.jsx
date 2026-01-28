@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2 } from "lucide-react";
+import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2, Plus, GripVertical } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { toast } from "sonner";
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
@@ -72,6 +74,22 @@ export default function Jobs() {
     queryFn: () => base44.entities.Job.list('-created_date'),
   });
 
+  const createEmptyJobMutation = useMutation({
+    mutationFn: async (customerId) => {
+      const { data: jobNumberData } = await base44.functions.invoke('generateJobNumber');
+      return base44.entities.Job.create({
+        job_number: jobNumberData.job_number,
+        customer_id: customerId,
+        job_type: 'service',
+        status: 'open'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('New job created');
+    }
+  });
+
   const generateJobNumberMutation = useMutation({
     mutationFn: async (jobId) => {
       const { data: jobNumberData } = await base44.functions.invoke('generateJobNumber');
@@ -82,6 +100,22 @@ export default function Jobs() {
     },
     onSuccess: (jobNumber) => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    }
+  });
+
+  const assignToJobMutation = useMutation({
+    mutationFn: async ({ itemType, itemId, jobId }) => {
+      if (itemType === 'authorization') {
+        await base44.entities.PreRepairAuthorization.update(itemId, { job_id: jobId });
+      } else if (itemType === 'serviceReport') {
+        await base44.entities.ServiceReport.update(itemId, { job_id: jobId });
+      } else if (itemType === 'partsOrder') {
+        await base44.entities.PartsOrder.update(itemId, { job_id: jobId });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs', 'authorizations', 'service-reports', 'parts-orders'] });
+      toast.success('Item assigned to job');
     }
   });
 
@@ -114,95 +148,40 @@ export default function Jobs() {
     }
   });
 
-  // Build unified job view
+  // Build unified job view (only real jobs, no orphans)
   const jobs = React.useMemo(() => {
-    const jobsMap = new Map();
-
-    // Start with Job entities
-    jobsData.forEach(job => {
-      jobsMap.set(job.id, {
+    return jobsData.map(job => {
+      const auth = authorizations.find(a => a.job_id === job.id);
+      const sr = serviceReports.find(s => s.job_id === job.id);
+      const parts = partsOrders.filter(p => p.job_id === job.id);
+      
+      return {
         ...job,
         jobNumber: job.job_number,
         type: job.job_type || 'service',
         date: job.created_date,
-        authorization: null,
-        serviceReport: null,
-        partsOrders: []
-      });
-    });
-
-    // Link authorizations
-    authorizations.forEach(auth => {
-      if (auth.job_id && jobsMap.has(auth.job_id)) {
-        jobsMap.get(auth.job_id).authorization = auth;
-      } else if (!auth.job_id) {
-        // Orphaned authorization - no job yet
-        const tempId = `temp-auth-${auth.id}`;
-        jobsMap.set(tempId, {
-          id: tempId,
-          jobNumber: null,
-          customer_id: auth.customer_id,
-          type: 'service',
-          date: auth.authorization_date || auth.created_date,
-          authorization: auth,
-          serviceReport: null,
-          partsOrders: []
-        });
-      }
-    });
-
-    // Link service reports
-    serviceReports.forEach(sr => {
-      if (sr.job_id && jobsMap.has(sr.job_id)) {
-        jobsMap.get(sr.job_id).serviceReport = sr;
-      } else if (!sr.job_id) {
-        // Orphaned service report
-        const tempId = `temp-sr-${sr.id}`;
-        jobsMap.set(tempId, {
-          id: tempId,
-          jobNumber: null,
-          customer_id: sr.customer_id,
-          type: 'service',
-          date: sr.service_date,
-          authorization: null,
-          serviceReport: sr,
-          partsOrders: []
-        });
-      }
-    });
-
-    // Link parts orders
-    partsOrders.forEach(po => {
-      if (po.job_id && jobsMap.has(po.job_id)) {
-        jobsMap.get(po.job_id).partsOrders.push(po);
-      } else if (!po.job_id) {
-        // Orphaned parts order
-        const tempId = `temp-po-${po.id}`;
-        const existing = Array.from(jobsMap.values()).find(
-          j => j.id.startsWith('temp-po-') && j.customer_id === po.customer_id
-        );
-        
-        if (existing) {
-          existing.partsOrders.push(po);
-        } else {
-          jobsMap.set(tempId, {
-            id: tempId,
-            jobNumber: null,
-            customer_id: po.customer_id,
-            type: 'parts_only',
-            date: po.order_date || po.created_date,
-            authorization: null,
-            serviceReport: null,
-            partsOrders: [po]
-          });
-        }
-      }
-    });
-
-    return Array.from(jobsMap.values()).sort((a, b) => 
-      new Date(b.date) - new Date(a.date)
-    );
+        authorization: auth || null,
+        serviceReport: sr || null,
+        partsOrders: parts
+      };
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [jobsData, authorizations, serviceReports, partsOrders]);
+
+  // Separate orphaned items
+  const orphanedAuths = useMemo(() => 
+    authorizations.filter(a => !a.job_id), 
+    [authorizations]
+  );
+  
+  const orphanedReports = useMemo(() => 
+    serviceReports.filter(sr => !sr.job_id), 
+    [serviceReports]
+  );
+  
+  const orphanedParts = useMemo(() => 
+    partsOrders.filter(po => !po.job_id), 
+    [partsOrders]
+  );
 
   const getCustomerName = useCallback((customerId) => {
     const customer = customers.find(c => c.id === customerId);
@@ -279,29 +258,194 @@ export default function Jobs() {
     });
   };
 
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const { source, destination, draggableId } = result;
+    
+    // Parse draggableId: format is "type-id"
+    const [itemType, itemId] = draggableId.split('-', 2);
+    const jobId = destination.droppableId.replace('job-', '');
+    
+    // Don't do anything if dropped in the same place
+    if (source.droppableId === destination.droppableId) return;
+    
+    assignToJobMutation.mutate({ itemType, itemId, jobId });
+  };
+
+  const handleCreateEmptyJob = async () => {
+    if (customers.length === 0) {
+      toast.error('Please create a customer first');
+      return;
+    }
+    
+    // Use first customer or prompt for selection
+    const customerId = customers[0].id;
+    createEmptyJobMutation.mutate(customerId);
+  };
+
+  const hasOrphans = orphanedAuths.length > 0 || orphanedReports.length > 0 || orphanedParts.length > 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900">Jobs Overview</h1>
-          <p className="text-slate-500">Unified view of authorizations, service work, and parts</p>
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-slate-900">Jobs Overview</h1>
+            <p className="text-slate-500">Unified view of authorizations, service work, and parts</p>
+          </div>
+          <Button 
+            onClick={handleCreateEmptyJob}
+            className="bg-amber-500 hover:bg-amber-600"
+            disabled={createEmptyJobMutation.isPending}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Empty Job
+          </Button>
         </div>
-      </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by customer, equipment, or parts..."
-          className="pl-10"
-        />
-      </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by customer, equipment, or parts..."
+            className="pl-10"
+          />
+        </div>
 
-      <div className="grid gap-4">
-        {filteredJobs.map((job) => (
-          <Card key={job.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-5">
+        {/* Orphaned Items Section */}
+        {hasOrphans && (
+          <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-4">
+            <h2 className="text-lg font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              Unassigned Items - Drag to Job
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Orphaned Authorizations */}
+              {orphanedAuths.length > 0 && (
+                <Droppable droppableId="orphan-auths" isDropDisabled={true}>
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                      <h3 className="text-sm font-medium text-slate-600 mb-2">Authorizations ({orphanedAuths.length})</h3>
+                      {orphanedAuths.map((auth, index) => (
+                        <Draggable key={auth.id} draggableId={`authorization-${auth.id}`} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-amber-400' : 'border-slate-200'}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <GripVertical className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-900 truncate">
+                                    {getCustomerName(auth.customer_id)}
+                                  </p>
+                                  <p className="text-xs text-slate-500 truncate">
+                                    {auth.service_type?.replace(/_/g, ' ')}
+                                  </p>
+                                </div>
+                                <ClipboardCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              )}
+
+              {/* Orphaned Service Reports */}
+              {orphanedReports.length > 0 && (
+                <Droppable droppableId="orphan-reports" isDropDisabled={true}>
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                      <h3 className="text-sm font-medium text-slate-600 mb-2">Service Reports ({orphanedReports.length})</h3>
+                      {orphanedReports.map((sr, index) => (
+                        <Draggable key={sr.id} draggableId={`serviceReport-${sr.id}`} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-400' : 'border-slate-200'}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <GripVertical className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-900 truncate">
+                                    {getCustomerName(sr.customer_id)}
+                                  </p>
+                                  <p className="text-xs text-slate-500 truncate">
+                                    {sr.equipment_type}
+                                  </p>
+                                </div>
+                                <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              )}
+
+              {/* Orphaned Parts */}
+              {orphanedParts.length > 0 && (
+                <Droppable droppableId="orphan-parts" isDropDisabled={true}>
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                      <h3 className="text-sm font-medium text-slate-600 mb-2">Parts Orders ({orphanedParts.length})</h3>
+                      {orphanedParts.map((po, index) => (
+                        <Draggable key={po.id} draggableId={`partsOrder-${po.id}`} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-purple-400' : 'border-slate-200'}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <GripVertical className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-900 truncate">
+                                    {po.part_description}
+                                  </p>
+                                  <p className="text-xs text-slate-500 truncate">
+                                    {po.supplier || 'No supplier'}
+                                  </p>
+                                </div>
+                                <Package className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-4">
+          {filteredJobs.map((job) => (
+            <Droppable key={job.id} droppableId={`job-${job.id}`}>
+              {(provided, snapshot) => (
+                <Card 
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`hover:shadow-md transition-all ${snapshot.isDraggingOver ? 'ring-2 ring-amber-400 bg-amber-50' : ''}`}
+                >
+                  <CardContent className="p-5">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
                   {job.type === 'service_report' ? (
@@ -449,80 +593,84 @@ export default function Jobs() {
                         </p>
                       )}
                     </Link>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  {provided.placeholder}
+                </CardContent>
+              </Card>
+            )}
+          </Droppable>
         ))}
 
-        {filteredJobs.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <FileText className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-              <p className="text-slate-500">
-                {searchQuery ? 'No jobs found' : 'No jobs yet'}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+          {filteredJobs.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-12">
+                <FileText className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-500">
+                  {searchQuery ? 'No jobs found' : 'No jobs yet'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
+    </DragDropContext>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteModal} onOpenChange={(open) => !open && setDeleteModal(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {isJobActive(deleteModal?.status) && (
-                <AlertCircle className="w-5 h-5 text-red-500" />
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deleteModal} onOpenChange={(open) => !open && setDeleteModal(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {isJobActive(deleteModal?.status) && (
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                )}
+                Delete Job?
+              </DialogTitle>
+              <DialogDescription>
+                {isJobActive(deleteModal?.status) 
+                  ? "⚠️ This job is currently active. Deleting it will remove all related authorization, service report, and parts records."
+                  : "This will permanently delete this job and all its related records:"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2 text-sm text-slate-600">
+              {deleteModal?.authorization && (
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4 text-amber-600" />
+                  <span>Pre-Repair Authorization ({deleteModal.authorization.status})</span>
+                </div>
               )}
-              Delete Job?
-            </DialogTitle>
-            <DialogDescription>
-              {isJobActive(deleteModal?.status) 
-                ? "⚠️ This job is currently active. Deleting it will remove all related authorization, service report, and parts records."
-                : "This will permanently delete this job and all its related records:"}
-            </DialogDescription>
-          </DialogHeader>
+              {deleteModal?.serviceReport && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span>Service Report ({deleteModal.serviceReport.status})</span>
+                </div>
+              )}
+              {deleteModal?.partsOrders?.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-amber-600" />
+                  <span>{deleteModal.partsOrders.length} Parts Order{deleteModal.partsOrders.length !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+            </div>
 
-          <div className="space-y-2 text-sm text-slate-600">
-            {deleteModal?.authorization && (
-              <div className="flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-amber-600" />
-                <span>Pre-Repair Authorization ({deleteModal.authorization.status})</span>
-              </div>
-            )}
-            {deleteModal?.serviceReport && (
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span>Service Report ({deleteModal.serviceReport.status})</span>
-              </div>
-            )}
-            {deleteModal?.partsOrders?.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-amber-600" />
-                <span>{deleteModal.partsOrders.length} Parts Order{deleteModal.partsOrders.length !== 1 ? 's' : ''}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3 justify-end pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteModal(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteJobMutation.mutate(deleteModal.job.id)}
-              disabled={deleteJobMutation.isPending}
-            >
-              {deleteJobMutation.isPending ? 'Deleting...' : 'Delete Job'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+            <div className="flex gap-3 justify-end pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteJobMutation.mutate(deleteModal.job.id)}
+                disabled={deleteJobMutation.isPending}
+              >
+                {deleteJobMutation.isPending ? 'Deleting...' : 'Delete Job'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
