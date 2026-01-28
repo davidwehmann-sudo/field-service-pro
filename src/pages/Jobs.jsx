@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
+  open: "bg-slate-100 text-slate-700",
   authorized: "bg-green-100 text-green-700",
   service_started: "bg-blue-100 text-blue-700",
   completed: "bg-purple-100 text-purple-700",
@@ -217,7 +218,7 @@ export default function Jobs() {
     if (job.authorization) {
       return job.authorization.status;
     }
-    return 'draft';
+    return job.status || 'open';
   };
 
   const getJobTitle = (job) => {
