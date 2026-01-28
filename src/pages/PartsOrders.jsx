@@ -189,6 +189,16 @@ export default function PartsOrders() {
     e.preventDefault();
     const formData = new FormData(e.target);
     
+    // Validate: part must be assigned to something
+    const serviceReportId = formData.get('service_report_id');
+    const customerId = formData.get('customer_id');
+    const ownVehicleId = formData.get('own_vehicle_id');
+    
+    if (!serviceReportId && !customerId && !ownVehicleId) {
+      toast.error('Part must be assigned to a service report, customer, or internal vehicle');
+      return;
+    }
+    
     // Get uploaded receipt URL if exists
     const receiptInput = e.target.querySelector('#receipt_url');
     const receiptUrl = receiptInput?.getAttribute('data-url') || editingPart?.receipt_url || '';
@@ -554,11 +564,16 @@ export default function PartsOrders() {
               </div>
             </div>
 
+            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+              <p className="text-sm font-medium text-amber-900 mb-2">Part Assignment (Required)</p>
+              <p className="text-xs text-amber-700">Must assign to service report, customer, or internal vehicle</p>
+            </div>
+
             <div>
               <Label>Service Report</Label>
               <Select name="service_report_id" defaultValue={editingPart?.service_report_id || ''}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Link to service report (optional)" />
+                  <SelectValue placeholder="Link to service report" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>
@@ -572,12 +587,13 @@ export default function PartsOrders() {
             </div>
 
             <div>
-              <Label>Customer</Label>
+              <Label>Customer (Counter Sales)</Label>
               <Select name="customer_id" defaultValue={editingPart?.customer_id || ''}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select customer (optional)" />
+                  <SelectValue placeholder="Select customer for counter sale" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.company_name}
@@ -591,7 +607,7 @@ export default function PartsOrders() {
               <Label>Our Vehicle (Internal Repair)</Label>
               <Select name="own_vehicle_id" defaultValue={editingPart?.own_vehicle_id || ''}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select vehicle (optional)" />
+                  <SelectValue placeholder="Select vehicle for internal repair" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>
