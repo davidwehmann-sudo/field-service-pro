@@ -57,7 +57,7 @@ export default function Authorizations() {
       }
     };
     loadUser();
-  }, [navigate, queryClient]);
+  }, [navigate]);
 
   const handlePrintBlankForm = async () => {
     try {
@@ -124,12 +124,16 @@ export default function Authorizations() {
       return auth;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['authorizations']);
-      queryClient.invalidateQueries(['jobs']);
+      queryClient.invalidateQueries({ queryKey: ['authorizations'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowForm(false);
       setEditingAuth(null);
       toast.success("Job created with authorization");
     },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create authorization');
+    }
+  });
   });
 
   const updateMutation = useMutation({
@@ -163,20 +167,29 @@ export default function Authorizations() {
       return auth;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['authorizations']);
-      queryClient.invalidateQueries(['jobs']);
+      queryClient.invalidateQueries({ queryKey: ['authorizations'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowForm(false);
       setEditingAuth(null);
       toast.success("Authorization updated");
     },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update authorization');
+    }
+  });
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.PreRepairAuthorization.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['authorizations']);
+      queryClient.invalidateQueries({ queryKey: ['authorizations'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setAuthToDelete(null);
       toast.success("Authorization deleted");
     },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete authorization');
+    }
   });
 
   const handleSave = (data) => {
@@ -192,11 +205,7 @@ export default function Authorizations() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Delete this authorization?')) {
-      deleteMutation.mutate(id);
-    }
-  };
+
 
   const handleSendCopy = async (auth) => {
     if (!auth.billing_contact_email) {
@@ -308,7 +317,7 @@ Thank you for your business.
           </Button>
           <UploadAuthorizationForm 
             customers={customers}
-            onAuthCreated={() => queryClient.invalidateQueries(['authorizations'])}
+            onAuthCreated={() => queryClient.invalidateQueries({ queryKey: ['authorizations'] })}
           />
           <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
             <Plus className="w-4 h-4 mr-2" />
@@ -373,18 +382,10 @@ Thank you for your business.
                       </div>
                       
                       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        {auth.status === 'draft' && (
-                          <GenerateAuthLink 
-                            authorization={auth}
-                            customer={customers.find(c => c.id === auth.customer_id)}
-                          />
-                        )}
-                        {(auth.status === 'authorized' || auth.status === 'service_started' || auth.status === 'completed') && (
-                          <GenerateAuthLink 
-                            authorization={auth}
-                            customer={customers.find(c => c.id === auth.customer_id)}
-                          />
-                        )}
+                        <GenerateAuthLink 
+                          authorization={auth}
+                          customer={customers.find(c => c.id === auth.customer_id)}
+                        />
                         {auth.status === 'authorized' && auth.billing_contact_email && (
                           <Button
                             variant="ghost"

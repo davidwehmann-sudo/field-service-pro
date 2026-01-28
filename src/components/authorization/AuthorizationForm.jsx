@@ -88,10 +88,11 @@ export default function AuthorizationForm({
 
     setIsEstimatingCost(true);
     try {
+      const serviceTypeLabel = SERVICE_TYPES.find(t => t.value === formData.service_type)?.label || formData.service_type;
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a diesel field service technician estimating the cost of a repair job.
 
-Service Type: ${serviceTypeLabels[formData.service_type]}
+Service Type: ${serviceTypeLabel}
 Equipment: ${formData.equipment_info || 'Not specified'}
 Service Description: ${formData.nature_of_service}
 
