@@ -446,18 +446,18 @@ export default function Jobs() {
                   className={`hover:shadow-md transition-all ${snapshot.isDraggingOver ? 'ring-2 ring-amber-400 bg-amber-50' : ''}`}
                 >
                   <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  {job.type === 'service_report' ? (
-                    <FileText className="w-6 h-6 text-amber-600" />
-                  ) : job.type === 'authorization' ? (
-                    <ClipboardCheck className="w-6 h-6 text-amber-600" />
-                  ) : (
-                    <Package className="w-6 h-6 text-amber-600" />
-                  )}
-                </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        {job.type === 'service_report' ? (
+                          <FileText className="w-6 h-6 text-amber-600" />
+                        ) : job.type === 'authorization' ? (
+                          <ClipboardCheck className="w-6 h-6 text-amber-600" />
+                        ) : (
+                          <Package className="w-6 h-6 text-amber-600" />
+                        )}
+                      </div>
 
-                <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -591,8 +591,9 @@ export default function Jobs() {
                         <p className="text-xs text-blue-600 flex items-center gap-1">
                           Add Parts <ChevronRight className="w-3 h-3" />
                         </p>
-                      )}
-                    </Link>
+                        )}
+                      </Link>
+                    </div>
                   </div>
                 </div>
                 {provided.placeholder}
