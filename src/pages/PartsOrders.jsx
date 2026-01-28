@@ -96,7 +96,28 @@ export default function PartsOrders() {
   }, [settings]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.PartsOrder.create(data),
+    mutationFn: async (data) => {
+      // Auto-create catalog entry if part has a part number
+      if (data.part_number) {
+        const existing = await base44.entities.PartsInventory.filter({
+          part_number: data.part_number
+        });
+        
+        if (existing.length === 0) {
+          await base44.entities.PartsInventory.create({
+            part_number: data.part_number,
+            part_description: data.part_description,
+            manufacturer: data.supplier,
+            unit_cost: data.unit_cost,
+            location: 'non_stock',
+            quantity_on_hand: 0,
+            notes: 'Auto-added from parts order'
+          });
+        }
+      }
+      
+      return base44.entities.PartsOrder.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partsOrders'] });
       setShowForm(false);
@@ -105,7 +126,28 @@ export default function PartsOrders() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.PartsOrder.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      // Auto-create catalog entry if part number is updated
+      if (data.part_number) {
+        const existing = await base44.entities.PartsInventory.filter({
+          part_number: data.part_number
+        });
+        
+        if (existing.length === 0) {
+          await base44.entities.PartsInventory.create({
+            part_number: data.part_number,
+            part_description: data.part_description,
+            manufacturer: data.supplier,
+            unit_cost: data.unit_cost,
+            location: 'non_stock',
+            quantity_on_hand: 0,
+            notes: 'Auto-added from parts order'
+          });
+        }
+      }
+      
+      return base44.entities.PartsOrder.update(id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partsOrders'] });
       setShowForm(false);
