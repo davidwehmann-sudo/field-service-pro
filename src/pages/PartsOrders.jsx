@@ -372,7 +372,8 @@ Return ONLY the part descriptions that match (exact text from the list above), o
         add_context_from_internet: false
       });
 
-      const resultText = typeof response === 'string' ? response : response?.text || '';
+      // InvokeLLM returns a plain string when no JSON schema is specified
+      const resultText = response || '';
       
       if (resultText.includes('NO_MATCHES') || !resultText.trim()) {
         toast.error('No matching parts found');
@@ -381,7 +382,7 @@ Return ONLY the part descriptions that match (exact text from the list above), o
         // Extract matched part descriptions
         const matches = resultText.split('\n')
           .map(line => line.replace(/^[-•*]\s*/, '').trim())
-          .filter(line => line.length > 0);
+          .filter(line => line.length > 0 && line !== 'NO_MATCHES');
         
         if (matches.length > 0) {
           // Use the first matched description as search
@@ -392,6 +393,7 @@ Return ONLY the part descriptions that match (exact text from the list above), o
         }
       }
     } catch (error) {
+      console.error('AI search error:', error);
       toast.error('AI search failed');
     } finally {
       setAiSearching(false);
