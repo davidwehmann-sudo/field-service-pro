@@ -111,10 +111,17 @@ export default function Jobs() {
       } else if (itemType === 'serviceReport') {
         await base44.entities.ServiceReport.update(itemId, { job_id: jobId });
       } else if (itemType === 'partsOrder') {
-        // For parts orders, preserve all existing fields
-        const existingParts = partsOrders.filter(p => p.id === itemId);
-        if (existingParts.length > 0) {
-          const { id, created_date, updated_date, created_by, ...partData } = existingParts[0];
+        // Fetch the part fresh from the API to ensure we have all current data
+        const freshParts = await base44.entities.PartsOrder.filter({ id: itemId });
+        if (freshParts.length > 0) {
+          const part = freshParts[0];
+          const { id, created_date, updated_date, created_by, ...partData } = part;
+          
+          // Ensure required fields are present
+          if (!partData.assignment_type) {
+            throw new Error('Part is missing assignment_type field');
+          }
+          
           await base44.entities.PartsOrder.update(itemId, {
             ...partData,
             job_id: jobId
@@ -128,6 +135,9 @@ export default function Jobs() {
       queryClient.invalidateQueries(['service-reports']);
       queryClient.invalidateQueries(['parts-orders']);
       toast.success('Item assigned to job');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to assign item');
     }
   });
 
