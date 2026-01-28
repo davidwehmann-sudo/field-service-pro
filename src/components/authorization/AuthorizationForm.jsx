@@ -30,7 +30,18 @@ export default function AuthorizationForm({
   onBack,
   isSaving 
 }) {
+  const [jobs, setJobs] = React.useState([]);
+
+  React.useEffect(() => {
+    const loadJobs = async () => {
+      const jobsList = await base44.entities.Job.list('-created_date');
+      setJobs(jobsList);
+    };
+    loadJobs();
+  }, []);
+
   const [formData, setFormData] = useState({
+    job_id: '',
     customer_id: '',
     billing_contact_name: '',
     billing_contact_company: '',
@@ -118,9 +129,9 @@ Be realistic and professional. This is an estimate that will be shown to a custo
   };
 
   const handleSave = async (status = 'draft') => {
-    // Generate job number if new authorization
+    // Generate job number if new authorization and no job selected
     let jobId = formData.job_id;
-    if (!authorization?.id) {
+    if (!authorization?.id && !jobId) {
       try {
         const jobNumberResult = await base44.functions.invoke('generateJobNumber', {});
         const jobNumber = jobNumberResult.data.job_number;
@@ -275,6 +286,26 @@ Thank you for your business.
                 value={formData.customer_id}
                 onChange={(val) => handleChange('customer_id', val)}
               />
+            </div>
+
+            <div>
+              <Label>Link to Job (Optional)</Label>
+              <Select 
+                value={formData.job_id || 'none'}
+                onValueChange={(val) => handleChange('job_id', val === 'none' ? '' : val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Create new job or link existing" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Create New Job</SelectItem>
+                  {jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id).map(job => (
+                    <SelectItem key={job.id} value={job.id}>
+                      {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

@@ -72,6 +72,19 @@ export default function Jobs() {
     queryFn: () => base44.entities.Job.list('-created_date'),
   });
 
+  const generateJobNumberMutation = useMutation({
+    mutationFn: async (jobId) => {
+      const { data: jobNumberData } = await base44.functions.invoke('generateJobNumber');
+      await base44.entities.Job.update(jobId, { 
+        job_number: jobNumberData.job_number 
+      });
+      return jobNumberData.job_number;
+    },
+    onSuccess: (jobNumber) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    }
+  });
+
   const deleteJobMutation = useMutation({
     mutationFn: async (jobId) => {
       const job = jobsData.find(j => j.id === jobId);
@@ -308,6 +321,19 @@ export default function Jobs() {
                           <Badge variant="outline" className="font-mono text-xs">
                             {job.jobNumber}
                           </Badge>
+                        ) : job.id && !job.id.startsWith('temp-') ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateJobNumberMutation.mutate(job.id);
+                            }}
+                            disabled={generateJobNumberMutation.isPending}
+                          >
+                            {generateJobNumberMutation.isPending ? 'Generating...' : 'Generate Job #'}
+                          </Button>
                         ) : (
                           <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">
                             No Job #

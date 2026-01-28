@@ -42,6 +42,15 @@ export default function ServiceReportForm({
 
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [jobs, setJobs] = React.useState([]);
+
+  React.useEffect(() => {
+    const loadJobs = async () => {
+      const jobsList = await base44.entities.Job.list('-created_date');
+      setJobs(jobsList);
+    };
+    loadJobs();
+  }, []);
 
   const [formData, setFormData] = useState(() => {
     // Load from localStorage if available
@@ -55,6 +64,7 @@ export default function ServiceReportForm({
     }
     
     return {
+      job_id: '',
       customer_id: '',
       service_date: format(new Date(), 'yyyy-MM-dd'),
       equipment_type: '',
@@ -306,6 +316,26 @@ Generate the best report possible with available information.`,
                 value={formData.customer_id}
                 onChange={(val) => handleChange('customer_id', val)}
               />
+            </div>
+
+            <div>
+              <Label>Link to Job (Optional)</Label>
+              <Select 
+                value={formData.job_id || 'none'}
+                onValueChange={(val) => handleChange('job_id', val === 'none' ? '' : val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Create new job or link existing" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Create New Job</SelectItem>
+                  {jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id).map(job => (
+                    <SelectItem key={job.id} value={job.id}>
+                      {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
