@@ -435,6 +435,11 @@ export default function PartsOrders() {
                         <p className="text-lg font-semibold text-slate-900 mt-2">
                           ${calculateTotal(part).toFixed(2)}
                         </p>
+                        {part.quantity > 1 && (
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            ${(calculateTotal(part) / part.quantity).toFixed(2)} / unit
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
