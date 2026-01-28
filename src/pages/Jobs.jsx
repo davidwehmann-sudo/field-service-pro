@@ -264,7 +264,10 @@ export default function Jobs() {
     const { source, destination, draggableId } = result;
     
     // Parse draggableId: format is "type-id"
-    const [itemType, itemId] = draggableId.split('-', 2);
+    // Handle IDs that may contain dashes
+    const firstDashIndex = draggableId.indexOf('-');
+    const itemType = draggableId.substring(0, firstDashIndex);
+    const itemId = draggableId.substring(firstDashIndex + 1);
     const jobId = destination.droppableId.replace('job-', '');
     
     // Don't do anything if dropped in the same place
