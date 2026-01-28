@@ -50,7 +50,7 @@ export default function MobileServiceForm({
       photos: [],
       customer_signature: '',
       notes: '',
-      status: 'draft',
+      status: 'open',
       ...report
     };
   });
@@ -140,7 +140,7 @@ IF additional specific information would help, list in suggested_additional_info
     }
   };
 
-  const handleSave = async (status = 'draft') => {
+  const handleSave = async (status = 'open') => {
     const data = {
       ...formData,
       status,
@@ -173,15 +173,19 @@ IF additional specific information would help, list in suggested_additional_info
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => handleSave('draft')}
+            onClick={() => handleSave('open')}
             disabled={isSaving}
             className="flex-1 bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
           >
             <Save className="w-4 h-4 mr-2" />
-            Save
+            Save as Open
           </Button>
           <Button 
-            onClick={() => handleSave('completed')}
+            onClick={() => {
+              if (window.confirm('⚠️ Mark as Complete?\n\nThis will finalize the report and redirect you to create an invoice.\n\nClick OK to proceed.')) {
+                handleSave('completed');
+              }
+            }}
             disabled={isSaving || !formData.customer_id}
             className="flex-1 bg-green-600 hover:bg-green-700"
           >

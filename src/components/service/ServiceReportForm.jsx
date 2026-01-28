@@ -79,7 +79,7 @@ export default function ServiceReportForm({
       photos: [],
       customer_signature: '',
       notes: '',
-      status: 'draft',
+      status: 'open',
       ...report
     };
   });
@@ -211,7 +211,7 @@ Generate the best report possible with available information.`,
     return { serviceTotal, destinationTotal, grandTotal: serviceTotal + destinationTotal };
   };
 
-  const handleSave = async (status = 'draft') => {
+  const handleSave = async (status = 'open') => {
     const data = {
       ...formData,
       status,
@@ -251,19 +251,23 @@ Generate the best report possible with available information.`,
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => handleSave('draft')}
+            onClick={() => handleSave('open')}
             disabled={isSaving}
           >
             <Save className="w-4 h-4 mr-2" />
-            Save Draft
+            Save as Open
           </Button>
           <Button 
             className="bg-green-600 hover:bg-green-700"
-            onClick={() => handleSave('completed')}
+            onClick={() => {
+              if (window.confirm('⚠️ Mark as Complete?\n\nThis will finalize the report and redirect you to create an invoice.\n\nClick OK to proceed, or Cancel to continue editing.')) {
+                handleSave('completed');
+              }
+            }}
             disabled={isSaving || !formData.customer_id}
           >
             <Send className="w-4 h-4 mr-2" />
-            Complete
+            Complete & Invoice
           </Button>
         </div>
       </div>

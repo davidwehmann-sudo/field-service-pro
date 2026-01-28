@@ -198,7 +198,7 @@ export default function ServiceReports() {
   };
 
   const statusColors = {
-    draft: "bg-slate-100 text-slate-700",
+    open: "bg-amber-100 text-amber-700",
     completed: "bg-blue-100 text-blue-700",
     invoiced: "bg-green-100 text-green-700"
   };
@@ -249,7 +249,7 @@ export default function ServiceReports() {
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="draft">Draft</TabsTrigger>
+              <TabsTrigger value="open">Open</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
               <TabsTrigger value="invoiced">Invoiced</TabsTrigger>
             </TabsList>
