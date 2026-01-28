@@ -16,7 +16,6 @@ import {
   FileText, 
   Calendar,
   Truck,
-  Pencil,
   Trash2,
   Receipt
 } from "lucide-react";
@@ -370,7 +369,7 @@ export default function ServiceReports() {
       ) : (
         <div className="space-y-3">
           {filteredReports.map((report) => (
-            <Card key={report.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card key={report.id} className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setEditingReport(report); setShowForm(true); }}>
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -416,14 +415,7 @@ export default function ServiceReports() {
                     )}
                   </div>
 
-                  <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => { setEditingReport(report); setShowForm(true); }}
-                    >
-                      <Pencil className="w-4 h-4 text-slate-400" />
-                    </Button>
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                     {report.status === 'completed' && (
                       <Link to={createPageUrl('Invoices') + `?from_report=${report.id}`}>
                         <Button variant="ghost" size="icon">

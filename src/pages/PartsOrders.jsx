@@ -16,7 +16,6 @@ import {
   Plus, 
   Search, 
   Package,
-  Pencil,
   Trash2,
   DollarSign,
   Hash,
@@ -597,11 +596,11 @@ If no match possible, return "NO_MATCH".`,
       ) : (
         <div className="space-y-3">
           {filteredParts.map((part) => (
-            <Card key={part.id} className={`border-0 shadow-sm hover:shadow-md transition-all ${selectedParts.includes(part.id) ? 'ring-2 ring-amber-400' : ''}`}>
+            <Card key={part.id} className={`border-0 shadow-sm hover:shadow-md transition-all cursor-pointer ${selectedParts.includes(part.id) ? 'ring-2 ring-amber-400' : ''}`} onClick={() => { setEditingPart(part); setShowForm(true); }}>
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => togglePartSelection(part.id)}
+                    onClick={(e) => { e.stopPropagation(); togglePartSelection(part.id); }}
                     className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                       selectedParts.includes(part.id) 
                         ? 'bg-amber-100 ring-2 ring-amber-400' 
@@ -677,14 +676,7 @@ If no match possible, return "NO_MATCH".`,
                     </div>
                   </div>
 
-                  <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => { setEditingPart(part); setShowForm(true); }}
-                    >
-                      <Pencil className="w-4 h-4 text-slate-400" />
-                    </Button>
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button 
                       variant="ghost" 
                       size="icon"

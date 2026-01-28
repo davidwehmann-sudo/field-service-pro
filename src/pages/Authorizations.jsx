@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Building2, Calendar, DollarSign, Pencil, Trash2, Mail, ExternalLink, Link2, Printer } from "lucide-react";
+import { Plus, Search, FileText, Building2, Calendar, DollarSign, Trash2, Mail, ExternalLink, Link2, Printer } from "lucide-react";
 import GenerateAuthLink from '@/components/authorization/GenerateAuthLink';
 import UploadAuthorizationForm from '@/components/authorization/UploadAuthorizationForm';
 import { Link, useNavigate } from 'react-router-dom';
@@ -343,7 +343,7 @@ Thank you for your business.
           </Card>
         ) : (
           filteredAuths.map((auth) => (
-            <Card key={auth.id} className="hover:shadow-md transition-shadow">
+            <Card key={auth.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleEdit(auth)}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -372,7 +372,7 @@ Thank you for your business.
                         </p>
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         {auth.status === 'draft' && (
                           <GenerateAuthLink 
                             authorization={auth}
@@ -396,13 +396,6 @@ Thank you for your business.
                             <Mail className="w-4 h-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(auth)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -438,13 +431,15 @@ Thank you for your business.
                         </div>
                       )}
                       {auth.service_report_id && (
-                        <Link 
-                          to={createPageUrl('ServiceReports')}
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1 text-blue-600 hover:underline"
                         >
-                          <ExternalLink className="w-3 h-3" />
-                          View Service Report
-                        </Link>
+                          <Link to={createPageUrl('ServiceReports')}>
+                            <ExternalLink className="w-3 h-3 inline mr-1" />
+                            View Service Report
+                          </Link>
+                        </div>
                       )}
                     </div>
                   </div>
