@@ -121,18 +121,35 @@ export default function PartsOrders() {
   });
 
   const saveSettingsMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
       const settingsId = settings?.[0]?.id;
+      let result;
       if (settingsId) {
-        return base44.entities.MarkupSettings.update(settingsId, data);
+        result = await base44.entities.MarkupSettings.update(settingsId, data);
       } else {
-        return base44.entities.MarkupSettings.create(data);
+        result = await base44.entities.MarkupSettings.create(data);
       }
+      
+      // Update all existing parts with new markup calculations
+      const updatePromises = parts.map(part => {
+        if (part.unit_cost && part.unit_cost > 0) {
+          const newMarkup = calculatePartsMarkup(part.unit_cost, data);
+          return base44.entities.PartsOrder.update(part.id, {
+            ...part,
+            markup_percent: newMarkup
+          });
+        }
+        return Promise.resolve();
+      });
+      
+      await Promise.all(updatePromises);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['markupSettings'] });
+      queryClient.invalidateQueries({ queryKey: ['partsOrders'] });
       setShowSettings(false);
-      toast.success('Markup settings updated');
+      toast.success('Markup settings and all parts updated');
     }
   });
 
