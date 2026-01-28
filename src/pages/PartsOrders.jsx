@@ -814,10 +814,10 @@ If no match possible, return "NO_MATCH".`,
 
             {assignmentType === 'service_report' && (
               <div>
-                <Label>Service Report *</Label>
+                <Label>Service Report</Label>
                 <Select name="service_report_id" defaultValue={editingPart?.service_report_id || ''}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select service report" />
+                    <SelectValue placeholder="Will use same as job (if assigned)" />
                   </SelectTrigger>
                   <SelectContent>
                     {serviceReports.map((report) => (
@@ -827,6 +827,9 @@ If no match possible, return "NO_MATCH".`,
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Optional: Leave empty to automatically use the service report assigned to the job
+                </p>
               </div>
             )}
 
