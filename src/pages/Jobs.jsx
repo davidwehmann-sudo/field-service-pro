@@ -117,15 +117,16 @@ export default function Jobs() {
           const part = freshParts[0];
           const { id, created_date, updated_date, created_by, ...partData } = part;
           
-          // Ensure required fields are present
-          if (!partData.assignment_type) {
-            throw new Error('Part is missing assignment_type field');
-          }
-          
-          await base44.entities.PartsOrder.update(itemId, {
+          // Ensure required fields are present with defaults
+          const updateData = {
+            assignment_type: partData.assignment_type || 'service_report',
+            part_description: partData.part_description || 'Unknown Part',
+            quantity: partData.quantity || 1,
             ...partData,
             job_id: jobId
-          });
+          };
+          
+          await base44.entities.PartsOrder.update(itemId, updateData);
         }
       }
     },
