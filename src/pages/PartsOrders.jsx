@@ -21,7 +21,8 @@ import {
   DollarSign,
   Hash,
   Printer,
-  Settings
+  Settings,
+  Check
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import { format } from 'date-fns';
@@ -228,6 +229,7 @@ export default function PartsOrders() {
   });
 
   const [assignmentType, setAssignmentType] = useState('service_report');
+  const [catalogSaved, setCatalogSaved] = useState(false);
 
   useEffect(() => {
     if (editingPart) {
@@ -235,7 +237,8 @@ export default function PartsOrders() {
     } else {
       setAssignmentType('service_report');
     }
-  }, [editingPart]);
+    setCatalogSaved(false);
+  }, [editingPart, showForm]);
 
   const handleSaveToCatalog = async (partData) => {
     try {
@@ -258,7 +261,8 @@ export default function PartsOrders() {
         quantity_on_hand: 0,
         notes: 'Added from parts order'
       });
-      toast.success('Part saved to catalog as non-stock item');
+      setCatalogSaved(true);
+      toast.success('✓ Part saved to catalog as non-stock item');
     } catch (error) {
       toast.error('Failed to save to catalog');
     }
@@ -818,10 +822,20 @@ export default function PartsOrders() {
                     toast.error('Enter part description first');
                   }
                 }}
-                className="text-blue-600"
+                className={catalogSaved ? "text-green-600 border-green-600" : "text-blue-600"}
+                disabled={catalogSaved}
               >
-                <Package className="w-4 h-4 mr-2" />
-                Save to Catalog
+                {catalogSaved ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Saved to Catalog
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4 mr-2" />
+                    Save to Catalog
+                  </>
+                )}
               </Button>
               <div className="flex gap-3">
                 <Button 
