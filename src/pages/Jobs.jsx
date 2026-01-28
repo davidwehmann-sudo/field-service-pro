@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2, Edit } from "lucide-react";
+import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -376,7 +376,10 @@ export default function Jobs() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
                     {/* Authorization */}
-                    <div className={`p-3 rounded-lg border ${job.authorization ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <Link 
+                      to={job.authorization ? `${createPageUrl('Authorizations')}?edit=${job.authorization.id}` : createPageUrl('Authorizations')}
+                      className={`p-3 rounded-lg border transition-all hover:shadow-md ${job.authorization ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <ClipboardCheck className={`w-4 h-4 ${job.authorization ? 'text-green-600' : 'text-slate-400'}`} />
                         <span className="text-xs font-medium text-slate-700">Authorization</span>
@@ -386,25 +389,22 @@ export default function Jobs() {
                           <p className="text-xs text-slate-600">
                             {job.authorization.service_type?.replace(/_/g, ' ')}
                           </p>
-                          <Link 
-                            to={`${createPageUrl('Authorizations')}?edit=${job.authorization.id}`}
-                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                          >
-                            Edit <Edit className="w-3 h-3" />
-                          </Link>
+                          <p className="text-xs text-blue-600 flex items-center gap-1">
+                            Click to edit <ChevronRight className="w-3 h-3" />
+                          </p>
                         </div>
                       ) : (
-                        <Link 
-                          to={createPageUrl('Authorizations')}
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                        >
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
                           Create Authorization <ChevronRight className="w-3 h-3" />
-                        </Link>
+                        </p>
                       )}
-                    </div>
+                    </Link>
 
                     {/* Service Report */}
-                    <div className={`p-3 rounded-lg border ${job.serviceReport ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <Link 
+                      to={job.serviceReport ? `${createPageUrl('ServiceReports')}?edit=${job.serviceReport.id}` : createPageUrl('FieldTech')}
+                      className={`p-3 rounded-lg border transition-all hover:shadow-md ${job.serviceReport ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <FileText className={`w-4 h-4 ${job.serviceReport ? 'text-blue-600' : 'text-slate-400'}`} />
                         <span className="text-xs font-medium text-slate-700">Service Report</span>
@@ -414,25 +414,22 @@ export default function Jobs() {
                           <p className="text-xs text-slate-600">
                             {job.serviceReport.equipment_type}
                           </p>
-                          <Link 
-                            to={`${createPageUrl('ServiceReports')}?edit=${job.serviceReport.id}`}
-                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                          >
-                            Edit <Edit className="w-3 h-3" />
-                          </Link>
+                          <p className="text-xs text-blue-600 flex items-center gap-1">
+                            Click to edit <ChevronRight className="w-3 h-3" />
+                          </p>
                         </div>
                       ) : (
-                        <Link 
-                          to={createPageUrl('FieldTech')}
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                        >
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
                           Create Service Report <ChevronRight className="w-3 h-3" />
-                        </Link>
+                        </p>
                       )}
-                    </div>
+                    </Link>
 
                     {/* Parts Orders */}
-                    <div className={`p-3 rounded-lg border ${job.partsOrders.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <Link 
+                      to={job.partsOrders.length > 0 ? `${createPageUrl('PartsOrders')}?edit=${job.partsOrders[0].id}` : createPageUrl('PartsOrders')}
+                      className={`p-3 rounded-lg border transition-all hover:shadow-md ${job.partsOrders.length > 0 ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <Package className={`w-4 h-4 ${job.partsOrders.length > 0 ? 'text-amber-600' : 'text-slate-400'}`} />
                         <span className="text-xs font-medium text-slate-700">Parts Orders</span>
@@ -442,22 +439,16 @@ export default function Jobs() {
                           <p className="text-xs text-slate-600">
                             {job.partsOrders.length} {job.partsOrders.length === 1 ? 'part' : 'parts'}
                           </p>
-                          <Link 
-                            to={`${createPageUrl('PartsOrders')}?edit=${job.partsOrders[0].id}`}
-                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                          >
-                            Edit {job.partsOrders.length === 1 ? 'Part' : 'First Part'} <Edit className="w-3 h-3" />
-                          </Link>
+                          <p className="text-xs text-blue-600 flex items-center gap-1">
+                            Click to edit <ChevronRight className="w-3 h-3" />
+                          </p>
                         </div>
                       ) : (
-                        <Link 
-                          to={createPageUrl('PartsOrders')}
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                        >
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
                           Add Parts <ChevronRight className="w-3 h-3" />
-                        </Link>
+                        </p>
                       )}
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
