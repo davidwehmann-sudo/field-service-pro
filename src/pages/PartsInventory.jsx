@@ -783,6 +783,7 @@ Return the IDs of ALL matching parts.`,
           }
         }}
       />
-    </div>
+      </div>
+    </>
   );
 }
