@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -198,7 +198,10 @@ Return the data in the specified JSON format. If you cannot identify something, 
     setEditingPart(null);
   };
 
-  const uniqueManufacturers = [...new Set(inventory.map(p => p.manufacturer).filter(Boolean))].sort();
+  const uniqueManufacturers = useMemo(() => 
+    [...new Set(inventory.map(p => p.manufacturer).filter(Boolean))].sort(),
+    [inventory]
+  );
 
   const handleAiSearch = async () => {
     if (!aiQuery.trim()) {
@@ -208,11 +211,21 @@ Return the data in the specified JSON format. If you cannot identify something, 
 
     setAiProcessing(true);
     try {
+      // Only send essential fields to reduce token usage
+      const compactInventory = inventory.map(p => ({
+        id: p.id,
+        pn: p.part_number || 'N/A',
+        desc: p.part_description,
+        mfr: p.manufacturer || 'Unknown',
+        qty: p.quantity_on_hand,
+        loc: p.location
+      }));
+
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a parts catalog expert. Given this search query: "${aiQuery}"
 
 Find matching parts from this inventory (ID | Part# | Description | Manufacturer | Stock | Location):
-${inventory.map(p => `${p.id} | ${p.part_number || 'N/A'} | ${p.part_description} | ${p.manufacturer || 'Unknown'} | ${p.quantity_on_hand} | ${p.location}`).join('\n')}
+${compactInventory.map(p => `${p.id} | ${p.pn} | ${p.desc} | ${p.mfr} | ${p.qty} | ${p.loc}`).join('\n')}
 
 CRITICAL DOMAIN KNOWLEDGE - Apply semantic understanding:
 - SEALS: includes O-rings, gaskets, seals, packing, weather stripping
@@ -257,23 +270,29 @@ Return the IDs of ALL matching parts.`,
     }
   };
 
-  const filteredInventory = (aiFilteredParts || inventory).filter(part => {
-    const matchesSearch = 
-      part.part_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      part.part_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      part.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredInventory = useMemo(() => {
+    const baseList = aiFilteredParts || inventory;
+    const lowerQuery = searchQuery.toLowerCase();
     
-    const matchesLocation = filterLocation === 'all' || part.location === filterLocation;
-    const matchesManufacturer = filterManufacturer === 'all' || part.manufacturer === filterManufacturer;
-    
-    const matchesStock = filterStock === 'all' || (
-      filterStock === 'low' ? (part.reorder_level && part.quantity_on_hand <= part.reorder_level) :
-      filterStock === 'out' ? part.quantity_on_hand === 0 :
-      filterStock === 'in' ? part.quantity_on_hand > 0 : true
-    );
-    
-    return matchesSearch && matchesLocation && matchesManufacturer && matchesStock;
-  });
+    return baseList.filter(part => {
+      const matchesSearch = !searchQuery || (
+        part.part_number?.toLowerCase().includes(lowerQuery) ||
+        part.part_description?.toLowerCase().includes(lowerQuery) ||
+        part.manufacturer?.toLowerCase().includes(lowerQuery)
+      );
+      
+      const matchesLocation = filterLocation === 'all' || part.location === filterLocation;
+      const matchesManufacturer = filterManufacturer === 'all' || part.manufacturer === filterManufacturer;
+      
+      const matchesStock = filterStock === 'all' || (
+        filterStock === 'low' ? (part.reorder_level && part.quantity_on_hand <= part.reorder_level) :
+        filterStock === 'out' ? part.quantity_on_hand === 0 :
+        filterStock === 'in' ? part.quantity_on_hand > 0 : true
+      );
+      
+      return matchesSearch && matchesLocation && matchesManufacturer && matchesStock;
+    });
+  }, [inventory, aiFilteredParts, searchQuery, filterLocation, filterManufacturer, filterStock]);
 
   const locationLabels = {
     storage: 'Storage',
