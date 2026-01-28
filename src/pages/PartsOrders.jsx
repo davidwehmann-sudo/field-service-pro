@@ -197,6 +197,16 @@ export default function PartsOrders() {
 
   const handleSaveToCatalog = async (partData) => {
     try {
+      // Check for existing part
+      const existing = await base44.entities.PartsInventory.filter({
+        part_number: partData.part_number
+      });
+      
+      if (existing.length > 0) {
+        toast.error(`Part ${partData.part_number} already exists in catalog`);
+        return;
+      }
+
       await base44.entities.PartsInventory.create({
         part_number: partData.part_number,
         part_description: partData.part_description,

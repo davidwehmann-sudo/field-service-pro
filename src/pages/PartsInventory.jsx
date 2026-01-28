@@ -138,6 +138,17 @@ Return the data in the specified JSON format. If you cannot identify something, 
   };
 
   const handleSave = () => {
+    // Check for duplicate part number when creating new part
+    if (!editingPart) {
+      const duplicate = inventory.find(p => 
+        p.part_number?.toLowerCase() === formData.part_number?.toLowerCase()
+      );
+      if (duplicate) {
+        toast.error(`Part ${formData.part_number} already exists in inventory`);
+        return;
+      }
+    }
+
     const data = {
       ...formData,
       quantity_on_hand: parseInt(formData.quantity_on_hand) || 0,
