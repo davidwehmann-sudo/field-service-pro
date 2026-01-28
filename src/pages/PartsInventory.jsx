@@ -208,27 +208,33 @@ Return the data in the specified JSON format. If you cannot identify something, 
     setAiProcessing(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Given this natural language query about parts: "${aiQuery}"
+        prompt: `You are a parts catalog expert. Given this search query: "${aiQuery}"
 
-Available parts inventory:
-${inventory.map(p => `- ${p.part_number || 'N/A'}: ${p.part_description} (${p.manufacturer || 'Unknown'}), Stock: ${p.quantity_on_hand}, Location: ${p.location}`).join('\n')}
+Find matching parts from this inventory (ID | Part# | Description | Manufacturer | Stock | Location):
+${inventory.map(p => `${p.id} | ${p.part_number || 'N/A'} | ${p.part_description} | ${p.manufacturer || 'Unknown'} | ${p.quantity_on_hand} | ${p.location}`).join('\n')}
 
-IMPORTANT: Use domain knowledge about part relationships:
-- O-rings, gaskets, and seals are all types of sealing components
-- Filters include oil filters, air filters, fuel filters, hydraulic filters
-- Belts include serpentine belts, timing belts, V-belts
-- Bearings include ball bearings, roller bearings, bushings
-- Hoses include hydraulic hoses, fuel lines, coolant hoses
-- Consider brand names (Cat/Caterpillar, John Deere, Kubota, etc.)
-- Understand equipment-specific terms (hydraulic, diesel, pneumatic, etc.)
+CRITICAL DOMAIN KNOWLEDGE - Apply semantic understanding:
+- SEALS: includes O-rings, gaskets, seals, packing, weather stripping
+- FILTERS: oil filters, air filters, fuel filters, hydraulic filters, cabin filters
+- BELTS: serpentine belts, timing belts, V-belts, drive belts
+- BEARINGS: ball bearings, roller bearings, bushings, sleeves
+- HOSES: hydraulic hoses, fuel lines, coolant hoses, air lines
+- FASTENERS: bolts, screws, nuts, washers, clips
+- FLUIDS: oil, coolant, hydraulic fluid, grease, lubricants
 
-Match based on:
-- Part descriptions, numbers, manufacturers (use semantic understanding and synonyms)
-- Stock levels: "out of stock" (0), "low stock" (at/below reorder level), "in stock" (>0)
-- Locations: storage, truck_1, truck_2, truck_3, non_stock
-- Part type relationships and synonyms
+Brand equivalents:
+- Cat = Caterpillar
+- JD = John Deere
+- Kubota, Komatsu, Case, etc.
 
-Return ONLY the IDs of matching parts.`,
+Stock levels:
+- "out of stock" or "empty" = 0
+- "low stock" = at or below reorder level
+- "in stock" or "available" = quantity > 0
+
+Be VERY LIBERAL with matches - if the query could reasonably relate to a part, include it.
+
+Return the IDs of ALL matching parts.`,
         response_json_schema: {
           type: "object",
           properties: {
