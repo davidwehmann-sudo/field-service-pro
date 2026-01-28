@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
 const EQUIPMENT_TYPES = [
   'Semi Truck',
@@ -43,15 +45,11 @@ export default function ServiceReportForm({
 
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
-  const [jobs, setJobs] = useState([]);
 
-  useEffect(() => {
-    const loadJobs = async () => {
-      const jobsList = await base44.entities.Job.list('-created_date');
-      setJobs(jobsList);
-    };
-    loadJobs();
-  }, []);
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list('-created_date'),
+  });
 
   const [formData, setFormData] = useState(() => {
     // Load from localStorage if available
@@ -104,19 +102,18 @@ export default function ServiceReportForm({
     return () => clearTimeout(timer);
   }, [formData, storageKey]);
 
-  const handleChange = (field, value) => {
+  const handleChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handleAIDerive = async () => {
+  const handleAIDerive = useCallback(async () => {
     if (!formData.technician_notes?.trim()) {
-      alert('Please enter technician notes first');
+      toast.error('Please enter technician notes first');
       return;
     }
 
     setAiProcessing(true);
     try {
-      const { base44 } = await import('@/api/base44Client');
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a field service technician documentation assistant. Generate a complete service report using the Caterpillar 7-Step Diagnostic Process.
 
@@ -207,22 +204,27 @@ Generate the best report possible with available information.`,
       }));
       
       setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);
+      toast.success('Report compiled successfully');
     } catch (error) {
-      alert('AI processing failed: ' + error.message);
+      toast.error('AI processing failed: ' + error.message);
     } finally {
       setAiProcessing(false);
     }
-  };
+  }, [formData]);
 
-  const calculateTotals = () => {
+  const totals = useMemo(() => {
     const serviceTotal = (formData.service_items || []).reduce(
       (sum, item) => sum + (item.total || 0), 0
     );
     const destinationTotal = formData.destination_fee?.total || 0;
     return { serviceTotal, destinationTotal, grandTotal: serviceTotal + destinationTotal };
-  };
+  }, [formData.service_items, formData.destination_fee]);
 
-  const handleSave = async (status = 'open') => {
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id);
+  }, [jobs, formData.customer_id]);
+
+  const handleSave = useCallback(async (status = 'open') => {
     const data = {
       ...formData,
       status,
@@ -241,9 +243,7 @@ Generate the best report possible with available information.`,
       // Keep in localStorage if save fails
       console.error('Save failed, data preserved locally');
     }
-  };
-
-  const totals = calculateTotals();
+  }, [formData, onSave, onComplete, storageKey]);
 
   return (
     <div className="space-y-6">
@@ -330,7 +330,7 @@ Generate the best report possible with available information.`,
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Create New Job</SelectItem>
-                  {jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id).map(job => (
+                  {filteredJobs.map(job => (
                     <SelectItem key={job.id} value={job.id}>
                       {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
                     </SelectItem>

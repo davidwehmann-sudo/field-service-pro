@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,15 +31,10 @@ export default function AuthorizationForm({
   onBack,
   isSaving 
 }) {
-  const [jobs, setJobs] = useState([]);
-
-  useEffect(() => {
-    const loadJobs = async () => {
-      const jobsList = await base44.entities.Job.list('-created_date');
-      setJobs(jobsList);
-    };
-    loadJobs();
-  }, []);
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list('-created_date'),
+  });
 
   const [formData, setFormData] = useState({
     job_id: '',
@@ -69,7 +65,7 @@ export default function AuthorizationForm({
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
 
-  const handleChange = (field, value) => {
+  const handleChange = useCallback((field, value) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       // Clear AI flag if user manually edits the cost
@@ -78,9 +74,9 @@ export default function AuthorizationForm({
       }
       return updated;
     });
-  };
+  }, []);
 
-  const handleEstimateCost = async () => {
+  const handleEstimateCost = useCallback(async () => {
     if (!formData.nature_of_service || !formData.service_type) {
       toast.error("Please fill in service type and description first");
       return;
@@ -127,7 +123,7 @@ Be realistic and professional. This is an estimate that will be shown to a custo
     } finally {
       setIsEstimatingCost(false);
     }
-  };
+  }, [formData.nature_of_service, formData.service_type, formData.equipment_info]);
 
   const handleSave = async (status = 'draft') => {
     // Generate job number if new authorization and no job selected
@@ -171,7 +167,7 @@ Be realistic and professional. This is an estimate that will be shown to a custo
     }
   };
 
-  const handleSendCopy = async () => {
+  const handleSendCopy = useCallback(async () => {
     if (!formData.billing_contact_email) {
       toast.error("No email address provided");
       return;
@@ -232,13 +228,17 @@ Thank you for your business.
     } finally {
       setIsSendingEmail(false);
     }
-  };
+  }, [formData, customers]);
 
-  const isReadyToAuthorize = formData.customer_id && 
+  const isReadyToAuthorize = useMemo(() => formData.customer_id && 
                              formData.billing_contact_name && 
                              formData.nature_of_service && 
                              formData.service_type &&
-                             formData.authorization_signature;
+                             formData.authorization_signature, [formData]);
+
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id);
+  }, [jobs, formData.customer_id]);
 
   return (
     <div className="space-y-6">
@@ -300,7 +300,7 @@ Thank you for your business.
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Create New Job</SelectItem>
-                  {jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id).map(job => (
+                  {filteredJobs.map(job => (
                     <SelectItem key={job.id} value={job.id}>
                       {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
                     </SelectItem>
