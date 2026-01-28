@@ -354,40 +354,38 @@ export default function PartsOrders() {
     setAiSearching(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a parts search assistant helping service technicians find parts they need.
+        prompt: `You are a parts search assistant. Analyze the user's query and return the best keyword to search for.
 
 User query: "${aiQuery}"
 
-Available parts in the system:
-${parts.map(p => `- ${p.part_description} ${p.part_number ? `(#${p.part_number})` : ''} - ${p.supplier || 'Unknown supplier'} - Status: ${p.status}`).join('\n')}
+Available parts:
+${parts.map(p => `- ${p.part_description} ${p.part_number ? `(#${p.part_number})` : ''}`).join('\n')}
 
-Task: Based on the user's query, identify which parts match their needs. Consider:
-1. Part descriptions and names
-2. Part numbers
-3. Supplier/manufacturer names
-4. Common synonyms (e.g., "fuel filter" matches "filter, fuel")
-5. Related terms (e.g., "injector" for fuel system issues)
-
-Return ONLY the part descriptions that match (exact text from the list above), one per line. If no matches, respond with "NO_MATCHES".`,
+Return ONLY a single short keyword or phrase (2-3 words max) that would best match relevant parts. 
+Examples: "filter", "injector", "hydraulic", "fuel pump"
+If no match possible, return "NO_MATCH".`,
         add_context_from_internet: false
       });
 
-      // InvokeLLM returns a plain string when no JSON schema is specified
-      const resultText = response || '';
+      const keyword = response.trim();
       
-      if (resultText.includes('NO_MATCHES') || !resultText.trim()) {
+      if (keyword === 'NO_MATCH' || !keyword) {
         toast.error('No matching parts found');
         setSearch('');
       } else {
-        // Extract matched part descriptions
-        const matches = resultText.split('\n')
-          .map(line => line.replace(/^[-•*]\s*/, '').trim())
-          .filter(line => line.length > 0 && line !== 'NO_MATCHES');
+        setSearch(keyword);
+        setStatusFilter('all');
+        setReportFilter('all');
+        
+        // Count matches
+        const matches = parts.filter(p => 
+          p.part_description?.toLowerCase().includes(keyword.toLowerCase()) ||
+          p.part_number?.toLowerCase().includes(keyword.toLowerCase()) ||
+          p.supplier?.toLowerCase().includes(keyword.toLowerCase())
+        );
         
         if (matches.length > 0) {
-          // Use the first matched description as search
-          setSearch(matches[0].split('(#')[0].trim());
-          toast.success(`Found ${matches.length} matching part${matches.length > 1 ? 's' : ''}`);
+          toast.success(`Found ${matches.length} matching part${matches.length !== 1 ? 's' : ''}`);
         } else {
           toast.error('No matching parts found');
         }
