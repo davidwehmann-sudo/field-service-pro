@@ -721,12 +721,27 @@ export default function PartsOrders() {
           <form onSubmit={(e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            saveSettingsMutation.mutate({
+            const newSettings = {
               max_markup: parseFloat(formData.get('max_markup')),
               min_markup: parseFloat(formData.get('min_markup')),
               decay_rate: parseFloat(formData.get('decay_rate')),
               service_company: currentUser?.current_company || currentUser?.company
-            });
+            };
+            
+            // Validate: ensure pricing curve is monotonically increasing
+            const testCosts = [10, 50, 100, 200, 500, 1000, 2000, 5000];
+            const prices = testCosts.map(cost => 
+              cost * (1 + calculatePartsMarkup(cost, newSettings) / 100)
+            );
+            
+            for (let i = 1; i < prices.length; i++) {
+              if (prices[i] <= prices[i-1]) {
+                toast.error('Invalid settings: cheaper parts would have higher prices than expensive parts. Adjust your decay rate.');
+                return;
+              }
+            }
+            
+            saveSettingsMutation.mutate(newSettings);
           }} className="space-y-4">
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">
@@ -737,44 +752,60 @@ export default function PartsOrders() {
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="max_markup">Maximum Markup %</Label>
-              <Input 
-                id="max_markup" 
-                name="max_markup" 
-                type="number"
-                step="0.1"
-                defaultValue={markupSettings.max_markup}
-                required
-              />
-              <p className="text-xs text-slate-500 mt-1">Applied to very cheap parts (e.g., $10 parts)</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="max_markup">Maximum Markup %</Label>
+                <Input 
+                  id="max_markup" 
+                  name="max_markup" 
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="200"
+                  value={markupSettings.max_markup}
+                  onChange={(e) => setMarkupSettings({...markupSettings, max_markup: parseFloat(e.target.value) || 0})}
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">For cheap parts (~$10)</p>
+              </div>
+
+              <div>
+                <Label htmlFor="min_markup">Minimum Markup %</Label>
+                <Input 
+                  id="min_markup" 
+                  name="min_markup" 
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="200"
+                  value={markupSettings.min_markup}
+                  onChange={(e) => setMarkupSettings({...markupSettings, min_markup: parseFloat(e.target.value) || 0})}
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">For expensive parts (~$2000+)</p>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="min_markup">Minimum Markup %</Label>
-              <Input 
-                id="min_markup" 
-                name="min_markup" 
-                type="number"
-                step="0.1"
-                defaultValue={markupSettings.min_markup}
-                required
-              />
-              <p className="text-xs text-slate-500 mt-1">Applied to expensive parts (e.g., $2000+ parts)</p>
-            </div>
-
-            <div>
-              <Label htmlFor="decay_rate">Decay Rate</Label>
+              <Label htmlFor="decay_rate">Decay Rate (Curve Steepness)</Label>
               <Input 
                 id="decay_rate" 
                 name="decay_rate" 
-                type="number"
-                step="1"
-                defaultValue={markupSettings.decay_rate}
+                type="range"
+                min="50"
+                max="1000"
+                step="10"
+                value={markupSettings.decay_rate}
+                onChange={(e) => setMarkupSettings({...markupSettings, decay_rate: parseFloat(e.target.value)})}
                 required
+                className="w-full"
               />
+              <div className="flex justify-between text-xs text-slate-500 mt-1">
+                <span>Fast transition ({markupSettings.decay_rate})</span>
+                <span>Slow transition</span>
+              </div>
               <p className="text-xs text-slate-500 mt-1">
-                Lower = faster transition from max to min markup. Typical range: 100-300.
+                Lower = markup drops quickly. Higher = markup stays high longer.
               </p>
             </div>
 
