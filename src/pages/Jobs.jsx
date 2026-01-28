@@ -111,15 +111,12 @@ export default function Jobs() {
       } else if (itemType === 'serviceReport') {
         await base44.entities.ServiceReport.update(itemId, { job_id: jobId });
       } else if (itemType === 'partsOrder') {
-        // For parts orders, only update the job_id field
+        // For parts orders, preserve all existing fields
         const existingParts = partsOrders.filter(p => p.id === itemId);
         if (existingParts.length > 0) {
-          const part = existingParts[0];
-          // Explicitly preserve all required fields
+          const { id, created_date, updated_date, created_by, ...partData } = existingParts[0];
           await base44.entities.PartsOrder.update(itemId, {
-            assignment_type: part.assignment_type,
-            part_description: part.part_description,
-            quantity: part.quantity,
+            ...partData,
             job_id: jobId
           });
         }
