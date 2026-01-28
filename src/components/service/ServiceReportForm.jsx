@@ -15,6 +15,7 @@ import ServiceItemsEditor from '@/components/service/ServiceItemsEditor';
 import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
 import { format } from 'date-fns';
+import { base44 } from '@/api/base44Client';
 
 const EQUIPMENT_TYPES = [
   'Semi Truck',
@@ -42,9 +43,9 @@ export default function ServiceReportForm({
 
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
-  const [jobs, setJobs] = React.useState([]);
+  const [jobs, setJobs] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const loadJobs = async () => {
       const jobsList = await base44.entities.Job.list('-created_date');
       setJobs(jobsList);

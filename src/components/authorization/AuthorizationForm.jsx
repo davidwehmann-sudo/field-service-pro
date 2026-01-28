@@ -30,9 +30,9 @@ export default function AuthorizationForm({
   onBack,
   isSaving 
 }) {
-  const [jobs, setJobs] = React.useState([]);
+  const [jobs, setJobs] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const loadJobs = async () => {
       const jobsList = await base44.entities.Job.list('-created_date');
       setJobs(jobsList);
