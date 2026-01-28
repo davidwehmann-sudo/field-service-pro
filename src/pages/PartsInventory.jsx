@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle, Sparkles, X } from "lucide-react";
+import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle, Sparkles, X, LayoutGrid, List, Printer } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
@@ -29,6 +29,7 @@ export default function PartsInventory() {
   const [aiQuery, setAiQuery] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiFilteredParts, setAiFilteredParts] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -282,20 +283,58 @@ Return the IDs of ALL matching parts.`,
     non_stock: 'Non-Stock'
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Parts Inventory</h1>
-          <p className="text-sm text-slate-500">Track parts in storage and on service trucks</p>
-        </div>
-        <Button onClick={() => { resetForm(); setShowForm(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Part
-        </Button>
-      </div>
+  const handlePrint = () => {
+    window.print();
+  };
 
-      <div className="space-y-4">
+  return (
+    <>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-table { display: table !important; width: 100%; }
+          .print-title { margin-bottom: 20px; }
+          body { padding: 20px; }
+        }
+      `}</style>
+      
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 print-title">Parts Inventory</h1>
+            <p className="text-sm text-slate-500 no-print">Track parts in storage and on service trucks</p>
+          </div>
+          <div className="flex gap-2 no-print">
+            <div className="flex rounded-lg border border-slate-200">
+              <Button 
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="rounded-r-none"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none"
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print
+            </Button>
+            <Button onClick={() => { resetForm(); setShowForm(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Part
+            </Button>
+          </div>
+        </div>
+
+      <div className="space-y-4 no-print">
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -422,7 +461,65 @@ Return the IDs of ALL matching parts.`,
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {viewMode === 'list' ? (
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <table className="w-full print-table">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Part #</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Manufacturer</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Stock</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Location</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Cost</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {filteredInventory.map(part => {
+                const isLowStock = part.reorder_level && part.quantity_on_hand <= part.reorder_level;
+                return (
+                  <tr key={part.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{part.part_number}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{part.part_description}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">{part.manufacturer || '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-sm font-medium ${isLowStock ? 'text-red-600' : 'text-slate-900'}`}>
+                        {part.quantity_on_hand}
+                        {isLowStock && ' ⚠️'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{locationLabels[part.location]}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {part.unit_cost ? `$${part.unit_cost.toFixed(2)}` : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-right no-print">
+                      <div className="flex gap-2 justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEdit(part)}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setPartToDelete(part)}
+                          className="text-red-500"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 no-print">
         {filteredInventory.map(part => {
           const isLowStock = part.reorder_level && part.quantity_on_hand <= part.reorder_level;
           
@@ -491,7 +588,8 @@ Return the IDs of ALL matching parts.`,
             </Card>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {filteredInventory.length === 0 && !isLoading && (
         <Card className="border-0 shadow-sm">
