@@ -94,9 +94,28 @@ export default function ServiceReports() {
   }, [shouldOpenNew, reportId, reports, preselectedCustomer]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ServiceReport.create(data),
+    mutationFn: async (data) => {
+      // Generate job number and create job if not linked to existing job
+      if (!data.job_id) {
+        const { data: jobNumberData } = await base44.functions.invoke('generateJobNumber');
+        const job = await base44.entities.Job.create({
+          job_number: jobNumberData.job_number,
+          customer_id: data.customer_id,
+          job_type: 'service',
+          status: 'in_progress'
+        });
+        
+        return base44.entities.ServiceReport.create({
+          ...data,
+          job_id: job.id
+        });
+      }
+      
+      return base44.entities.ServiceReport.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['serviceReports'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowForm(false);
       setEditingReport(null);
     }

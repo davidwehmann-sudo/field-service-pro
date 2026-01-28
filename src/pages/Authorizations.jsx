@@ -83,11 +83,24 @@ export default function Authorizations() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const auth = await base44.entities.PreRepairAuthorization.create(data);
+      // Generate job number and create job
+      const { data: jobNumberData } = await base44.functions.invoke('generateJobNumber');
+      const job = await base44.entities.Job.create({
+        job_number: jobNumberData.job_number,
+        customer_id: data.customer_id,
+        job_type: 'service',
+        status: 'open'
+      });
+      
+      const auth = await base44.entities.PreRepairAuthorization.create({
+        ...data,
+        job_id: job.id
+      });
       
       // If authorized, create a service report
       if (data.status === 'authorized') {
         const serviceReport = await base44.entities.ServiceReport.create({
+          job_id: job.id,
           customer_id: data.customer_id,
           service_date: data.authorization_date,
           equipment_type: 'Other',
@@ -112,9 +125,10 @@ export default function Authorizations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['authorizations']);
+      queryClient.invalidateQueries(['jobs']);
       setShowForm(false);
       setEditingAuth(null);
-      toast.success("Authorization created and service report started");
+      toast.success("Job created with authorization");
     },
   });
 
@@ -125,6 +139,7 @@ export default function Authorizations() {
       // If changing to authorized and no service report exists, create one
       if (data.status === 'authorized' && !editingAuth?.service_report_id) {
         const serviceReport = await base44.entities.ServiceReport.create({
+          job_id: editingAuth?.job_id,
           customer_id: data.customer_id,
           service_date: data.authorization_date,
           equipment_type: 'Other',
@@ -149,9 +164,10 @@ export default function Authorizations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['authorizations']);
+      queryClient.invalidateQueries(['jobs']);
       setShowForm(false);
       setEditingAuth(null);
-      toast.success("Authorization updated and service report started");
+      toast.success("Authorization updated");
     },
   });
 
