@@ -213,11 +213,20 @@ Return the data in the specified JSON format. If you cannot identify something, 
 Available parts inventory:
 ${inventory.map(p => `- ${p.part_number || 'N/A'}: ${p.part_description} (${p.manufacturer || 'Unknown'}), Stock: ${p.quantity_on_hand}, Location: ${p.location}`).join('\n')}
 
-Return an array of part IDs that match the query. Consider:
-- Part descriptions, numbers, manufacturers
-- Stock levels (e.g., "out of stock", "low stock", "in stock")
-- Locations (storage, truck_1, truck_2, truck_3, non_stock)
-- Any other relevant criteria
+IMPORTANT: Use domain knowledge about part relationships:
+- O-rings, gaskets, and seals are all types of sealing components
+- Filters include oil filters, air filters, fuel filters, hydraulic filters
+- Belts include serpentine belts, timing belts, V-belts
+- Bearings include ball bearings, roller bearings, bushings
+- Hoses include hydraulic hoses, fuel lines, coolant hoses
+- Consider brand names (Cat/Caterpillar, John Deere, Kubota, etc.)
+- Understand equipment-specific terms (hydraulic, diesel, pneumatic, etc.)
+
+Match based on:
+- Part descriptions, numbers, manufacturers (use semantic understanding and synonyms)
+- Stock levels: "out of stock" (0), "low stock" (at/below reorder level), "in stock" (>0)
+- Locations: storage, truck_1, truck_2, truck_3, non_stock
+- Part type relationships and synonyms
 
 Return ONLY the IDs of matching parts.`,
         response_json_schema: {
