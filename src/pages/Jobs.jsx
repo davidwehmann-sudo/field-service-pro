@@ -593,14 +593,14 @@ export default function Jobs() {
                         </p>
                       )}
                     </Link>
-                    </div>
                   </div>
-                  {provided.placeholder}
-                </CardContent>
-              </Card>
-            )}
-          </Droppable>
-        ))}
+                </div>
+                {provided.placeholder}
+              </CardContent>
+            </Card>
+          )}
+        </Droppable>
+      ))}
 
           {filteredJobs.length === 0 && (
             <Card>
@@ -614,63 +614,61 @@ export default function Jobs() {
           )}
         </div>
       </div>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteModal} onOpenChange={(open) => !open && setDeleteModal(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {isJobActive(deleteModal?.status) && (
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              )}
+              Delete Job?
+            </DialogTitle>
+            <DialogDescription>
+              {isJobActive(deleteModal?.status) 
+                ? "⚠️ This job is currently active. Deleting it will remove all related authorization, service report, and parts records."
+                : "This will permanently delete this job and all its related records:"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 text-sm text-slate-600">
+            {deleteModal?.authorization && (
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-amber-600" />
+                <span>Pre-Repair Authorization ({deleteModal.authorization.status})</span>
+              </div>
+            )}
+            {deleteModal?.serviceReport && (
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Service Report ({deleteModal.serviceReport.status})</span>
+              </div>
+            )}
+            {deleteModal?.partsOrders?.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-amber-600" />
+                <span>{deleteModal.partsOrders.length} Parts Order{deleteModal.partsOrders.length !== 1 ? 's' : ''}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModal(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteJobMutation.mutate(deleteModal.job.id)}
+              disabled={deleteJobMutation.isPending}
+            >
+              {deleteJobMutation.isPending ? 'Deleting...' : 'Delete Job'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DragDropContext>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={!!deleteModal} onOpenChange={(open) => !open && setDeleteModal(null)}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {isJobActive(deleteModal?.status) && (
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                )}
-                Delete Job?
-              </DialogTitle>
-              <DialogDescription>
-                {isJobActive(deleteModal?.status) 
-                  ? "⚠️ This job is currently active. Deleting it will remove all related authorization, service report, and parts records."
-                  : "This will permanently delete this job and all its related records:"}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-2 text-sm text-slate-600">
-              {deleteModal?.authorization && (
-                <div className="flex items-center gap-2">
-                  <ClipboardCheck className="w-4 h-4 text-amber-600" />
-                  <span>Pre-Repair Authorization ({deleteModal.authorization.status})</span>
-                </div>
-              )}
-              {deleteModal?.serviceReport && (
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                  <span>Service Report ({deleteModal.serviceReport.status})</span>
-                </div>
-              )}
-              {deleteModal?.partsOrders?.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-amber-600" />
-                  <span>{deleteModal.partsOrders.length} Parts Order{deleteModal.partsOrders.length !== 1 ? 's' : ''}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3 justify-end pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteModal(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => deleteJobMutation.mutate(deleteModal.job.id)}
-                disabled={deleteJobMutation.isPending}
-              >
-                {deleteJobMutation.isPending ? 'Deleting...' : 'Delete Job'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
+  );
+}
