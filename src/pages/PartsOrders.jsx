@@ -22,7 +22,9 @@ import {
   Hash,
   Printer,
   Settings,
-  Check
+  Check,
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import { format } from 'date-fns';
@@ -45,6 +47,8 @@ export default function PartsOrders() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [markupSettings, setMarkupSettings] = useState({ max_markup: 45, min_markup: 12, decay_rate: 200 });
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiSearching, setAiSearching] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -341,6 +345,59 @@ export default function PartsOrders() {
     );
   };
 
+  const handleAiSearch = async () => {
+    if (!aiQuery.trim()) {
+      toast.error('Please enter a search query');
+      return;
+    }
+
+    setAiSearching(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a parts search assistant helping service technicians find parts they need.
+
+User query: "${aiQuery}"
+
+Available parts in the system:
+${parts.map(p => `- ${p.part_description} ${p.part_number ? `(#${p.part_number})` : ''} - ${p.supplier || 'Unknown supplier'} - Status: ${p.status}`).join('\n')}
+
+Task: Based on the user's query, identify which parts match their needs. Consider:
+1. Part descriptions and names
+2. Part numbers
+3. Supplier/manufacturer names
+4. Common synonyms (e.g., "fuel filter" matches "filter, fuel")
+5. Related terms (e.g., "injector" for fuel system issues)
+
+Return ONLY the part descriptions that match (exact text from the list above), one per line. If no matches, respond with "NO_MATCHES".`,
+        add_context_from_internet: false
+      });
+
+      const resultText = typeof response === 'string' ? response : response?.text || '';
+      
+      if (resultText.includes('NO_MATCHES') || !resultText.trim()) {
+        toast.error('No matching parts found');
+        setSearch('');
+      } else {
+        // Extract matched part descriptions
+        const matches = resultText.split('\n')
+          .map(line => line.replace(/^[-•*]\s*/, '').trim())
+          .filter(line => line.length > 0);
+        
+        if (matches.length > 0) {
+          // Use the first matched description as search
+          setSearch(matches[0].split('(#')[0].trim());
+          toast.success(`Found ${matches.length} matching part${matches.length > 1 ? 's' : ''}`);
+        } else {
+          toast.error('No matching parts found');
+        }
+      }
+    } catch (error) {
+      toast.error('AI search failed');
+    } finally {
+      setAiSearching(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -375,6 +432,41 @@ export default function PartsOrders() {
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Part
+          </Button>
+        </div>
+      </div>
+
+      {/* AI Search */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-5 h-5 text-purple-600" />
+          <h3 className="font-semibold text-slate-900">AI Parts Search</h3>
+        </div>
+        <p className="text-sm text-slate-600 mb-3">Describe what you need, and AI will find matching parts</p>
+        <div className="flex gap-2">
+          <Input
+            value={aiQuery}
+            onChange={(e) => setAiQuery(e.target.value)}
+            placeholder="e.g., 'fuel filter for Caterpillar', 'injector parts', 'hydraulic hoses'"
+            className="flex-1 bg-white"
+            onKeyDown={(e) => e.key === 'Enter' && !aiSearching && handleAiSearch()}
+          />
+          <Button 
+            onClick={handleAiSearch}
+            disabled={aiSearching || !aiQuery.trim()}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            {aiSearching ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Searching...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Search
+              </>
+            )}
           </Button>
         </div>
       </div>
