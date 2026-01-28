@@ -30,6 +30,7 @@ export default function Jobs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -114,7 +115,10 @@ export default function Jobs() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs', 'authorizations', 'service-reports', 'parts-orders'] });
+      queryClient.invalidateQueries(['jobs']);
+      queryClient.invalidateQueries(['authorizations']);
+      queryClient.invalidateQueries(['service-reports']);
+      queryClient.invalidateQueries(['parts-orders']);
       toast.success('Item assigned to job');
     }
   });
@@ -143,7 +147,10 @@ export default function Jobs() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs', 'authorizations', 'service-reports', 'parts-orders'] });
+      queryClient.invalidateQueries(['jobs']);
+      queryClient.invalidateQueries(['authorizations']);
+      queryClient.invalidateQueries(['service-reports']);
+      queryClient.invalidateQueries(['parts-orders']);
       setDeleteModal(null);
     }
   });
@@ -258,7 +265,7 @@ export default function Jobs() {
     });
   };
 
-  const handleDragEnd = (result) => {
+  const handleDragEnd = async (result) => {
     if (!result.destination) return;
     
     const { source, destination, draggableId } = result;
@@ -273,7 +280,21 @@ export default function Jobs() {
     // Don't do anything if dropped in the same place
     if (source.droppableId === destination.droppableId) return;
     
-    assignToJobMutation.mutate({ itemType, itemId, jobId });
+    // If item is selected, assign all selected items
+    const itemKey = `${itemType}-${itemId}`;
+    if (selectedItems.includes(itemKey)) {
+      // Assign all selected items
+      for (const selected of selectedItems) {
+        const firstDash = selected.indexOf('-');
+        const type = selected.substring(0, firstDash);
+        const id = selected.substring(firstDash + 1);
+        await assignToJobMutation.mutateAsync({ itemType: type, itemId: id, jobId });
+      }
+      setSelectedItems([]);
+      toast.success(`${selectedItems.length} items assigned to job`);
+    } else {
+      assignToJobMutation.mutate({ itemType, itemId, jobId });
+    }
   };
 
   const handleCreateEmptyJob = async () => {
@@ -288,6 +309,17 @@ export default function Jobs() {
   };
 
   const hasOrphans = orphanedAuths.length > 0 || orphanedReports.length > 0 || orphanedParts.length > 0;
+
+  const toggleItemSelection = (itemType, itemId) => {
+    const itemKey = `${itemType}-${itemId}`;
+    setSelectedItems(prev => 
+      prev.includes(itemKey) ? prev.filter(id => id !== itemKey) : [...prev, itemKey]
+    );
+  };
+
+  const isItemSelected = (itemType, itemId) => {
+    return selectedItems.includes(`${itemType}-${itemId}`);
+  };
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -320,10 +352,28 @@ export default function Jobs() {
         {/* Orphaned Items Section */}
         {hasOrphans && (
           <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-4">
-            <h2 className="text-lg font-semibold text-slate-700 mb-3 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              Unassigned Items - Drag to Job
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                Unassigned Items - Drag to Job
+              </h2>
+              {selectedItems.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-amber-500 text-white">
+                    {selectedItems.length} selected
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedItems([])}
+                    className="h-6 text-xs"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mb-3">Ctrl+Click to multi-select items</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Orphaned Authorizations */}
               {orphanedAuths.length > 0 && (
@@ -338,7 +388,17 @@ export default function Jobs() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-amber-400' : 'border-slate-200'}`}
+                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${
+                                snapshot.isDragging ? 'shadow-lg ring-2 ring-amber-400' : 
+                                isItemSelected('authorization', auth.id) ? 'ring-2 ring-amber-400 bg-amber-50' : 
+                                'border-slate-200'
+                              }`}
+                              onClick={(e) => {
+                                if (e.ctrlKey || e.metaKey) {
+                                  e.preventDefault();
+                                  toggleItemSelection('authorization', auth.id);
+                                }
+                              }}
                             >
                               <div className="flex items-start gap-2">
                                 <GripVertical className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
@@ -375,7 +435,17 @@ export default function Jobs() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-400' : 'border-slate-200'}`}
+                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${
+                                snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-400' : 
+                                isItemSelected('serviceReport', sr.id) ? 'ring-2 ring-blue-400 bg-blue-50' : 
+                                'border-slate-200'
+                              }`}
+                              onClick={(e) => {
+                                if (e.ctrlKey || e.metaKey) {
+                                  e.preventDefault();
+                                  toggleItemSelection('serviceReport', sr.id);
+                                }
+                              }}
                             >
                               <div className="flex items-start gap-2">
                                 <GripVertical className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
@@ -412,7 +482,17 @@ export default function Jobs() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-purple-400' : 'border-slate-200'}`}
+                              className={`p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-all ${
+                                snapshot.isDragging ? 'shadow-lg ring-2 ring-purple-400' : 
+                                isItemSelected('partsOrder', po.id) ? 'ring-2 ring-purple-400 bg-purple-50' : 
+                                'border-slate-200'
+                              }`}
+                              onClick={(e) => {
+                                if (e.ctrlKey || e.metaKey) {
+                                  e.preventDefault();
+                                  toggleItemSelection('partsOrder', po.id);
+                                }
+                              }}
                             >
                               <div className="flex items-start gap-2">
                                 <GripVertical className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
