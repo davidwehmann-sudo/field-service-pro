@@ -523,16 +523,36 @@ Return the data in the specified JSON format. If you cannot identify something, 
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSave}
-                disabled={!formData.part_number || !formData.part_description}
-              >
-                {editingPart ? 'Update' : 'Add'} Part
-              </Button>
+            <div className="flex justify-between items-center gap-3">
+              {!editingPart && formData.part_description && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      location: 'non_stock',
+                      quantity_on_hand: 0
+                    }));
+                    toast.success('Set to non-stock catalog item');
+                  }}
+                  className="text-blue-600"
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Mark as Non-Stock
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSave}
+                  disabled={!formData.part_number || !formData.part_description}
+                >
+                  {editingPart ? 'Update' : 'Add'} Part
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>

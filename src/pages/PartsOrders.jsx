@@ -195,6 +195,23 @@ export default function PartsOrders() {
     }
   }, [editingPart]);
 
+  const handleSaveToCatalog = async (partData) => {
+    try {
+      await base44.entities.PartsInventory.create({
+        part_number: partData.part_number,
+        part_description: partData.part_description,
+        manufacturer: partData.supplier,
+        unit_cost: partData.unit_cost,
+        location: 'non_stock',
+        quantity_on_hand: 0,
+        notes: 'Added from parts order'
+      });
+      toast.success('Part saved to catalog as non-stock item');
+    } catch (error) {
+      toast.error('Failed to save to catalog');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -731,21 +748,45 @@ export default function PartsOrders() {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-between items-center gap-3 pt-4">
               <Button 
                 type="button" 
                 variant="outline"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  const formData = new FormData(document.querySelector('form'));
+                  const partData = {
+                    part_number: formData.get('part_number'),
+                    part_description: formData.get('part_description'),
+                    supplier: formData.get('supplier'),
+                    unit_cost: parseFloat(formData.get('unit_cost')) || 0
+                  };
+                  if (partData.part_description) {
+                    handleSaveToCatalog(partData);
+                  } else {
+                    toast.error('Enter part description first');
+                  }
+                }}
+                className="text-blue-600"
               >
-                Cancel
+                <Package className="w-4 h-4 mr-2" />
+                Save to Catalog
               </Button>
-              <Button 
-                type="submit"
-                className="bg-amber-500 hover:bg-amber-600"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {editingPart ? 'Save Changes' : 'Add Part'}
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  className="bg-amber-500 hover:bg-amber-600"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {editingPart ? 'Save Changes' : 'Add Part'}
+                </Button>
+              </div>
             </div>
           </form>
         </DialogContent>
