@@ -569,61 +569,75 @@ export default function PartsOrders() {
               </div>
             </div>
 
-            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-              <p className="text-sm font-medium text-amber-900 mb-2">Part Assignment (Required)</p>
-              <p className="text-xs text-amber-700">Must assign to service report, customer, or internal vehicle</p>
-            </div>
-
             <div>
-              <Label>Service Report</Label>
-              <Select name="service_report_id" defaultValue={editingPart?.service_report_id || ''}>
+              <Label>Assignment Type *</Label>
+              <Select value={assignmentType} onValueChange={setAssignmentType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Link to service report" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {serviceReports.map((report) => (
-                    <SelectItem key={report.id} value={report.id}>
-                      {getServiceReportLabel(report.id)}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="service_report">Service Report</SelectItem>
+                  <SelectItem value="counter_sale">Counter Sale (Customer)</SelectItem>
+                  <SelectItem value="cash_sale">Cash Sale</SelectItem>
+                  <SelectItem value="inventory">Inventory (Stock)</SelectItem>
+                  <SelectItem value="internal_vehicle">Internal Vehicle Repair</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label>Customer (Counter Sales)</Label>
-              <Select name="customer_id" defaultValue={editingPart?.customer_id || ''}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer for counter sale" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {assignmentType === 'service_report' && (
+              <div>
+                <Label>Service Report *</Label>
+                <Select name="service_report_id" defaultValue={editingPart?.service_report_id || ''}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service report" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceReports.map((report) => (
+                      <SelectItem key={report.id} value={report.id}>
+                        {getServiceReportLabel(report.id)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            <div>
-              <Label>Our Vehicle (Internal Repair)</Label>
-              <Select name="own_vehicle_id" defaultValue={editingPart?.own_vehicle_id || ''}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select vehicle for internal repair" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {vehicles.map((vehicle) => (
-                    <SelectItem key={vehicle.id} value={vehicle.id}>
-                      {vehicle.name} {vehicle.vehicle_owner === 'personal' ? '(Personal)' : '(Company)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {assignmentType === 'counter_sale' && (
+              <div>
+                <Label>Customer *</Label>
+                <Select name="customer_id" defaultValue={editingPart?.customer_id || ''}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.company_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {assignmentType === 'internal_vehicle' && (
+              <div>
+                <Label>Our Vehicle *</Label>
+                <Select name="own_vehicle_id" defaultValue={editingPart?.own_vehicle_id || ''}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select vehicle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.name} {vehicle.vehicle_owner === 'personal' ? '(Personal)' : '(Company)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {editingPart?.own_vehicle_id && (
               <div>
