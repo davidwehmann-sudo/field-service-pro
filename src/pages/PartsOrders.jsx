@@ -89,6 +89,11 @@ export default function PartsOrders() {
     queryFn: () => base44.entities.ServiceReport.list('-created_date')
   });
 
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list()
+  });
+
   const { data: settings = [] } = useQuery({
     queryKey: ['markupSettings'],
     queryFn: () => base44.entities.MarkupSettings.list()
@@ -223,10 +228,21 @@ export default function PartsOrders() {
   };
 
   const filteredParts = parts.filter(p => {
+    const query = search.toLowerCase();
+    const customer = customers.find(c => c.id === p.customer_id);
+    const job = jobs.find(j => j.id === p.job_id);
+    const vehicle = vehicles.find(v => v.id === p.own_vehicle_id);
+    
     const matchesSearch = 
-      p.part_description?.toLowerCase().includes(search.toLowerCase()) ||
-      p.part_number?.toLowerCase().includes(search.toLowerCase()) ||
-      p.supplier?.toLowerCase().includes(search.toLowerCase());
+      p.part_description?.toLowerCase().includes(query) ||
+      p.part_number?.toLowerCase().includes(query) ||
+      p.supplier?.toLowerCase().includes(query) ||
+      customer?.company_name?.toLowerCase().includes(query) ||
+      job?.job_number?.toLowerCase().includes(query) ||
+      vehicle?.name?.toLowerCase().includes(query) ||
+      p.notes?.toLowerCase().includes(query) ||
+      p.assignment_type?.toLowerCase().includes(query);
+    
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     const matchesReport = reportFilter === 'all' || p.service_report_id === reportFilter;
     return matchesSearch && matchesStatus && matchesReport;
@@ -353,16 +369,34 @@ export default function PartsOrders() {
 
     setAiSearching(true);
     try {
+      // Build enriched context for AI
+      const enrichedParts = parts.map(p => {
+        const customer = customers.find(c => c.id === p.customer_id);
+        const job = jobs.find(j => j.id === p.job_id);
+        const vehicle = vehicles.find(v => v.id === p.own_vehicle_id);
+        
+        return `- ${p.part_description} ${p.part_number ? `(#${p.part_number})` : ''} | ${p.supplier || 'No supplier'} | Status: ${p.status}${customer ? ` | Customer: ${customer.company_name}` : ''}${job ? ` | Job: ${job.job_number}` : ''}${vehicle ? ` | Vehicle: ${vehicle.name}` : ''}${p.assignment_type ? ` | Type: ${p.assignment_type}` : ''}`;
+      });
+
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a parts search assistant. Analyze the user's query and return the best keyword to search for.
 
 User query: "${aiQuery}"
 
-Available parts:
-${parts.map(p => `- ${p.part_description} ${p.part_number ? `(#${p.part_number})` : ''}`).join('\n')}
+Available parts with full context:
+${enrichedParts.join('\n')}
 
-Return ONLY a single short keyword or phrase (2-3 words max) that would best match relevant parts. 
-Examples: "filter", "injector", "hydraulic", "fuel pump"
+Search across:
+- Part descriptions and part numbers
+- Suppliers/manufacturers
+- Customer names
+- Job numbers
+- Vehicle names
+- Assignment types (service_report, counter_sale, inventory, etc.)
+- Status (needed, ordered, received, installed)
+
+Return ONLY a single short keyword or phrase (2-4 words max) that would best match relevant parts. 
+Examples: "filter", "injector", "J-2026-001", "Caterpillar", "John Deere", "Truck 1", "hydraulic"
 If no match possible, return "NO_MATCH".`,
         add_context_from_internet: false
       });
@@ -377,12 +411,21 @@ If no match possible, return "NO_MATCH".`,
         setStatusFilter('all');
         setReportFilter('all');
         
-        // Count matches
-        const matches = parts.filter(p => 
-          p.part_description?.toLowerCase().includes(keyword.toLowerCase()) ||
-          p.part_number?.toLowerCase().includes(keyword.toLowerCase()) ||
-          p.supplier?.toLowerCase().includes(keyword.toLowerCase())
-        );
+        // Count matches with enhanced filtering
+        const query = keyword.toLowerCase();
+        const matches = parts.filter(p => {
+          const customer = customers.find(c => c.id === p.customer_id);
+          const job = jobs.find(j => j.id === p.job_id);
+          const vehicle = vehicles.find(v => v.id === p.own_vehicle_id);
+          
+          return p.part_description?.toLowerCase().includes(query) ||
+                 p.part_number?.toLowerCase().includes(query) ||
+                 p.supplier?.toLowerCase().includes(query) ||
+                 customer?.company_name?.toLowerCase().includes(query) ||
+                 job?.job_number?.toLowerCase().includes(query) ||
+                 vehicle?.name?.toLowerCase().includes(query) ||
+                 p.assignment_type?.toLowerCase().includes(query);
+        });
         
         if (matches.length > 0) {
           toast.success(`Found ${matches.length} matching part${matches.length !== 1 ? 's' : ''}`);
