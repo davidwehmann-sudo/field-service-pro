@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, DollarSign, Building2, Trash2, Plus, GripVertical } from "lucide-react";
+import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, Trash2, Plus, GripVertical } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -88,6 +88,9 @@ export default function Jobs() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       toast.success('New job created');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create job');
     }
   });
 
@@ -99,8 +102,12 @@ export default function Jobs() {
       });
       return jobNumberData.job_number;
     },
-    onSuccess: (jobNumber) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Job number generated');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to generate job number');
     }
   });
 
@@ -131,10 +138,10 @@ export default function Jobs() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['jobs']);
-      queryClient.invalidateQueries(['authorizations']);
-      queryClient.invalidateQueries(['service-reports']);
-      queryClient.invalidateQueries(['parts-orders']);
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['authorizations'] });
+      queryClient.invalidateQueries({ queryKey: ['service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['parts-orders'] });
       toast.success('Item assigned to job');
     },
     onError: (error) => {
@@ -144,33 +151,33 @@ export default function Jobs() {
 
   const deleteJobMutation = useMutation({
     mutationFn: async (jobId) => {
-      const job = jobsData.find(j => j.id === jobId);
-      if (!job) return;
+      // Fetch fresh related entities to ensure we have current state
+      const [auths, reports, parts] = await Promise.all([
+        base44.entities.PreRepairAuthorization.filter({ job_id: jobId }),
+        base44.entities.ServiceReport.filter({ job_id: jobId }),
+        base44.entities.PartsOrder.filter({ job_id: jobId })
+      ]);
       
       // Delete all related entities first
-      if (deleteModal?.authorization?.id) {
-        await base44.entities.PreRepairAuthorization.delete(deleteModal.authorization.id);
-      }
-      if (deleteModal?.serviceReport?.id) {
-        await base44.entities.ServiceReport.delete(deleteModal.serviceReport.id);
-      }
-      if (deleteModal?.partsOrders?.length) {
-        for (const po of deleteModal.partsOrders) {
-          await base44.entities.PartsOrder.delete(po.id);
-        }
-      }
+      await Promise.all([
+        ...auths.map(a => base44.entities.PreRepairAuthorization.delete(a.id)),
+        ...reports.map(r => base44.entities.ServiceReport.delete(r.id)),
+        ...parts.map(p => base44.entities.PartsOrder.delete(p.id))
+      ]);
       
       // Delete the job itself
-      if (job.id && !job.id.startsWith('temp-')) {
-        await base44.entities.Job.delete(jobId);
-      }
+      await base44.entities.Job.delete(jobId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['jobs']);
-      queryClient.invalidateQueries(['authorizations']);
-      queryClient.invalidateQueries(['service-reports']);
-      queryClient.invalidateQueries(['parts-orders']);
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['authorizations'] });
+      queryClient.invalidateQueries({ queryKey: ['service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['parts-orders'] });
       setDeleteModal(null);
+      toast.success('Job deleted');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete job');
     }
   });
 
@@ -290,7 +297,6 @@ export default function Jobs() {
     const { source, destination, draggableId } = result;
     
     // Parse draggableId: format is "type-id"
-    // Handle IDs that may contain dashes
     const firstDashIndex = draggableId.indexOf('-');
     const itemType = draggableId.substring(0, firstDashIndex);
     const itemId = draggableId.substring(firstDashIndex + 1);
@@ -299,18 +305,25 @@ export default function Jobs() {
     // Don't do anything if dropped in the same place
     if (source.droppableId === destination.droppableId) return;
     
-    // If item is selected, assign all selected items
+    // If item is selected, batch assign all selected items
     const itemKey = `${itemType}-${itemId}`;
     if (selectedItems.includes(itemKey)) {
-      // Assign all selected items
-      for (const selected of selectedItems) {
-        const firstDash = selected.indexOf('-');
-        const type = selected.substring(0, firstDash);
-        const id = selected.substring(firstDash + 1);
-        await assignToJobMutation.mutateAsync({ itemType: type, itemId: id, jobId });
+      const count = selectedItems.length;
+      try {
+        // Batch all assignments together
+        await Promise.all(
+          selectedItems.map(selected => {
+            const firstDash = selected.indexOf('-');
+            const type = selected.substring(0, firstDash);
+            const id = selected.substring(firstDash + 1);
+            return assignToJobMutation.mutateAsync({ itemType: type, itemId: id, jobId });
+          })
+        );
+        setSelectedItems([]);
+        toast.success(`${count} items assigned to job`);
+      } catch (error) {
+        toast.error('Some items failed to assign');
       }
-      setSelectedItems([]);
-      toast.success(`${selectedItems.length} items assigned to job`);
     } else {
       assignToJobMutation.mutate({ itemType, itemId, jobId });
     }
@@ -322,7 +335,7 @@ export default function Jobs() {
       return;
     }
     
-    // Use first customer or prompt for selection
+    // Use first customer by default
     const customerId = customers[0].id;
     createEmptyJobMutation.mutate(customerId);
   };
@@ -567,7 +580,7 @@ export default function Jobs() {
                           <Badge variant="outline" className="font-mono text-xs">
                             {job.jobNumber}
                           </Badge>
-                        ) : job.id && !job.id.startsWith('temp-') ? (
+                        ) : (
                           <Button
                             size="sm"
                             variant="outline"
@@ -580,10 +593,6 @@ export default function Jobs() {
                           >
                             {generateJobNumberMutation.isPending ? 'Generating...' : 'Generate Job #'}
                           </Button>
-                        ) : (
-                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">
-                            No Job #
-                          </Badge>
                         )}
                         <h3 className="font-semibold text-slate-900">
                           {getCustomerName(job.customer_id)}
