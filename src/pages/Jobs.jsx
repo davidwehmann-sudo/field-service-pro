@@ -111,7 +111,15 @@ export default function Jobs() {
       } else if (itemType === 'serviceReport') {
         await base44.entities.ServiceReport.update(itemId, { job_id: jobId });
       } else if (itemType === 'partsOrder') {
-        await base44.entities.PartsOrder.update(itemId, { job_id: jobId });
+        // Fetch existing part to preserve all required fields
+        const existingParts = await base44.entities.PartsOrder.filter({ id: itemId });
+        if (existingParts.length > 0) {
+          const part = existingParts[0];
+          await base44.entities.PartsOrder.update(itemId, {
+            ...part,
+            job_id: jobId
+          });
+        }
       }
     },
     onSuccess: () => {
