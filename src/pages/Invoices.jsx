@@ -88,6 +88,13 @@ export default function Invoices() {
     loadUser();
   }, [navigate]);
 
+  const generateInvoiceNumber = useCallback(() => {
+    const prefix = 'INV';
+    const date = format(new Date(), 'yyyyMMdd');
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${prefix}-${date}-${random}`;
+  }, []);
+
   useEffect(() => {
     if (fromReportId && serviceReports.length > 0) {
       const report = serviceReports.find(r => r.id === fromReportId);
@@ -182,13 +189,6 @@ export default function Invoices() {
     const customer = customers.find(c => c.id === customerId);
     return customer?.company_name || 'Unknown Customer';
   }, [customers]);
-
-  const generateInvoiceNumber = useCallback(() => {
-    const prefix = 'INV';
-    const date = format(new Date(), 'yyyyMMdd');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${prefix}-${date}-${random}`;
-  }, []);
 
   const filteredInvoices = useMemo(() => {
     const lowerSearch = search.toLowerCase();
