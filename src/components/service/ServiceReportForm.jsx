@@ -30,6 +30,18 @@ const EQUIPMENT_TYPES = [
   'Crane',
   'Compressor',
   'Pump',
+  'Tractor',
+  'Combine Harvester',
+  'Planter',
+  'Sprayer',
+  'Baler',
+  'Cultivator',
+  'Disc Harrow',
+  'Plow',
+  'Grain Cart',
+  'Auger',
+  'Grain Dryer',
+  'Irrigation System',
   'Other'
 ];
 
