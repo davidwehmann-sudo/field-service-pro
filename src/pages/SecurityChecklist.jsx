@@ -54,9 +54,13 @@ export default function SecurityChecklist() {
             <CheckItem text="Invoices reference original job_id for traceability" />
             <CheckItem text="Job status automatically updates based on related records" />
             <CheckItem text="Service company isolation is enforced (multi-company data separation)" />
-            <CheckItem text="Stripe webhooks validate signatures before processing" />
-            <CheckItem text="Payment data never stored in local database" />
+            <CheckItem text="Authorization access tokens expire after 90 days" />
+            <CheckItem text="Customer portal access is token-based (no password required)" />
+            <CheckItem text="Stripe webhooks validate signatures before processing payments" />
+            <CheckItem text="Payment data never stored in local database (PCI compliance)" />
             <CheckItem text="Admin functions verify user.role === 'admin' before execution" />
+            <CheckItem text="Backend functions authenticate requests using base44.auth.me()" />
+            <CheckItem text="Service role operations are restricted to authorized use cases" />
           </div>
         </CardContent>
       </Card>
@@ -72,15 +76,16 @@ export default function SecurityChecklist() {
         <CardContent className="pt-6">
           <div className="space-y-3">
             <CheckItem text="Review pending authorizations in Authorizations page" />
-            <CheckItem text="Check service reports for completion status" />
-            <CheckItem text="Update parts inventory levels after field work" />
+            <CheckItem text="Check service reports for completion and accuracy" />
+            <CheckItem text="Update parts inventory levels after receiving stock" />
             <CheckItem text="Generate invoices for completed service reports" />
             <CheckItem text="Send customer portal links for new customers" />
-            <CheckItem text="Respond to customer chat messages" />
-            <CheckItem text="Verify payment status on sent invoices" />
-            <CheckItem text="Check low-stock alerts in parts inventory" />
-            <CheckItem text="Review and approve parts orders" />
-            <CheckItem text="Sync completed work with Google Calendar" />
+            <CheckItem text="Verify payment status on sent invoices (check Stripe dashboard)" />
+            <CheckItem text="Monitor parts with low stock or reorder alerts" />
+            <CheckItem text="Review and update parts orders status (ordered → received → installed)" />
+            <CheckItem text="Track vehicle expenses and attach receipts" />
+            <CheckItem text="Reconcile payment logs with bank statements" />
+            <CheckItem text="Sync service appointments with Google Calendar" />
           </div>
         </CardContent>
       </Card>
@@ -95,12 +100,13 @@ export default function SecurityChecklist() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-3">
-            <CheckItem text="Generate unique portal link for each customer from Customers page" />
-            <CheckItem text="Share portal links only via secure channels (email, SMS)" />
-            <CheckItem text="Verify link expiration (90-day validity)" />
-            <CheckItem text="Regenerate expired links when customers report access issues" />
-            <CheckItem text="Monitor customer chat for support requests" />
-            <CheckItem text="Review customer-submitted authorizations promptly" />
+            <CheckItem text="Generate unique portal link for each customer (Customers page → Generate Link)" />
+            <CheckItem text="Share portal links only via secure channels (email/SMS, never public posts)" />
+            <CheckItem text="Portal tokens expire after 90 days - regenerate if customer reports access issues" />
+            <CheckItem text="Customers can view only their own service reports and invoices" />
+            <CheckItem text="Customers can submit authorization requests via their portal" />
+            <CheckItem text="Review customer-submitted authorizations and approve/edit as needed" />
+            <CheckItem text="Provide payment links directly from Invoices page (secure per-invoice URLs)" />
           </div>
         </CardContent>
       </Card>
@@ -116,12 +122,14 @@ export default function SecurityChecklist() {
         <CardContent className="pt-6">
           <div className="space-y-3">
             <CheckItem text="Stripe integration is in Live Mode (accepting real payments)" />
-            <CheckItem text="Invoice payment links are generated securely" />
-            <CheckItem text="Payment confirmations are tracked via webhooks" />
-            <CheckItem text="Customers receive invoice links via secure channels only" />
-            <CheckItem text="Mark invoices as 'paid' only after webhook confirmation" />
-            <CheckItem text="Review failed payments and follow up with customers" />
-            <CheckItem text="Generate financial reports monthly (Financial Exports page)" />
+            <CheckItem text="Invoice payment links generate unique Stripe checkout sessions" />
+            <CheckItem text="Payment confirmations are tracked automatically via Stripe webhooks" />
+            <CheckItem text="Invoices auto-update to 'paid' status when payment succeeds" />
+            <CheckItem text="Payment method and reference are logged in payment_log entity" />
+            <CheckItem text="Review failed/overdue invoices weekly and follow up with customers" />
+            <CheckItem text="Manual payments (cash/check) are recorded with payment_reference" />
+            <CheckItem text="Export financial data monthly from Data Management page" />
+            <CheckItem text="Reconcile Stripe dashboard with app payment logs" />
           </div>
         </CardContent>
       </Card>
@@ -157,12 +165,14 @@ export default function SecurityChecklist() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-3">
-            <CheckItem text="Google Calendar sync is authorized and active" />
-            <CheckItem text="Google Maps API key is secured (not exposed in frontend)" />
-            <CheckItem text="Stripe API keys are stored as environment secrets" />
-            <CheckItem text="Webhook endpoints validate incoming requests" />
-            <CheckItem text="OAuth tokens are refreshed before expiration" />
-            <CheckItem text="Review integration logs for suspicious activity" />
+            <CheckItem text="Google Calendar OAuth is authorized (check Code → Functions)" />
+            <CheckItem text="Calendar sync creates events for service reports automatically" />
+            <CheckItem text="Google Maps API key secured as GOOGLE_MAPS_API_KEY secret" />
+            <CheckItem text="Stripe API keys stored as STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY" />
+            <CheckItem text="Stripe webhook secret stored as STRIPE_WEBHOOK_SECRET" />
+            <CheckItem text="Webhook endpoints validate signatures/tokens before processing" />
+            <CheckItem text="Authorization tokens (AuthorizationAccessToken) expire after 90 days" />
+            <CheckItem text="Review backend function logs for errors or suspicious calls" />
           </div>
         </CardContent>
       </Card>
@@ -177,12 +187,14 @@ export default function SecurityChecklist() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-3">
-            <CheckItem text="If customer reports unauthorized access: Immediately deactivate portal token" />
-            <CheckItem text="If payment issue occurs: Check Stripe dashboard webhook logs" />
-            <CheckItem text="If data breach suspected: Document incident and notify affected customers" />
-            <CheckItem text="Review access logs for unauthorized admin actions" />
-            <CheckItem text="Change API keys if compromise is suspected" />
-            <CheckItem text="Keep emergency contact list for Base44 support" />
+            <CheckItem text="If customer reports unauthorized access: Deactivate their portal token in AuthorizationAccessToken entity" />
+            <CheckItem text="If payment fails: Check Stripe dashboard → Webhooks for delivery errors" />
+            <CheckItem text="If invoice not updating to 'paid': Verify webhook endpoint is receiving events" />
+            <CheckItem text="If data breach suspected: Document incident, assess scope, notify affected parties" />
+            <CheckItem text="Review User entity for unauthorized admin role assignments" />
+            <CheckItem text="Rotate API keys if compromise suspected (Stripe, Google Maps)" />
+            <CheckItem text="Contact Base44 support for platform-level security issues" />
+            <CheckItem text="Backup critical data regularly using Data Management export feature" />
           </div>
         </CardContent>
       </Card>
@@ -192,22 +204,31 @@ export default function SecurityChecklist() {
         <h3 className="font-bold text-lg mb-3">Quick Reference</h3>
         <div className="grid md:grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="font-semibold">Key Pages:</p>
+            <p className="font-semibold mb-2">Key Pages:</p>
             <ul className="list-disc list-inside space-y-1 text-slate-600">
               <li>Dashboard - Overview & metrics</li>
-              <li>Jobs - View & track all jobs</li>
-              <li>Authorizations - Review & authorize work</li>
-              <li>Service Reports - Complete & document work</li>
-              <li>Invoices - Generate & track payments</li>
-              <li>Customers - Manage all customer data</li>
+              <li>Jobs - Unified job tracking with drag-and-drop</li>
+              <li>Authorizations - Pre-repair approvals</li>
+              <li>Service Reports - Field work documentation</li>
+              <li>Invoices - Billing & payment tracking</li>
+              <li>Parts Orders - Track parts lifecycle</li>
+              <li>Parts Inventory - Stock management</li>
+              <li>Our Vehicles - Fleet tracking</li>
+              <li>Expenses - Vehicle costs & receipts</li>
+              <li>Customers - Customer data & portal links</li>
+              <li>Data Management - Exports & backups</li>
             </ul>
           </div>
           <div>
-            <p className="font-semibold">Security Contacts:</p>
+            <p className="font-semibold mb-2">Important Notes:</p>
             <ul className="list-disc list-inside space-y-1 text-slate-600">
+              <li>Always verify user authentication before sensitive operations</li>
+              <li>Use service company filtering for multi-tenant data</li>
+              <li>Keep all API keys in environment secrets, never in code</li>
+              <li>Test payment flows in Stripe test mode before going live</li>
+              <li>Regular backups via Data Management export</li>
               <li>Base44 Support: support@base44.com</li>
-              <li>Stripe Support: https://support.stripe.com</li>
-              <li>Emergency: Document all incidents</li>
+              <li>Stripe Dashboard: https://dashboard.stripe.com</li>
             </ul>
           </div>
         </div>
