@@ -32,6 +32,8 @@ import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import { toast } from 'sonner';
+import { createPageUrl } from '@/utils';
 
 export default function Invoices() {
   const [search, setSearch] = useState('');
@@ -134,7 +136,7 @@ export default function Invoices() {
       setShowForm(true);
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [fromReportId, serviceReports, partsOrders, shouldOpenNew, autoGenerate]);
+  }, [fromReportId, serviceReports, partsOrders, shouldOpenNew, autoGenerate, generateInvoiceNumber]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Invoice.create(data),
@@ -142,6 +144,10 @@ export default function Invoices() {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       setShowForm(false);
       setEditingInvoice(null);
+      toast.success('Invoice created');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create invoice');
     }
   });
 
@@ -153,6 +159,10 @@ export default function Invoices() {
       setEditingInvoice(null);
       setShowPayment(false);
       setPayingInvoice(null);
+      toast.success('Invoice updated');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update invoice');
     }
   });
 
@@ -160,6 +170,11 @@ export default function Invoices() {
     mutationFn: (id) => base44.entities.Invoice.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      setInvoiceToDelete(null);
+      toast.success('Invoice deleted');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete invoice');
     }
   });
 
@@ -195,7 +210,7 @@ export default function Invoices() {
     });
   }, [invoices, search, statusFilter, customerFilter, startDate, endDate, getCustomerName]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     
@@ -245,9 +260,9 @@ export default function Invoices() {
     } else {
       createMutation.mutate(data);
     }
-  };
+  }, [editingInvoice, generateInvoiceNumber, createMutation, updateMutation]);
 
-  const handlePayment = (e) => {
+  const handlePayment = useCallback((e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     
@@ -260,20 +275,21 @@ export default function Invoices() {
         payment_reference: formData.get('payment_reference')
       }
     });
-  };
+  }, [payingInvoice, updateMutation]);
 
-  const handleGeneratePaymentLink = async (invoice) => {
+  const handleGeneratePaymentLink = useCallback(async (invoice) => {
     const paymentUrl = `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/PayInvoice')}?invoice_id=${invoice.id}`;
     
     try {
       await navigator.clipboard.writeText(paymentUrl);
-      alert('Payment link copied to clipboard!\n\n' + paymentUrl);
+      toast.success('Payment link copied to clipboard');
     } catch (error) {
-      alert('Payment link:\n\n' + paymentUrl);
+      toast.error('Failed to copy link');
+      console.log('Payment URL:', paymentUrl);
     }
-  };
+  }, []);
 
-  const handlePrintInvoice = async (invoiceId) => {
+  const handlePrintInvoice = useCallback(async (invoiceId) => {
     try {
       const response = await base44.functions.invoke('generateInvoicePDF', { invoice_id: invoiceId });
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -285,16 +301,16 @@ export default function Invoices() {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      alert('Invoice PDF downloaded');
+      toast.success('Invoice PDF downloaded');
     } catch (error) {
-      alert('Failed to generate PDF');
+      toast.error('Failed to generate PDF');
     }
-  };
+  }, []);
 
-  const handleSendEmail = async (invoice) => {
+  const handleSendEmail = useCallback(async (invoice) => {
     const customer = customers.find(c => c.id === invoice.customer_id);
     if (!customer?.email) {
-      alert('Customer does not have an email address');
+      toast.error('Customer does not have an email address');
       return;
     }
 
@@ -363,17 +379,15 @@ CHARGES:
 
       // Update invoice status to 'sent' if it was draft
       if (invoice.status === 'draft') {
-        updateMutation.mutate({
-          id: invoice.id,
-          data: { status: 'sent' }
-        });
+        await base44.entities.Invoice.update(invoice.id, { status: 'sent' });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
       }
 
-      alert(`Invoice sent to ${customer.email}`);
+      toast.success(`Invoice sent to ${customer.email}`);
     } catch (error) {
-      alert('Failed to send email');
+      toast.error('Failed to send email');
     }
-  };
+  }, [customers, serviceReports, partsOrders, queryClient]);
 
   const statusColors = {
     draft: "bg-slate-100 text-slate-700",
@@ -518,14 +532,18 @@ CHARGES:
       ) : (
         <div className="space-y-3">
           {filteredInvoices.map((invoice) => (
-            <Card key={invoice.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card 
+              key={invoice.id} 
+              className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => { setEditingInvoice(invoice); setShowForm(true); }}
+            >
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Receipt className="w-6 h-6 text-green-600" />
                   </div>
                   
-                  <div className="flex-1 min-w-0">
+                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="font-semibold text-slate-900">
@@ -571,7 +589,7 @@ CHARGES:
                     </div>
                   </div>
 
-                  <div className="flex gap-1">
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                    <Button 
                      variant="ghost" 
                      size="icon"
@@ -598,13 +616,7 @@ CHARGES:
                    >
                      <Send className="w-4 h-4 text-blue-500" />
                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => { setEditingInvoice(invoice); setShowForm(true); }}
-                    >
-                      <Pencil className="w-4 h-4 text-slate-400" />
-                    </Button>
+
                     {invoice.status !== 'paid' && (
                       <Button 
                         variant="ghost" 
@@ -891,7 +903,7 @@ CHARGES:
         </DialogContent>
         </Dialog>
 
-        <DeleteConfirmationDialog
+      <DeleteConfirmationDialog
         open={!!invoiceToDelete}
         onOpenChange={(open) => !open && setInvoiceToDelete(null)}
         title="Delete Invoice?"
@@ -906,7 +918,7 @@ CHARGES:
             deleteMutation.mutate(invoiceToDelete.id);
           }
         }}
-        />
-        </div>
-        );
-        }
+      />
+    </div>
+  );
+}
