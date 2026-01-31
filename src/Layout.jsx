@@ -165,7 +165,7 @@ export default function Layout({ children, currentPageName }) {
 
           <CompanySelector currentUser={currentUser} onCompanyChange={setDisplayCompany} />
 
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1 overflow-y-auto flex-1">
           {navigation.map((item) => {
             const isActive = currentPageName === item.href;
             return (
