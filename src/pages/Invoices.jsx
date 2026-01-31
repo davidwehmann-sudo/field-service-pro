@@ -32,6 +32,7 @@ import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import PrepaymentSummary from '@/components/invoice/PrepaymentSummary';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 
@@ -71,6 +72,11 @@ export default function Invoices() {
   const { data: partsOrders = [] } = useQuery({
     queryKey: ['partsOrders'],
     queryFn: () => base44.entities.PartsOrder.list()
+  });
+
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list()
   });
 
   const [currentUser, setCurrentUser] = useState(null);
@@ -393,7 +399,8 @@ CHARGES:
     draft: "bg-slate-100 text-slate-700",
     sent: "bg-blue-100 text-blue-700",
     paid: "bg-green-100 text-green-700",
-    overdue: "bg-red-100 text-red-700"
+    overdue: "bg-red-100 text-red-700",
+    partially_paid: "bg-amber-100 text-amber-700"
   };
 
   return (
@@ -430,6 +437,7 @@ CHARGES:
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="draft">Draft</TabsTrigger>
               <TabsTrigger value="sent">Sent</TabsTrigger>
+              <TabsTrigger value="partially_paid">Partial</TabsTrigger>
               <TabsTrigger value="paid">Paid</TabsTrigger>
               <TabsTrigger value="overdue">Overdue</TabsTrigger>
             </TabsList>
@@ -651,6 +659,13 @@ CHARGES:
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
+            {editingInvoice?.job_id && (
+              <PrepaymentSummary 
+                jobId={editingInvoice.job_id} 
+                invoiceId={editingInvoice.id}
+              />
+            )}
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="invoice_number">Invoice Number</Label>
@@ -784,6 +799,7 @@ CHARGES:
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="partially_paid">Partially Paid</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="overdue">Overdue</SelectItem>
                   </SelectContent>
