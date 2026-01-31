@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2, Mail, AlertCircle } from "lucide-react";
-import CustomerSelect from '@/components/customers/CustomerSelect';
+
 import SignaturePad from '@/components/ui/SignaturePad';
 import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
 import PrepaymentTracker from '@/components/authorization/PrepaymentTracker';
@@ -67,6 +67,7 @@ export default function AuthorizationForm({
   const [isEstimatingCost, setIsEstimatingCost] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [customerSearchName, setCustomerSearchName] = useState('');
 
   const handleChange = useCallback((field, value) => {
     setFormData(prev => {
@@ -78,6 +79,39 @@ export default function AuthorizationForm({
       return updated;
     });
   }, []);
+
+  const handleCustomerNameBlur = useCallback(() => {
+    if (!customerSearchName.trim()) return;
+
+    // Search for matching customer by company name (case-insensitive)
+    const matchedCustomer = customers.find(c => 
+      c.company_name?.toLowerCase() === customerSearchName.trim().toLowerCase()
+    );
+
+    if (matchedCustomer) {
+      // Autofill all customer data
+      setFormData(prev => ({
+        ...prev,
+        customer_id: matchedCustomer.id,
+        billing_contact_company: matchedCustomer.company_name || '',
+        billing_contact_name: matchedCustomer.contact_name || prev.billing_contact_name,
+        billing_contact_phone: matchedCustomer.phone || prev.billing_contact_phone,
+        billing_contact_email: matchedCustomer.email || prev.billing_contact_email,
+        billing_address: matchedCustomer.address || prev.billing_address,
+        billing_city: matchedCustomer.city || prev.billing_city,
+        billing_state: matchedCustomer.state || prev.billing_state,
+        billing_zip: matchedCustomer.zip || prev.billing_zip
+      }));
+      toast.success(`Customer "${matchedCustomer.company_name}" found and loaded`);
+    } else {
+      // Clear customer_id if no match - treat as new customer
+      setFormData(prev => ({
+        ...prev,
+        customer_id: '',
+        billing_contact_company: customerSearchName.trim()
+      }));
+    }
+  }, [customerSearchName, customers]);
 
   const handleEstimateCost = useCallback(async () => {
     if (!formData.nature_of_service || !formData.service_type) {
@@ -129,6 +163,28 @@ Be realistic and professional. This is an estimate that will be shown to a custo
   }, [formData.nature_of_service, formData.service_type, formData.equipment_info]);
 
   const handleSave = async (status = 'draft') => {
+    // Create new customer if no customer_id exists
+    let customerId = formData.customer_id;
+    if (!customerId && formData.billing_contact_company) {
+      try {
+        const newCustomer = await base44.entities.Customer.create({
+          company_name: formData.billing_contact_company,
+          contact_name: formData.billing_contact_name,
+          phone: formData.billing_contact_phone,
+          email: formData.billing_contact_email,
+          address: formData.billing_address,
+          city: formData.billing_city,
+          state: formData.billing_state,
+          zip: formData.billing_zip
+        });
+        customerId = newCustomer.id;
+        toast.success(`New customer "${formData.billing_contact_company}" created`);
+      } catch (error) {
+        toast.error("Failed to create customer");
+        return;
+      }
+    }
+
     // Generate job number if new authorization and no job selected
     let jobId = formData.job_id;
     if (!authorization?.id && !jobId) {
@@ -138,7 +194,7 @@ Be realistic and professional. This is an estimate that will be shown to a custo
         
         const newJob = await base44.entities.Job.create({
           job_number: jobNumber,
-          customer_id: formData.customer_id,
+          customer_id: customerId,
           job_type: 'service',
           status: status === 'authorized' ? 'in_progress' : 'open',
           description: formData.nature_of_service?.slice(0, 100) || 'Service authorization'
@@ -154,6 +210,7 @@ Be realistic and professional. This is an estimate that will be shown to a custo
     
     const data = {
       ...formData,
+      customer_id: customerId,
       job_id: jobId,
       status,
       estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
@@ -233,7 +290,7 @@ Thank you for your business.
     }
   }, [formData, customers]);
 
-  const isReadyToAuthorize = useMemo(() => formData.customer_id && 
+  const isReadyToAuthorize = useMemo(() => (formData.customer_id || formData.billing_contact_company) && 
                              formData.billing_contact_name && 
                              formData.nature_of_service && 
                              formData.service_type &&
@@ -242,6 +299,16 @@ Thank you for your business.
   const filteredJobs = useMemo(() => {
     return jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id);
   }, [jobs, formData.customer_id]);
+
+  // Set initial customer search name when editing
+  useEffect(() => {
+    if (authorization?.id && formData.customer_id && customers.length > 0) {
+      const customer = customers.find(c => c.id === formData.customer_id);
+      if (customer) {
+        setCustomerSearchName(customer.company_name || '');
+      }
+    }
+  }, [authorization, formData.customer_id, customers]);
 
   return (
     <div className="space-y-6">
@@ -284,12 +351,16 @@ Thank you for your business.
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Customer *</Label>
-              <CustomerSelect 
-                customers={customers}
-                value={formData.customer_id}
-                onChange={(val) => handleChange('customer_id', val)}
+              <Label>Customer Company Name *</Label>
+              <Input 
+                value={customerSearchName || formData.billing_contact_company}
+                onChange={(e) => setCustomerSearchName(e.target.value)}
+                onBlur={handleCustomerNameBlur}
+                placeholder="Enter company name..."
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Type existing customer name to autofill, or enter new customer
+              </p>
             </div>
 
             <div>
