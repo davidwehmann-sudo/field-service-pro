@@ -92,7 +92,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "FieldTech",
+    mainPage: "AuthorizeService",
     Pages: PAGES,
     Layout: __Layout,
 };
