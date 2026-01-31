@@ -13,6 +13,7 @@ import {
         Menu,
         X,
         ChevronRight,
+        ChevronDown,
         ClipboardCheck,
         MessageSquare,
         Download,
@@ -115,6 +116,7 @@ export default function Layout({ children, currentPageName }) {
   const [userType, setUserType] = useState('unassigned_user');
   const [currentUser, setCurrentUser] = useState(null);
   const [displayCompany, setDisplayCompany] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({});
 
   useEffect(() => {
     const loadUserType = async () => {
@@ -123,6 +125,16 @@ export default function Layout({ children, currentPageName }) {
           setUserType(user.user_type || 'unassigned_user');
           setCurrentUser(user);
           setDisplayCompany(user.current_company || user.company);
+          
+          // Initialize all sections as expanded by default
+          const nav = allNavigation[user.user_type || 'unassigned_user'] || allNavigation.unassigned_user;
+          const sections = {};
+          nav.forEach((item, idx) => {
+            if (item.type === 'section') {
+              sections[idx] = true;
+            }
+          });
+          setExpandedSections(sections);
         } catch (error) {
           setUserType('unassigned_user');
         }
@@ -189,13 +201,38 @@ export default function Layout({ children, currentPageName }) {
           <nav className="p-4 space-y-1 overflow-y-auto flex-1">
           {navigation.map((item, index) => {
             if (item.type === 'section') {
+              const isExpanded = expandedSections[index];
               return (
-                <div key={`section-${index}`} className="px-4 pt-4 pb-2">
+                <button
+                  key={`section-${index}`}
+                  onClick={() => setExpandedSections(prev => ({ ...prev, [index]: !prev[index] }))}
+                  className="w-full flex items-center justify-between px-4 pt-4 pb-2 text-left hover:bg-slate-800 rounded-lg transition-colors"
+                >
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     {item.label}
                   </p>
-                </div>
+                  <ChevronDown 
+                    className={cn(
+                      "w-4 h-4 text-slate-500 transition-transform",
+                      isExpanded ? "rotate-0" : "-rotate-90"
+                    )}
+                  />
+                </button>
               );
+            }
+
+            // Find the section this item belongs to
+            let sectionIndex = null;
+            for (let i = index - 1; i >= 0; i--) {
+              if (navigation[i].type === 'section') {
+                sectionIndex = i;
+                break;
+              }
+            }
+
+            // Hide if section is collapsed
+            if (sectionIndex !== null && !expandedSections[sectionIndex]) {
+              return null;
             }
 
             const isActive = currentPageName === item.href;
