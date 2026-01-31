@@ -92,7 +92,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "AuthorizeService",
+    mainPage: "RequestAuthorization",
     Pages: PAGES,
     Layout: __Layout,
 };
