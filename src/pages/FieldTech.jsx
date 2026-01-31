@@ -15,9 +15,6 @@ import {
   Search,
   Calendar,
   Wrench,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
   Receipt,
   ClipboardCheck
 } from "lucide-react";
@@ -57,11 +54,6 @@ export default function FieldTech() {
   });
 
   const recentReports = reports.slice(0, 5);
-  const draftReports = reports.filter(r => r.status === 'draft');
-  const completedToday = reports.filter(r => 
-    r.status === 'completed' && 
-    r.service_date === format(new Date(), 'yyyy-MM-dd')
-  );
 
   const filteredCustomers = customers
     .filter(c => 
@@ -90,25 +82,6 @@ export default function FieldTech() {
             </div>
           </div>
           <OfflineIndicator />
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-slate-800 rounded-lg p-3 text-center">
-            <Clock className="w-4 h-4 mx-auto mb-1 text-amber-400" />
-            <p className="text-xl font-bold">{draftReports.length}</p>
-            <p className="text-xs text-slate-400">In Progress</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-3 text-center">
-            <CheckCircle2 className="w-4 h-4 mx-auto mb-1 text-green-400" />
-            <p className="text-xl font-bold">{completedToday.length}</p>
-            <p className="text-xs text-slate-400">Today</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-3 text-center">
-            <TrendingUp className="w-4 h-4 mx-auto mb-1 text-blue-400" />
-            <p className="text-xl font-bold">{reports.length}</p>
-            <p className="text-xs text-slate-400">Total</p>
-          </div>
         </div>
       </div>
 
