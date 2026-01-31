@@ -177,6 +177,14 @@ Return only the formatted text, no explanations.`,
     setAiProcessing(true);
     
     try {
+      // Preserve original notes if not already saved
+      if (!formData.original_technician_notes) {
+        setFormData(prev => ({ 
+          ...prev, 
+          original_technician_notes: formData.technician_notes 
+        }));
+      }
+
       // Step 1: Format notes
       toast.info('Step 1: Formatting notes...');
       const formatResult = await base44.functions.invoke('grokAssistant', {
