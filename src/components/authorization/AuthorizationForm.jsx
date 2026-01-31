@@ -10,6 +10,7 @@ import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2, Mail, AlertCircle } fr
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import SignaturePad from '@/components/ui/SignaturePad';
 import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
+import PrepaymentTracker from '@/components/authorization/PrepaymentTracker';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from "sonner";
@@ -553,6 +554,15 @@ Thank you for your business.
           )}
         </CardContent>
       </Card>
+
+      {/* Prepayments (only show if editing existing authorization) */}
+      {authorization?.id && (
+        <PrepaymentTracker
+          authorizationId={authorization.id}
+          customerId={formData.customer_id}
+          jobId={formData.job_id}
+        />
+      )}
 
       {/* Authorization */}
       <Card className="border-0 shadow-sm">
