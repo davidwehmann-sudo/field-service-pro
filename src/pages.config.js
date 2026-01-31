@@ -64,6 +64,7 @@ import SecurityChecklist from './pages/SecurityChecklist';
 import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import VehicleExpenses from './pages/VehicleExpenses';
+import ReceiptUpload from './pages/ReceiptUpload';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +86,7 @@ export const PAGES = {
     "ServiceReports": ServiceReports,
     "Sitemap": Sitemap,
     "VehicleExpenses": VehicleExpenses,
+    "ReceiptUpload": ReceiptUpload,
 }
 
 export const pagesConfig = {
