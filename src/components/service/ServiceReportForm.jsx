@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, DollarSign, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import PhotoUpload from '@/components/service/PhotoUpload';
@@ -57,6 +57,7 @@ export default function ServiceReportForm({
 
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [formattingNotes, setFormattingNotes] = useState(false);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -117,6 +118,54 @@ export default function ServiceReportForm({
   const handleChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
+
+  const handleFormatNotes = useCallback(async () => {
+    if (!formData.technician_notes?.trim()) {
+      toast.error('Please enter technician notes first');
+      return;
+    }
+
+    setFormattingNotes(true);
+    try {
+      const result = await base44.functions.invoke('grokAssistant', {
+        prompt: `Convert the following raw technician notes into a professional, organized format:
+
+${formData.technician_notes}
+
+Requirements:
+1. Segment into logical service categories (e.g., Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing)
+2. Use bullet points for each category
+3. Format with **bold** for action verbs (e.g., **Split**, **Inspected**, **Adjusted**, **Replaced**)
+4. Format with *italics* for technical specifications and measurements (e.g., *0.015 Intake*, *0.023 Exhaust*)
+5. Keep the language concise and professional
+6. Preserve all technical details and measurements
+
+Example transformation:
+Input: "split tractor, inspect shaft, adjusted overhead to 0.015 Intake 0.023 exhaust"
+Output:
+**Disassembly:**
+• **Split** tractor to access internal components
+
+**Inspection:**
+• **Inspected** shaft for wear and damage
+
+**Adjustments:**
+• **Adjusted** overhead clearance to *0.015" Intake / 0.023" Exhaust*
+
+Return only the formatted text, no explanations.`,
+        maxTokens: 1500
+      });
+
+      if (result.data?.text) {
+        handleChange('technician_notes', result.data.text);
+        toast.success('Notes formatted successfully');
+      }
+    } catch (error) {
+      toast.error('Formatting failed: ' + error.message);
+    } finally {
+      setFormattingNotes(false);
+    }
+  }, [formData.technician_notes, handleChange]);
 
   const handleAIDerive = useCallback(async () => {
     if (!formData.technician_notes?.trim()) {
@@ -423,16 +472,28 @@ Generate the best report possible with available information.`,
               Technician Notes
               <Badge variant="outline" className="text-xs font-normal">Keep adding notes as you work</Badge>
             </CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleAIDerive}
-              disabled={aiProcessing || !formData.technician_notes?.trim()}
-              className="gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              {aiProcessing ? 'Processing...' : 'AI Compile'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleFormatNotes}
+                disabled={formattingNotes || !formData.technician_notes?.trim()}
+                className="gap-2"
+              >
+                <Wand2 className="w-4 h-4" />
+                {formattingNotes ? 'Formatting...' : 'Format'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAIDerive}
+                disabled={aiProcessing || !formData.technician_notes?.trim()}
+                className="gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                {aiProcessing ? 'Processing...' : 'AI Compile'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Textarea 
