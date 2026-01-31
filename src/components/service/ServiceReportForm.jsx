@@ -167,21 +167,65 @@ Return only the formatted text, no explanations.`,
     }
   }, [formData.technician_notes, handleChange]);
 
-  const handleAIDerive = useCallback(async () => {
+  const handleFormatAndCompile = useCallback(async () => {
     if (!formData.technician_notes?.trim()) {
       toast.error('Please enter technician notes first');
       return;
     }
 
+    setFormattingNotes(true);
     setAiProcessing(true);
+    
     try {
+      // Step 1: Format notes
+      toast.info('Step 1: Formatting notes...');
+      const formatResult = await base44.functions.invoke('grokAssistant', {
+        prompt: `Convert the following raw technician notes into a professional, organized format:
+
+${formData.technician_notes}
+
+Requirements:
+1. Segment into logical service categories (e.g., Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing)
+2. Use bullet points for each category
+3. Format with **bold** for action verbs (e.g., **Split**, **Inspected**, **Adjusted**, **Replaced**)
+4. Format with *italics* for technical specifications and measurements (e.g., *0.015 Intake*, *0.023 Exhaust*)
+5. Keep the language concise and professional
+6. Preserve all technical details and measurements
+
+Example transformation:
+Input: "split tractor, inspect shaft, adjusted overhead to 0.015 Intake 0.023 exhaust"
+Output:
+**Disassembly:**
+• **Split** tractor to access internal components
+
+**Inspection:**
+• **Inspected** shaft for wear and damage
+
+**Adjustments:**
+• **Adjusted** overhead clearance to *0.015" Intake / 0.023" Exhaust*
+
+Return only the formatted text, no explanations.`,
+        maxTokens: 1500
+      });
+
+      let formattedNotes = formData.technician_notes;
+      if (formatResult.data?.text) {
+        formattedNotes = formatResult.data.text;
+        setFormData(prev => ({ ...prev, technician_notes: formattedNotes }));
+        toast.success('Notes formatted ✓');
+      }
+
+      setFormattingNotes(false);
+
+      // Step 2: Compile report using formatted notes
+      toast.info('Step 2: Compiling full report...');
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a field service technician documentation assistant. Generate a complete service report using the Caterpillar 7-Step Diagnostic Process.
 
 IMPORTANT: Review ALL technician notes comprehensively. Consider the complete context from all notes entered, not just the latest addition.
 
 Current Information:
-- ALL Technician Notes: ${formData.technician_notes}
+- ALL Technician Notes: ${formattedNotes}
 - Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}
 - Customer Complaint: ${formData.complaint}
 - Photos Provided: ${formData.photos?.length || 0}
@@ -265,10 +309,11 @@ Generate the best report possible with available information.`,
       }));
       
       setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);
-      toast.success('Report compiled successfully');
+      toast.success('Report compiled successfully ✓');
     } catch (error) {
-      toast.error('AI processing failed: ' + error.message);
+      toast.error('Processing failed: ' + error.message);
     } finally {
+      setFormattingNotes(false);
       setAiProcessing(false);
     }
   }, [formData]);
@@ -472,28 +517,16 @@ Generate the best report possible with available information.`,
               Technician Notes
               <Badge variant="outline" className="text-xs font-normal">Keep adding notes as you work</Badge>
             </CardTitle>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleFormatNotes}
-                disabled={formattingNotes || !formData.technician_notes?.trim()}
-                className="gap-2"
-              >
-                <Wand2 className="w-4 h-4" />
-                {formattingNotes ? 'Formatting...' : 'Format'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleAIDerive}
-                disabled={aiProcessing || !formData.technician_notes?.trim()}
-                className="gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                {aiProcessing ? 'Processing...' : 'AI Compile'}
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleFormatAndCompile}
+              disabled={formattingNotes || aiProcessing || !formData.technician_notes?.trim()}
+              className="gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              {formattingNotes ? 'Formatting...' : aiProcessing ? 'Compiling...' : 'Format & Compile'}
+            </Button>
           </CardHeader>
           <CardContent>
             <Textarea 
