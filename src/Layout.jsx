@@ -125,6 +125,17 @@ export default function Layout({ children, currentPageName }) {
   }, [currentPageName]);
 
   useEffect(() => {
+    // Dark mode system preference detection
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateTheme = (e) => {
+      document.documentElement.classList.toggle('dark', e.matches);
+    };
+    updateTheme(mediaQuery);
+    mediaQuery.addEventListener('change', updateTheme);
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, []);
+
+  useEffect(() => {
     const loadUserType = async () => {
         try {
           const user = await base44.auth.me();
@@ -156,7 +167,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-background">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -167,7 +178,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-72 bg-stone-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "fixed top-0 left-0 z-50 h-full w-72 bg-stone-900 dark:bg-stone-950 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between p-6 border-b border-stone-800">
@@ -270,7 +281,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main content */}
       <div className="lg:pl-72">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 bg-stone-50 border-b border-stone-200 lg:hidden">
+        <header className="sticky top-0 z-30 bg-background border-b border-border lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <Button 
               variant="ghost" 
@@ -293,7 +304,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="p-4 lg:p-8 bg-stone-50">
+        <main className="p-4 lg:p-8 bg-background">
           {children}
         </main>
       </div>
