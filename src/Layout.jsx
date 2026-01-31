@@ -156,7 +156,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -167,10 +167,10 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-72 bg-stone-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "fixed top-0 left-0 z-50 h-full w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between p-6 border-b border-stone-800">
+        <div className="flex items-center justify-between p-6 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1.5">
               <img 
@@ -180,14 +180,14 @@ export default function Layout({ children, currentPageName }) {
               />
             </div>
             <div>
-              <h1 className="font-bold text-stone-100 text-lg">{displayCompany || 'Wehmann'}</h1>
-              <p className="text-xs text-stone-400">Field Service Pro</p>
+              <h1 className="font-bold text-white text-lg">{displayCompany || 'Wehmann'}</h1>
+              <p className="text-xs text-slate-400">Field Service Pro</p>
             </div>
           </div>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="lg:hidden text-stone-400 hover:text-stone-200 hover:bg-stone-800"
+            className="lg:hidden text-slate-400"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="w-5 h-5" />
@@ -195,10 +195,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {currentUser && (
-            <div className="px-6 py-4 border-b border-stone-800">
-              <p className="text-xs text-stone-500 mb-1">Logged in as</p>
-              <p className="text-sm font-medium text-stone-100 truncate">{currentUser.full_name || currentUser.email}</p>
-              <p className="text-xs text-stone-400 mt-0.5">
+            <div className="px-6 py-4 border-b border-slate-800">
+              <p className="text-xs text-slate-500 mb-1">Logged in as</p>
+              <p className="text-sm font-medium text-white truncate">{currentUser.full_name || currentUser.email}</p>
+              <p className="text-xs text-slate-400 mt-0.5">
                 {currentUser.role && <span className="capitalize">{currentUser.role}</span>}
                 {currentUser.role && currentUser.user_type && ' • '}
                 {currentUser.user_type && formatUserType(currentUser.user_type)}
@@ -216,14 +216,14 @@ export default function Layout({ children, currentPageName }) {
                 <button
                   key={`section-${index}`}
                   onClick={() => setExpandedSections(prev => ({ ...prev, [index]: !prev[index] }))}
-                  className="w-full flex items-center justify-between px-4 pt-4 pb-2 text-left hover:bg-stone-800 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-between px-4 pt-4 pb-2 text-left hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     {item.label}
                   </p>
                   <ChevronDown 
                     className={cn(
-                      "w-4 h-4 text-stone-500 transition-transform",
+                      "w-4 h-4 text-slate-500 transition-transform",
                       isExpanded ? "rotate-0" : "-rotate-90"
                     )}
                   />
@@ -254,8 +254,8 @@ export default function Layout({ children, currentPageName }) {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
                   isActive 
-                    ? "bg-emerald-700 text-white shadow-lg" 
-                    : "text-stone-400 hover:text-stone-100 hover:bg-stone-800"
+                    ? "bg-amber-500 text-white" 
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
                 )}
               >
                 <item.icon className="w-5 h-5" />
@@ -270,7 +270,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main content */}
       <div className="lg:pl-72">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 bg-stone-50 border-b border-stone-200 lg:hidden">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <Button 
               variant="ghost" 
@@ -287,13 +287,13 @@ export default function Layout({ children, currentPageName }) {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="font-bold text-stone-900">{displayCompany || 'Wehmann'}</span>
+              <span className="font-bold text-slate-900">{displayCompany || 'Wehmann'}</span>
             </div>
             <div className="w-10" />
           </div>
         </header>
 
-        <main className="p-4 lg:p-8 bg-stone-50">
+        <main className="p-4 lg:p-8">
           {children}
         </main>
       </div>
