@@ -18,7 +18,8 @@ import {
   TrendingUp,
   Clock,
   CheckCircle2,
-  Receipt
+  Receipt,
+  ClipboardCheck
 } from "lucide-react";
 import { format } from 'date-fns';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
@@ -126,7 +127,13 @@ export default function FieldTech() {
               <span className="font-semibold">Order Parts</span>
             </Button>
           </Link>
-          <Link to={createPageUrl('ReceiptUpload')} className="col-span-2">
+          <Link to={createPageUrl('Authorizations') + '?new=true'}>
+            <Button className="w-full h-24 bg-purple-600 hover:bg-purple-700 text-white flex-col gap-2">
+              <ClipboardCheck className="w-6 h-6" />
+              <span className="font-semibold">Pre-Auth</span>
+            </Button>
+          </Link>
+          <Link to={createPageUrl('ReceiptUpload')}>
             <Button className="w-full h-24 bg-green-600 hover:bg-green-700 text-white flex-col gap-2">
               <Receipt className="w-6 h-6" />
               <span className="font-semibold">Capture Receipt</span>
