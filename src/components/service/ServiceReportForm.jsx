@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import PhotoUpload from '@/components/service/PhotoUpload';
@@ -15,6 +15,7 @@ import CatDiagnosticForm from '@/components/service/CatDiagnosticForm';
 import ServiceItemsEditor from '@/components/service/ServiceItemsEditor';
 import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
+import OriginalNotesViewer from '@/components/service/OriginalNotesViewer';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -58,6 +59,7 @@ export default function ServiceReportForm({
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
   const [formattingNotes, setFormattingNotes] = useState(false);
+  const [showOriginalNotes, setShowOriginalNotes] = useState(false);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -525,16 +527,29 @@ Generate the best report possible with available information.`,
               Technician Notes
               <Badge variant="outline" className="text-xs font-normal">Keep adding notes as you work</Badge>
             </CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleFormatAndCompile}
-              disabled={formattingNotes || aiProcessing || !formData.technician_notes?.trim()}
-              className="gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              {formattingNotes ? 'Formatting...' : aiProcessing ? 'Compiling...' : 'Format & Compile'}
-            </Button>
+            <div className="flex gap-2">
+              {formData.original_technician_notes && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowOriginalNotes(true)}
+                  className="gap-2 text-blue-600"
+                >
+                  <Eye className="w-4 h-4" />
+                  Original
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleFormatAndCompile}
+                disabled={formattingNotes || aiProcessing || !formData.technician_notes?.trim()}
+                className="gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                {formattingNotes ? 'Formatting...' : aiProcessing ? 'Compiling...' : 'Format & Compile'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Textarea 
@@ -544,9 +559,21 @@ Generate the best report possible with available information.`,
               rows={8}
               className="font-mono text-sm"
             />
-            <p className="text-xs text-slate-500 mt-2">
-              💡 Add notes continuously. Click AI Compile anytime to update report sections based on ALL accumulated notes
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-slate-500">
+                💡 Add notes continuously. Click AI Compile anytime to update report sections based on ALL accumulated notes
+              </p>
+              {formData.original_technician_notes && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  onClick={() => setShowOriginalNotes(true)}
+                  className="text-xs text-blue-600 h-auto p-0"
+                >
+                  View unmodified original
+                </Button>
+              )}
+            </div>
             {aiSuggestions && aiSuggestions.length > 0 && (
               <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-start gap-2">
@@ -671,6 +698,12 @@ Generate the best report possible with available information.`,
           </CardContent>
         </Card>
       </div>
+
+      <OriginalNotesViewer
+        report={formData}
+        open={showOriginalNotes}
+        onOpenChange={setShowOriginalNotes}
+      />
     </div>
   );
 }
