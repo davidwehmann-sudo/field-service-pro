@@ -17,13 +17,15 @@ import {
   Calendar,
   Truck,
   Trash2,
-  Receipt
+  Receipt,
+  Eye
 } from "lucide-react";
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import ServiceReportForm from '@/components/service/ServiceReportForm';
 import MobileServiceForm from '@/components/service/MobileServiceForm';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import OriginalNotesViewer from '@/components/service/OriginalNotesViewer';
 
 export default function ServiceReports() {
   const [search, setSearch] = useState('');
@@ -36,6 +38,7 @@ export default function ServiceReports() {
   const [editingReport, setEditingReport] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [reportToDelete, setReportToDelete] = useState(null);
+  const [viewingOriginalNotes, setViewingOriginalNotes] = useState(null);
   const queryClient = useQueryClient();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -423,6 +426,16 @@ export default function ServiceReports() {
                         </Button>
                       </Link>
                     )}
+                    {report.original_technician_notes && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => setViewingOriginalNotes(report)}
+                        title="View Original Notes"
+                      >
+                        <Eye className="w-4 h-4 text-blue-500" />
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="icon"
@@ -453,6 +466,12 @@ export default function ServiceReports() {
             deleteMutation.mutate(reportToDelete.id);
           }
         }}
+        />
+
+        <OriginalNotesViewer
+          report={viewingOriginalNotes}
+          open={!!viewingOriginalNotes}
+          onOpenChange={(open) => !open && setViewingOriginalNotes(null)}
         />
         </div>
         );
