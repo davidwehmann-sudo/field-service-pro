@@ -88,7 +88,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "FieldTech",
+    mainPage: "RequestAuthorization",
     Pages: PAGES,
     Layout: __Layout,
 };
