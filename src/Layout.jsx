@@ -24,65 +24,85 @@ import { cn } from "@/lib/utils";
 const allNavigation = {
   service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
+    { type: 'section', label: 'Operations' },
     { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
-    { name: 'Parts', href: 'PartsOrders', icon: Package },
-    { name: 'Our Vehicles', href: 'OwnVehicles', icon: Package },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
+    { type: 'section', label: 'Fleet' },
+    { name: 'Vehicles', href: 'OwnVehicles', icon: Package },
     { name: 'Expenses', href: 'VehicleExpenses', icon: Package },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { type: 'section', label: 'Other' },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   parts_specialist: [
-    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
+    { type: 'section', label: 'Parts' },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Orders', href: 'PartsOrders', icon: Package },
-    { name: 'Our Vehicles', href: 'OwnVehicles', icon: Package },
+    { type: 'section', label: 'Operations' },
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { type: 'section', label: 'Fleet' },
+    { name: 'Vehicles', href: 'OwnVehicles', icon: Package },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
-    { name: 'Service', href: 'ServiceReports', icon: FileText },
+    { type: 'section', label: 'Other' },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   bookkeeper: [
-    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
+    { type: 'section', label: 'Financial' },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
-    { name: 'Fleet Costs', href: 'VehicleExpenses', icon: Package },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
-    { name: 'Service', href: 'ServiceReports', icon: FileText },
-    { name: 'Data', href: 'DataManagement', icon: FileText },
+    { type: 'section', label: 'Operations' },
+    { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { name: 'Fleet Costs', href: 'VehicleExpenses', icon: Package },
+    { type: 'section', label: 'Data' },
+    { name: 'Data Export', href: 'DataManagement', icon: FileText },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
   software_engineer: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { type: 'section', label: 'Operations' },
     { name: 'Field', href: 'FieldTech', icon: Wrench },
     { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Pre-Auth', href: 'Authorizations', icon: ClipboardCheck },
-    { name: 'Service', href: 'ServiceReports', icon: FileText },
-    { name: 'Parts', href: 'PartsOrders', icon: Package },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { type: 'section', label: 'Parts & Inventory' },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
-    { name: 'Our Vehicles', href: 'OwnVehicles', icon: Package },
+    { type: 'section', label: 'Fleet' },
+    { name: 'Vehicles', href: 'OwnVehicles', icon: Package },
     { name: 'Expenses', href: 'VehicleExpenses', icon: Package },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { type: 'section', label: 'Financial' },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
+    { type: 'section', label: 'Admin' },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Data', href: 'DataManagement', icon: Download },
+    { name: 'Data Export', href: 'DataManagement', icon: Download },
     { name: 'Sitemap', href: 'Sitemap', icon: Download },
   ],
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
+    { type: 'section', label: 'Operations' },
     { name: 'Field', href: 'FieldTech', icon: Wrench },
     { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Pre-Auth', href: 'Authorizations', icon: ClipboardCheck },
-    { name: 'Service', href: 'ServiceReports', icon: FileText },
-    { name: 'Parts', href: 'PartsOrders', icon: Package },
+    { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
+    { type: 'section', label: 'Parts & Inventory' },
+    { name: 'Parts Orders', href: 'PartsOrders', icon: Package },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
-    { name: 'Our Vehicles', href: 'OwnVehicles', icon: Package },
+    { type: 'section', label: 'Fleet' },
+    { name: 'Vehicles', href: 'OwnVehicles', icon: Package },
     { name: 'Expenses', href: 'VehicleExpenses', icon: Package },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { type: 'section', label: 'Financial' },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
+    { type: 'section', label: 'Admin' },
     { name: 'Customers', href: 'Customers', icon: Users },
-    { name: 'Data', href: 'DataManagement', icon: Download },
+    { name: 'Data Export', href: 'DataManagement', icon: Download },
     { name: 'Sitemap', href: 'Sitemap', icon: Download },
   ],
   unassigned_user: [
@@ -167,7 +187,17 @@ export default function Layout({ children, currentPageName }) {
           <CompanySelector currentUser={currentUser} onCompanyChange={setDisplayCompany} />
 
           <nav className="p-4 space-y-1 overflow-y-auto flex-1">
-          {navigation.map((item) => {
+          {navigation.map((item, index) => {
+            if (item.type === 'section') {
+              return (
+                <div key={`section-${index}`} className="px-4 pt-4 pb-2">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {item.label}
+                  </p>
+                </div>
+              );
+            }
+
             const isActive = currentPageName === item.href;
             return (
               <Link
