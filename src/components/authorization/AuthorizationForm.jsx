@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle, Sparkles, Loader2, Mail, AlertCircle } from "lucide-react";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import SignaturePad from '@/components/ui/SignaturePad';
 import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
@@ -54,6 +54,8 @@ export default function AuthorizationForm({
     equipment_info: '',
     estimated_cost: '',
     cost_is_ai_estimate: false,
+    parts_payment_required: false,
+    parts_payment_note: '',
     authorization_signature: '',
     authorization_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
@@ -511,6 +513,44 @@ Thank you for your business.
             value={formData.nature_of_service}
             onChange={(val) => handleChange('nature_of_service', val)}
           />
+        </CardContent>
+      </Card>
+
+      {/* Parts Payment Requirements */}
+      <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-amber-600" />
+            Parts Payment Requirements
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="parts_payment_required"
+              checked={formData.parts_payment_required}
+              onChange={(e) => handleChange('parts_payment_required', e.target.checked)}
+              className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+            />
+            <Label htmlFor="parts_payment_required" className="cursor-pointer">
+              Parts must be paid upfront before service continues
+            </Label>
+          </div>
+          {formData.parts_payment_required && (
+            <div>
+              <Label>Payment Requirements Note</Label>
+              <Textarea 
+                value={formData.parts_payment_note}
+                onChange={(e) => handleChange('parts_payment_note', e.target.value)}
+                placeholder="Specify payment terms, estimated parts cost, or other payment details..."
+                rows={3}
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                💡 Example: "Parts estimated at $850. Payment required before ordering. Service will continue once parts arrive and are paid for."
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
