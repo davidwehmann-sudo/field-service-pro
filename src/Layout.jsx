@@ -86,12 +86,15 @@ const allNavigation = {
     { name: 'Data', href: 'DataManagement', icon: Download },
     { name: 'Security', href: 'SecurityChecklist', icon: Shield },
     { name: 'Sitemap', href: 'Sitemap', icon: Download },
+  ],
+  unassigned_user: [
+    { name: 'Request Authorization', href: 'RequestAuthorization', icon: ClipboardCheck },
   ]
 };
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userType, setUserType] = useState('service_admin');
+  const [userType, setUserType] = useState('unassigned_user');
   const [currentUser, setCurrentUser] = useState(null);
   const [displayCompany, setDisplayCompany] = useState(null);
 
@@ -99,17 +102,17 @@ export default function Layout({ children, currentPageName }) {
     const loadUserType = async () => {
         try {
           const user = await base44.auth.me();
-          setUserType(user.user_type || 'service_admin');
+          setUserType(user.user_type || 'unassigned_user');
           setCurrentUser(user);
           setDisplayCompany(user.current_company || user.company);
         } catch (error) {
-          setUserType('service_admin');
+          setUserType('unassigned_user');
         }
       };
       loadUserType();
   }, []);
 
-  const navigation = allNavigation[userType] || allNavigation.service_admin;
+  const navigation = allNavigation[userType] || allNavigation.unassigned_user;
 
   const formatUserType = (type) => {
     if (!type) return 'Unknown';
