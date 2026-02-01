@@ -230,7 +230,16 @@ Return only the formatted text, no explanations.`,
       // Step 2: Compile report using formatted notes
       toast.info('Step 2: Compiling full report...');
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a field service technician documentation assistant. Generate a complete service report using the Caterpillar 7-Step Diagnostic Process.
+        prompt: `You are a field service technician documentation assistant. Generate a complete service report using the official Caterpillar 7-Step Diagnostic Process.
+
+CATERPILLAR 7-STEP PROCESS:
+1. Verify Customer Complaint
+2. Conduct Initial Inspection (pictures as necessary)
+3. List Possible Causes
+4. Analyze Possible Causes / Determine Root Cause
+5. Repair Root Cause
+6. Verify Repair (pictures as necessary)
+7. Document [concern], [analysis], & [repair] in Service Report
 
 IMPORTANT: Review ALL technician notes comprehensively. Consider the complete context from all notes entered, not just the latest addition.
 
@@ -243,13 +252,13 @@ Current Information:
 - Existing Diagnostic Work: ${Object.values(formData.cat_diagnostic || {}).filter(v => v).length > 0 ? 'Yes - update/refine existing entries' : 'No - generate fresh'}
 
 ALWAYS provide:
-1. step1_symptom - Describe the symptom/problem observed (based on ALL notes)
-2. step2_research - Service bulletins, manuals, or prior history consulted
-3. step3_visual_inspection - What was visually inspected (leaks, damage, wear, etc.)
-4. step4_operational_tests - Tests performed (function tests, cycling, etc.)
-5. step5_diagnostic_codes - Error codes retrieved or diagnostic tool results
-6. step6_measurements - Measurements taken (pressure, voltage, resistance, etc.)
-7. step7_root_cause - Root cause identified and corrective action
+1. step1_verify_complaint - Confirm and verify the customer's complaint
+2. step2_initial_inspection - Initial inspection findings (note if pictures were taken)
+3. step3_list_causes - List all possible causes identified
+4. step4_analyze_causes - Analysis of causes and determination of root cause
+5. step5_repair - Repairs performed to address root cause
+6. step6_verify_repair - Verification testing and results (note if pictures taken)
+7. step7_document - Final documentation summary
 8. work_performed - Detailed description of repairs/work completed
 9. billable_service_items - Break down work into distinct billable segments. IMPORTANT: Combine related operations on the SAME line to reduce line count:
    - "Remove and reinstall hydraulic pump" (not separate remove/install lines)
@@ -260,7 +269,7 @@ ALWAYS provide:
 
 SELF-AUDIT: Before finalizing, verify:
 - All tech notes have been considered
-- Diagnostic steps logically flow and connect
+- Diagnostic steps follow CAT 7-Step Process
 - Work performed aligns with diagnostic findings
 - Billable items cover all work mentioned
 - No contradictions in the report
@@ -271,13 +280,13 @@ Generate the best report possible with available information.`,
         response_json_schema: {
           type: "object",
           properties: {
-            step1_symptom: { type: "string" },
-            step2_research: { type: "string" },
-            step3_visual_inspection: { type: "string" },
-            step4_operational_tests: { type: "string" },
-            step5_diagnostic_codes: { type: "string" },
-            step6_measurements: { type: "string" },
-            step7_root_cause: { type: "string" },
+            step1_verify_complaint: { type: "string" },
+            step2_initial_inspection: { type: "string" },
+            step3_list_causes: { type: "string" },
+            step4_analyze_causes: { type: "string" },
+            step5_repair: { type: "string" },
+            step6_verify_repair: { type: "string" },
+            step7_document: { type: "string" },
             work_performed: { type: "string" },
             billable_service_items: {
               type: "array",
@@ -301,13 +310,13 @@ Generate the best report possible with available information.`,
         ...prev,
         cat_diagnostic: {
           ...prev.cat_diagnostic,
-          step1_symptom: result.step1_symptom,
-          step2_research: result.step2_research,
-          step3_visual_inspection: result.step3_visual_inspection,
-          step4_operational_tests: result.step4_operational_tests,
-          step5_diagnostic_codes: result.step5_diagnostic_codes,
-          step6_measurements: result.step6_measurements,
-          step7_root_cause: result.step7_root_cause
+          step1_verify_complaint: result.step1_verify_complaint,
+          step2_initial_inspection: result.step2_initial_inspection,
+          step3_list_causes: result.step3_list_causes,
+          step4_analyze_causes: result.step4_analyze_causes,
+          step5_repair: result.step5_repair,
+          step6_verify_repair: result.step6_verify_repair,
+          step7_document: result.step7_document
         },
         work_performed: result.work_performed,
         service_items: result.billable_service_items?.map(item => ({

@@ -8,45 +8,45 @@ import { CheckCircle2, Circle } from "lucide-react";
 const DIAGNOSTIC_STEPS = [
   {
     step: 1,
-    title: "Identify the Symptom",
-    field: "step1_symptom",
-    placeholder: "What is the customer complaint? What symptoms are present? When does it occur?"
+    title: "Verify Customer Complaint",
+    field: "step1_verify_complaint",
+    placeholder: "Confirm and verify the customer's complaint. What is the actual problem? Does it match the customer's description?"
   },
   {
     step: 2,
-    title: "Research the Symptom",
-    field: "step2_research",
-    placeholder: "SIS research, troubleshooting guides consulted, known issues, TSBs reviewed..."
+    title: "Conduct Initial Inspection",
+    field: "step2_initial_inspection",
+    placeholder: "Perform initial visual inspection. Document findings and take pictures as necessary..."
   },
   {
     step: 3,
-    title: "Visual Inspection",
-    field: "step3_visual_inspection",
-    placeholder: "Physical inspection findings: leaks, damage, wear, loose connections, contamination..."
+    title: "List Possible Causes",
+    field: "step3_list_causes",
+    placeholder: "Based on inspection and complaint, list all potential causes of the problem..."
   },
   {
     step: 4,
-    title: "Operational Tests",
-    field: "step4_operational_tests",
-    placeholder: "Tests performed: engine performance, hydraulic function, electrical checks, results..."
+    title: "Analyze Possible Causes / Determine Root Cause",
+    field: "step4_analyze_causes",
+    placeholder: "Analyze each possible cause through testing, measurements, and diagnostics. Determine the root cause..."
   },
   {
     step: 5,
-    title: "Diagnostic Codes",
-    field: "step5_diagnostic_codes",
-    placeholder: "ET codes, flash codes, logged events, code descriptions and conditions..."
+    title: "Repair Root Cause",
+    field: "step5_repair",
+    placeholder: "Execute repairs to address the root cause. Detail all work performed..."
   },
   {
     step: 6,
-    title: "Measurements & Tests",
-    field: "step6_measurements",
-    placeholder: "Pressure readings, voltage/amperage, temperatures, flow rates, tolerances..."
+    title: "Verify Repair",
+    field: "step6_verify_repair",
+    placeholder: "Test and verify that the repair resolved the issue. Take pictures as necessary to document successful repair..."
   },
   {
     step: 7,
-    title: "Root Cause",
-    field: "step7_root_cause",
-    placeholder: "Confirmed root cause of the problem based on diagnostic findings..."
+    title: "Document [concern], [analysis], & [repair]",
+    field: "step7_document",
+    placeholder: "Comprehensive documentation of the concern, analysis performed, and repairs completed..."
   }
 ];
 
