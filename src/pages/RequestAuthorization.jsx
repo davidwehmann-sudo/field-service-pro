@@ -412,6 +412,19 @@ export default function RequestAuthorization() {
               <CardTitle className="text-xl">On-Site Contact (Optional)</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-900 mb-1">Security Notice</p>
+                    <p className="text-xs text-amber-800">
+                      Please do not include gate codes, access codes, combinations, key locations, or other security information on this form. 
+                      We do not keep records of this nature for security reasons. Please share this information via text or call when our technician arrives.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label>Contact Name</Label>
