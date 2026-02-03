@@ -145,37 +145,14 @@ export default function ServiceReportForm({
 
     setFormattingNotes(true);
     try {
-      const result = await base44.functions.invoke('grokAssistant', {
-        prompt: `Convert the following raw technician notes into a professional, organized format:
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Format these technician notes professionally with categories (Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing). Use bullet points, **bold** for action verbs, *italics* for specs/measurements. Preserve all technical details:
 
-${formData.technician_notes}
-
-Requirements:
-1. Segment into logical service categories (e.g., Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing)
-2. Use bullet points for each category
-3. Format with **bold** for action verbs (e.g., **Split**, **Inspected**, **Adjusted**, **Replaced**)
-4. Format with *italics* for technical specifications and measurements (e.g., *0.015 Intake*, *0.023 Exhaust*)
-5. Keep the language concise and professional
-6. Preserve all technical details and measurements
-
-Example transformation:
-Input: "split tractor, inspect shaft, adjusted overhead to 0.015 Intake 0.023 exhaust"
-Output:
-**Disassembly:**
-• **Split** tractor to access internal components
-
-**Inspection:**
-• **Inspected** shaft for wear and damage
-
-**Adjustments:**
-• **Adjusted** overhead clearance to *0.015" Intake / 0.023" Exhaust*
-
-Return only the formatted text, no explanations.`,
-        maxTokens: 1500
+${formData.technician_notes}`
       });
 
-      if (result.data?.text) {
-        handleChange('technician_notes', result.data.text);
+      if (result) {
+        handleChange('technician_notes', result);
         toast.success('Notes formatted successfully');
       }
     } catch (error) {
@@ -205,38 +182,15 @@ Return only the formatted text, no explanations.`,
 
       // Step 1: Format notes
       toast.info('Step 1: Formatting notes...');
-      const formatResult = await base44.functions.invoke('grokAssistant', {
-        prompt: `Convert the following raw technician notes into a professional, organized format:
+      const formatResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `Format these technician notes professionally with categories (Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing). Use bullet points, **bold** for action verbs, *italics* for specs/measurements. Preserve all technical details:
 
-${formData.technician_notes}
-
-Requirements:
-1. Segment into logical service categories (e.g., Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing)
-2. Use bullet points for each category
-3. Format with **bold** for action verbs (e.g., **Split**, **Inspected**, **Adjusted**, **Replaced**)
-4. Format with *italics* for technical specifications and measurements (e.g., *0.015 Intake*, *0.023 Exhaust*)
-5. Keep the language concise and professional
-6. Preserve all technical details and measurements
-
-Example transformation:
-Input: "split tractor, inspect shaft, adjusted overhead to 0.015 Intake 0.023 exhaust"
-Output:
-**Disassembly:**
-• **Split** tractor to access internal components
-
-**Inspection:**
-• **Inspected** shaft for wear and damage
-
-**Adjustments:**
-• **Adjusted** overhead clearance to *0.015" Intake / 0.023" Exhaust*
-
-Return only the formatted text, no explanations.`,
-        maxTokens: 1500
+${formData.technician_notes}`
       });
 
       let formattedNotes = formData.technician_notes;
-      if (formatResult.data?.text) {
-        formattedNotes = formatResult.data.text;
+      if (formatResult) {
+        formattedNotes = formatResult;
         setFormData(prev => ({ ...prev, technician_notes: formattedNotes }));
         toast.success('Notes formatted ✓');
       }
