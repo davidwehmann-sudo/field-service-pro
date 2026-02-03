@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2, Eye } from "lucide-react";
+import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2, Eye, Building2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import PhotoUpload from '@/components/service/PhotoUpload';
@@ -80,6 +81,7 @@ export default function ServiceReportForm({
     return {
       job_id: '',
       customer_id: '',
+      is_internal: false,
       service_date: format(new Date(), 'yyyy-MM-dd'),
       equipment_type: '',
       equipment_make: '',
@@ -441,6 +443,20 @@ Generate the best report possible with available information.`,
                 customers={customers}
                 value={formData.customer_id}
                 onChange={(val) => handleChange('customer_id', val)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-slate-600" />
+                <div>
+                  <Label className="text-sm font-medium">Internal Work</Label>
+                  <p className="text-xs text-slate-500">For company equipment/non-billable</p>
+                </div>
+              </div>
+              <Switch
+                checked={formData.is_internal}
+                onCheckedChange={(val) => handleChange('is_internal', val)}
               />
             </div>
 

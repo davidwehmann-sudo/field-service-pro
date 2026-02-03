@@ -18,7 +18,8 @@ import {
   Truck,
   Trash2,
   Receipt,
-  Eye
+  Eye,
+  Building2
 } from "lucide-react";
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -405,6 +406,12 @@ export default function ServiceReports() {
                       </div>
                       
                       <div className="flex items-center gap-2">
+                        {report.is_internal && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            <Building2 className="w-3 h-3 mr-1" />
+                            Internal
+                          </Badge>
+                        )}
                         <Badge className={statusColors[report.status]}>
                           {report.status}
                         </Badge>
