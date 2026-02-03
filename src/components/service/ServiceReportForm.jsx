@@ -17,6 +17,7 @@ import ServiceItemsEditor from '@/components/service/ServiceItemsEditor';
 import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
 import OriginalNotesViewer from '@/components/service/OriginalNotesViewer';
+import TimeTracker from '@/components/service/TimeTracker';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -61,6 +62,7 @@ export default function ServiceReportForm({
   const [aiSuggestions, setAiSuggestions] = useState(null);
   const [formattingNotes, setFormattingNotes] = useState(false);
   const [showOriginalNotes, setShowOriginalNotes] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -90,6 +92,7 @@ export default function ServiceReportForm({
       equipment_hours: '',
       complaint: '',
       technician_notes: '',
+      time_entries: [],
       cat_diagnostic: {},
       work_performed: '',
       service_items: [],
@@ -109,6 +112,17 @@ export default function ServiceReportForm({
       ...report
     };
   });
+
+  // Load current user
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {}
+    };
+    loadUser();
+  }, []);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -639,6 +653,13 @@ Generate the best report possible with available information.`,
             />
           </CardContent>
         </Card>
+
+        {/* Time Tracker */}
+        <TimeTracker
+          entries={formData.time_entries || []}
+          onChange={(entries) => handleChange('time_entries', entries)}
+          currentUser={currentUser}
+        />
       </div>
 
       {/* CAT 7-Step Diagnostic */}
