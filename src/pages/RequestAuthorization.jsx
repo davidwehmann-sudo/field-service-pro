@@ -557,9 +557,6 @@ export default function RequestAuthorization() {
                   </>
                 )}
               </Button>
-              <p className="text-sm text-slate-600 text-center mt-4">
-                We'll review your request and contact you within 24 hours with an estimate
-              </p>
             </CardContent>
           </Card>
         </form>
