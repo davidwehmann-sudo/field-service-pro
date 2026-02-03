@@ -243,7 +243,7 @@ export default function RequestAuthorization() {
             Request Equipment Service
           </h1>
           <p className="text-lg text-slate-600">
-            Complete this form to request service on your equipment. We'll provide a pre-repair authorization and estimate.
+            Complete this authorization form to request service on your equipment. We provide an AI-powered pre-repair estimate to offer some idea of what our services may cost. This is a data-driven estimate, and can be incorrect for uncommon situations.
           </p>
           {currentUser && (
             <p className="text-sm text-slate-500 mt-2">
