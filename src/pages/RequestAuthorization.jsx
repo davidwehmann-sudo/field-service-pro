@@ -503,7 +503,6 @@ export default function RequestAuthorization() {
                   <li>Perform the necessary repairs described above</li>
                   <li>Order and install required parts</li>
                   <li>You agree to pay for actual services rendered (the AI estimate is for reference only and final costs may vary)</li>
-                  <li>You agree to accommodate the safety of our technicians as much as conditions permit. We recommend keeping all personnel clear of the work area as much as possible for both technician and others' safety.</li>
                 </ul>
               </div>
             </CardContent>
