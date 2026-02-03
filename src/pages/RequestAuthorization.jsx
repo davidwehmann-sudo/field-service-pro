@@ -203,10 +203,10 @@ export default function RequestAuthorization() {
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-slate-900 mb-4">
-              Authorization Request Submitted!
+              Service Request Submitted!
             </h1>
             <p className="text-slate-600 text-lg mb-8">
-              Thank you for submitting your service authorization request. Our team will review it and contact you shortly.
+              Thank you for requesting service. Our team will review your equipment needs and contact you shortly with an estimate.
             </p>
             <div className="bg-slate-50 rounded-xl p-6 text-left space-y-2">
               <p className="text-sm text-slate-600">
@@ -223,7 +223,7 @@ export default function RequestAuthorization() {
               </p>
             </div>
             <p className="text-sm text-slate-500 mt-8">
-              A confirmation has been recorded in our system. We'll reach out to you within 24 hours.
+              Your request has been received. We'll contact you within 24 hours to discuss the service and provide an authorization estimate.
             </p>
           </CardContent>
         </Card>
@@ -240,10 +240,10 @@ export default function RequestAuthorization() {
             <Wrench className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">
-            Request Service Authorization
+            Request Equipment Service
           </h1>
           <p className="text-lg text-slate-600">
-            Complete this form to request pre-repair authorization for service work
+            Complete this form to request service on your equipment. We'll provide a pre-repair authorization and estimate.
           </p>
           {currentUser && (
             <p className="text-sm text-slate-500 mt-2">
@@ -346,7 +346,7 @@ export default function RequestAuthorization() {
           {/* Service Details */}
           <Card className="border-0 shadow-lg">
             <CardHeader className="bg-slate-50">
-              <CardTitle className="text-xl">Service Details</CardTitle>
+              <CardTitle className="text-xl">Equipment & Service Needed</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div>
@@ -379,11 +379,14 @@ export default function RequestAuthorization() {
               </div>
 
               <div>
-                <Label>Nature of Service *</Label>
+                <Label>Describe the Problem *</Label>
                 <NatureOfServiceInput 
                   value={formData.nature_of_service}
                   onChange={(val) => handleChange('nature_of_service', val)}
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  Tell us what's wrong with your equipment or what service is needed
+                </p>
               </div>
 
               <div>
@@ -493,12 +496,13 @@ export default function RequestAuthorization() {
               />
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  <strong>By signing above, you:</strong>
+                  <strong>By signing above, you authorize us to:</strong>
                 </p>
                 <ul className="text-sm text-blue-800 mt-2 space-y-1 ml-4 list-disc">
-                  <li>Authorize the service work described in this request</li>
-                  <li>Agree to pay for the work performed</li>
-                  <li>Acknowledge that this is a legally binding authorization</li>
+                  <li>Inspect and diagnose your equipment</li>
+                  <li>Perform the necessary repairs described above</li>
+                  <li>Order and install required parts</li>
+                  <li>You agree to pay for services rendered per the estimate provided</li>
                 </ul>
               </div>
             </CardContent>
@@ -520,12 +524,12 @@ export default function RequestAuthorization() {
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5 mr-2" />
-                    Submit Authorization Request
+                    Submit Service Request
                   </>
                 )}
               </Button>
               <p className="text-sm text-slate-600 text-center mt-4">
-                Your authorization request will be reviewed by our team within 24 hours
+                We'll review your request and contact you within 24 hours with an estimate
               </p>
             </CardContent>
           </Card>
