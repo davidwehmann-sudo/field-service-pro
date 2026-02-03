@@ -20,17 +20,7 @@ export default function NatureOfServiceInput({ value, onChange }) {
     setIsGenerating(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a diesel field service technician helping write a clear, professional "Nature of Service" description for a pre-repair authorization form.
-
-The customer/technician has briefly described the issue as: "${aiInput}"
-
-Write a concise, professional description (2-4 sentences) suitable for an authorization form that:
-- Clearly states what equipment/system is affected
-- Describes the problem or service needed
-- Is written in a professional, service-oriented tone
-- Includes any relevant symptoms or customer complaints mentioned
-
-Return ONLY the description text, nothing else.`
+        prompt: `Transform this into a professional service authorization description (2-4 sentences, technical but clear): "${aiInput}"`
       });
 
       onChange(response);
