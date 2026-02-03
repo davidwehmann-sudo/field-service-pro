@@ -102,7 +102,7 @@ Return ONLY the description text, nothing else.`
         {value && (
           <div className="flex items-center gap-1 mt-1 text-xs text-green-600">
             <CheckCircle className="w-3 h-3" />
-            Description ready
+            Description ready (you can edit if needed)
           </div>
         )}
       </div>
