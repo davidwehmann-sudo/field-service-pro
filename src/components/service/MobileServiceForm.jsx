@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, Camera, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Send, Camera, Sparkles, Building2 } from "lucide-react";
 import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
+import TimeTracker from '@/components/service/TimeTracker';
+import { Switch } from "@/components/ui/switch";
 import { format } from 'date-fns';
 
 const EQUIPMENT_TYPES = [
@@ -28,6 +30,7 @@ export default function MobileServiceForm({
 
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem(storageKey);
@@ -39,6 +42,7 @@ export default function MobileServiceForm({
     
     return {
       customer_id: '',
+      is_internal: false,
       service_date: format(new Date(), 'yyyy-MM-dd'),
       equipment_type: '',
       equipment_make: '',
@@ -46,6 +50,7 @@ export default function MobileServiceForm({
       equipment_hours: '',
       complaint: '',
       technician_notes: '',
+      time_entries: [],
       work_performed: '',
       photos: [],
       customer_signature: '',
@@ -54,6 +59,17 @@ export default function MobileServiceForm({
       ...report
     };
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const { base44 } = await import('@/api/base44Client');
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {}
+    };
+    loadUser();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -226,6 +242,20 @@ IF additional specific information would help, list in suggested_additional_info
                 onChange={(e) => handleChange('service_date', e.target.value)}
               />
             </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-slate-600" />
+                <div>
+                  <Label className="text-xs font-medium">Internal Work</Label>
+                  <p className="text-xs text-slate-500">Company equipment</p>
+                </div>
+              </div>
+              <Switch
+                checked={formData.is_internal}
+                onCheckedChange={(val) => handleChange('is_internal', val)}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -294,6 +324,13 @@ IF additional specific information would help, list in suggested_additional_info
             />
           </CardContent>
         </Card>
+
+        {/* Time Tracker */}
+        <TimeTracker
+          entries={formData.time_entries || []}
+          onChange={(entries) => handleChange('time_entries', entries)}
+          currentUser={currentUser}
+        />
 
         {/* Technician Notes */}
         <Card className="border-0 shadow-sm">
