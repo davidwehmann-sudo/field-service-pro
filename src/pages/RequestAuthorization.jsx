@@ -494,17 +494,32 @@ export default function RequestAuthorization() {
                 initialValue={formData.authorization_signature}
                 onSave={(sig) => handleChange('authorization_signature', sig)}
               />
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  <strong>By signing above, you authorize us to:</strong>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                <div>
+                  <p className="text-sm text-blue-900 font-semibold mb-2">
+                    By signing above, you authorize us to:
+                  </p>
+                  <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+                    <li>Inspect and diagnose your equipment</li>
+                    <li>Perform necessary repairs as described above</li>
+                    <li>Order and install required parts</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-blue-900 font-semibold mb-2">
+                    You agree to:
+                  </p>
+                  <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+                    <li>Pay for actual services rendered and parts used</li>
+                    <li>Provide a safe work environment for our technicians as conditions permit</li>
+                    <li>Keep all personnel clear of the work area whenever possible for everyone's safety</li>
+                  </ul>
+                </div>
+                
+                <p className="text-xs text-blue-700 italic pt-2 border-t border-blue-200">
+                  Note: Any AI-generated cost estimates are for reference only. Final costs may vary based on actual work performed.
                 </p>
-                <ul className="text-sm text-blue-800 mt-2 space-y-1 ml-4 list-disc">
-                  <li>Inspect and diagnose your equipment</li>
-                  <li>Perform the necessary repairs described above</li>
-                  <li>Order and install required parts</li>
-                  <li>You agree to pay for actual services rendered (the AI estimate is for reference only and final costs may vary)</li>
-                  <li>You will accommodate the safety of our technicians as much as conditions permit. We recommend keeping all personnel clear of the work area as much as possible for both technician and others' safety</li>
-                </ul>
               </div>
             </CardContent>
           </Card>
