@@ -55,7 +55,7 @@ Return ONLY the description text, nothing else.`
           </div>
           <div className="flex-1">
             <p className="font-medium text-slate-900 text-sm">AI Writing Assistant</p>
-            <p className="text-xs text-slate-600">Quickly describe the issue and let AI write a professional description</p>
+            <p className="text-xs text-slate-600">Describe the issue in your own words - AI will translate it into detailed technical language for the service authorization</p>
           </div>
         </div>
         
