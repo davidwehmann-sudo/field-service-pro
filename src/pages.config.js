@@ -64,6 +64,7 @@ import RequestAuthorization from './pages/RequestAuthorization';
 import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import VehicleExpenses from './pages/VehicleExpenses';
+import TechnicianPayroll from './pages/TechnicianPayroll';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +86,7 @@ export const PAGES = {
     "ServiceReports": ServiceReports,
     "Sitemap": Sitemap,
     "VehicleExpenses": VehicleExpenses,
+    "TechnicianPayroll": TechnicianPayroll,
 }
 
 export const pagesConfig = {

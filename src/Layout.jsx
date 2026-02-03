@@ -17,7 +17,8 @@ import {
         ClipboardCheck,
         MessageSquare,
         Download,
-        Shield
+        Shield,
+        DollarSign
       } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,8 @@ const allNavigation = {
     { type: 'section', label: 'Fleet' },
     { name: 'Vehicles', href: 'OwnVehicles', icon: Package },
     { name: 'Expenses', href: 'VehicleExpenses', icon: Package },
+    { type: 'section', label: 'Payroll' },
+    { name: 'My Hours', href: 'TechnicianPayroll', icon: DollarSign },
     { type: 'section', label: 'Other' },
     { name: 'Customers', href: 'Customers', icon: Users },
   ],
@@ -80,6 +83,7 @@ const allNavigation = {
     { type: 'section', label: 'Financial' },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
+    { name: 'Tech Payroll', href: 'TechnicianPayroll', icon: DollarSign },
     { type: 'section', label: 'Admin' },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Data Export', href: 'DataManagement', icon: Download },
@@ -102,6 +106,7 @@ const allNavigation = {
     { type: 'section', label: 'Financial' },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
+    { name: 'Tech Payroll', href: 'TechnicianPayroll', icon: DollarSign },
     { type: 'section', label: 'Admin' },
     { name: 'Customers', href: 'Customers', icon: Users },
     { name: 'Data Export', href: 'DataManagement', icon: Download },
