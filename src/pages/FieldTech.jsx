@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { format } from 'date-fns';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
+import AISearch from '@/components/search/AISearch';
 
 export default function FieldTech() {
   const [search, setSearch] = useState('');
@@ -113,6 +114,9 @@ export default function FieldTech() {
             </Button>
           </Link>
         </div>
+
+        {/* AI Search */}
+        <AISearch customers={customers} reports={reports} />
 
         {/* Customer Quick Search */}
         <Card className="border-0 shadow-sm">
