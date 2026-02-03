@@ -502,7 +502,7 @@ export default function RequestAuthorization() {
                   <li>Inspect and diagnose your equipment</li>
                   <li>Perform the necessary repairs described above</li>
                   <li>Order and install required parts</li>
-                  <li>You agree to pay for services rendered per the estimate provided</li>
+                  <li>You agree to pay for actual services rendered (the AI estimate is for reference only and final costs may vary)</li>
                 </ul>
               </div>
             </CardContent>
