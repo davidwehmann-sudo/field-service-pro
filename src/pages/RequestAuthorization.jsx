@@ -210,7 +210,7 @@ export default function RequestAuthorization() {
             </p>
             <div className="bg-slate-50 rounded-xl p-6 text-left space-y-2">
               <p className="text-sm text-slate-600">
-                <strong>Company:</strong> {formData.company_name}
+                <strong>Customer:</strong> {formData.company_name}
               </p>
               <p className="text-sm text-slate-600">
                 <strong>Contact:</strong> {formData.billing_contact_name}
@@ -260,16 +260,16 @@ export default function RequestAuthorization() {
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div>
-                <Label>Company Name *</Label>
+                <Label>Customer Name *</Label>
                 <Input 
                   value={formData.company_name}
                   onChange={(e) => handleChange('company_name', e.target.value)}
                   onBlur={handleCompanyNameBlur}
-                  placeholder="Your Company LLC"
+                  placeholder="Your name or company name"
                   required
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Enter your company name - we'll autofill your details if you're a returning customer
+                  Enter your name - we'll autofill your details if you're a returning customer
                 </p>
               </div>
 
