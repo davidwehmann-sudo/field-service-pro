@@ -301,6 +301,18 @@ export default function Layout({ children, currentPageName }) {
         <main className="p-4 lg:p-8">
           {children}
         </main>
+
+        {/* Mobile FAB - Field Tech */}
+        {userType !== 'unassigned_user' && userType !== 'service_customer' && (
+          <Link 
+            to={createPageUrl('FieldTech')}
+            className="lg:hidden fixed bottom-6 right-6 z-40"
+          >
+            <button className="w-16 h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95">
+              <Wrench className="w-7 h-7" />
+            </button>
+          </Link>
+        )}
       </div>
     </div>
   );
