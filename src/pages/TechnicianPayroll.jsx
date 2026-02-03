@@ -26,8 +26,13 @@ export default function TechnicianPayroll() {
 
   const technicianData = useMemo(() => {
     const techMap = {};
+    let totalReports = 0;
+    let filteredReports = 0;
     
     reports.forEach(report => {
+      if (!report.time_entries || report.time_entries.length === 0) return;
+      totalReports++;
+      
       if (!report.time_entries || report.time_entries.length === 0) return;
       
       const reportDate = new Date(report.service_date);
@@ -35,6 +40,7 @@ export default function TechnicianPayroll() {
                          (!endDate || reportDate <= new Date(endDate));
       
       if (!inDateRange) return;
+      filteredReports++;
       
       report.time_entries.forEach(entry => {
         const techName = entry.technician || 'Unknown';
@@ -58,10 +64,14 @@ export default function TechnicianPayroll() {
       });
     });
     
-    return Object.values(techMap).sort((a, b) => b.totalHours - a.totalHours);
+    const result = Object.values(techMap).sort((a, b) => b.totalHours - a.totalHours);
+    result.totalReports = totalReports;
+    result.filteredReports = filteredReports;
+    return result;
   }, [reports, customers, startDate, endDate]);
 
-  const totalHours = technicianData.reduce((sum, tech) => sum + tech.totalHours, 0);
+  const totalHours = technicianData.reduce((sum, tech) => sum + (tech.totalHours || 0), 0);
+  const filterStats = { total: technicianData.totalReports || 0, filtered: technicianData.filteredReports || 0 };
 
   const handleExport = () => {
     const csv = [
@@ -69,7 +79,7 @@ export default function TechnicianPayroll() {
       ...technicianData.flatMap(tech =>
         tech.entries.map(entry => [
           tech.name,
-          format(new Date(entry.start_time), 'yyyy-MM-dd'),
+          format(new Date(entry.reportDate), 'yyyy-MM-dd'),
           entry.hours.toFixed(2),
           `"${entry.description || ''}"`,
           `"${entry.customer}"`,
@@ -122,14 +132,18 @@ export default function TechnicianPayroll() {
             </div>
           </div>
           {(startDate || endDate) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setStartDate(''); setEndDate(''); }}
-              className="mt-3"
-            >
-              Clear Dates
-            </Button>
+            <div className="mt-3 flex items-center justify-between">
+              <p className="text-xs text-slate-500">
+                Showing {filterStats.filtered} of {filterStats.total} reports with time entries
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+              >
+                Clear Dates
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -54,7 +54,7 @@ export default function TimeTracker({ entries = [], onChange, currentUser }) {
         end_time: new Date(endTime).toISOString(),
         hours,
         description: '',
-        technician: currentUser?.full_name || currentUser?.email || 'Unknown'
+        technician: currentUser?.full_name || currentUser?.email || 'Technician'
       };
       
       onChange([...entries, newEntry]);
@@ -69,6 +69,12 @@ export default function TimeTracker({ entries = [], onChange, currentUser }) {
     
     const start = new Date(manualEntry.start_time);
     const end = new Date(manualEntry.end_time);
+    
+    if (end <= start) {
+      alert('End time must be after start time');
+      return;
+    }
+    
     const hours = parseFloat(((end - start) / (1000 * 60 * 60)).toFixed(2));
     
     if (hours <= 0) return;
@@ -78,7 +84,7 @@ export default function TimeTracker({ entries = [], onChange, currentUser }) {
       end_time: end.toISOString(),
       hours,
       description: manualEntry.description,
-      technician: currentUser?.full_name || currentUser?.email || 'Unknown'
+      technician: currentUser?.full_name || currentUser?.email || 'Technician'
     };
     
     onChange([...entries, newEntry]);
@@ -87,7 +93,9 @@ export default function TimeTracker({ entries = [], onChange, currentUser }) {
   };
 
   const handleDelete = (index) => {
-    onChange(entries.filter((_, i) => i !== index));
+    if (window.confirm('Delete this time entry?')) {
+      onChange(entries.filter((_, i) => i !== index));
+    }
   };
 
   const totalHours = entries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
