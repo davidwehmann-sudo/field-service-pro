@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Loader2, CheckCircle2, AlertCircle, Edit2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Upload, Loader2, CheckCircle2, AlertCircle, Edit2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ReceiptUpload() {
@@ -18,6 +19,9 @@ export default function ReceiptUpload() {
   const [editedData, setEditedData] = useState(null);
   const [showManualMatch, setShowManualMatch] = useState(false);
   const [manualMatches, setManualMatches] = useState({});
+  const [multiMatchConfirm, setMultiMatchConfirm] = useState(null);
+
+  const queryClient = useQueryClient();
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['ownVehicles'],
@@ -209,19 +213,23 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         const item = data.line_items[idx];
         
         // Check for manual match first
-        let matchingPart = null;
+        let matchingParts = [];
         let matchType = null;
         
         if (manualMatches[idx]) {
-          matchingPart = neededParts.find(p => p.id === manualMatches[idx]);
-          matchType = 'manual';
+          const manualPart = neededParts.find(p => p.id === manualMatches[idx]);
+          if (manualPart) {
+            matchingParts = [manualPart];
+            matchType = 'manual';
+          }
         } else if (item.part_number) {
-          // First, try direct part number match
-          matchingPart = neededParts.find(p => 
+          // First, try direct part number match (could be multiple)
+          const directMatches = neededParts.filter(p => 
             p.part_number && p.part_number.trim().toLowerCase() === item.part_number.trim().toLowerCase()
           );
           
-          if (matchingPart) {
+          if (directMatches.length > 0) {
+            matchingParts = directMatches;
             matchType = 'direct';
           } else {
             // Check cross-compatible part numbers in inventory
@@ -233,17 +241,31 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             );
             
             if (inventoryItem) {
-              // Find needed part that matches this inventory part number
-              matchingPart = neededParts.find(p => 
+              // Find all needed parts that match this inventory part number
+              const crossMatches = neededParts.filter(p => 
                 p.part_number && p.part_number.trim().toLowerCase() === inventoryItem.part_number.trim().toLowerCase()
               );
-              matchType = 'cross-compatible';
+              if (crossMatches.length > 0) {
+                matchingParts = crossMatches;
+                matchType = 'cross-compatible';
+              }
             }
           }
         }
 
-        // If no match and no part number, create new
-        if (!matchingPart && !item.part_number) {
+        // If multiple matches found, confirm they're cross-compatible
+        if (matchingParts.length > 1 && !multiMatchConfirm) {
+          setMultiMatchConfirm({
+            item,
+            matchingParts,
+            matchType,
+            callback: () => handleSaveAsPartsOrder(assignmentType, serviceReportId, customerId)
+          });
+          return;
+        }
+
+        // If no matches and no part number, create new
+        if (matchingParts.length === 0 && !item.part_number) {
           partsToCreate.push({
             assignment_type: assignmentType,
             service_report_id: serviceReportId,
@@ -261,30 +283,36 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           continue;
         }
 
-        if (matchingPart) {
-          // Match found - update existing part
-          const priceDiff = matchingPart.unit_cost !== item.unit_price;
-          const higherPrice = Math.max(matchingPart.unit_cost || 0, item.unit_price || 0);
-          
-          const matchDescription = matchType === 'manual' ? 'Manually matched' : 
-                                   matchType === 'cross-compatible' ? `Auto-matched via cross-compatible part#: ${item.part_number}` :
-                                   'Auto-matched';
-          
-          partsToUpdate.push({
-            id: matchingPart.id,
-            data: {
-              unit_cost: higherPrice,
-              supplier: data.vendor,
-              status: 'ordered',
-              order_date: data.receipt_date,
-              receipt_url: data.receipt_url,
-              notes: `${matchingPart.notes || ''}\n\n⚠️ ${matchDescription} from receipt upload. ${priceDiff ? `Price difference detected! Original: $${matchingPart.unit_cost}, Receipt: $${item.unit_price}, Using higher: $${higherPrice}` : 'Price matches.'} - Confirm receipt manually`
-            },
-            receiptPartNumber: item.part_number,
-            inventoryPartNumber: matchingPart.part_number,
-            wasManualMatch: matchType === 'manual'
-          });
-        } else if (!matchingPart) {
+        if (matchingParts.length > 0) {
+          // Match(es) found - update all matching parts
+          for (const matchingPart of matchingParts) {
+            const currentCost = matchingPart.unit_cost || 0;
+            const receiptCost = item.unit_price || 0;
+            const priceDiff = currentCost !== receiptCost;
+            const higherPrice = Math.max(currentCost, receiptCost);
+            
+            const matchDescription = matchType === 'manual' ? 'Manually matched' : 
+                                     matchType === 'cross-compatible' ? `Auto-matched via cross-compatible part#: ${item.part_number}` :
+                                     matchingParts.length > 1 ? `Auto-matched (${matchingParts.length} cross-compatible parts updated)` :
+                                     'Auto-matched';
+            
+            partsToUpdate.push({
+              id: matchingPart.id,
+              data: {
+                unit_cost: higherPrice,
+                supplier: data.vendor,
+                status: 'ordered',
+                order_date: data.receipt_date,
+                receipt_url: data.receipt_url,
+                notes: `${matchingPart.notes || ''}\n\n⚠️ ${matchDescription} from receipt upload. ${priceDiff ? `Price difference detected! Original: $${currentCost.toFixed(2)}, Receipt: $${receiptCost.toFixed(2)}, Using higher: $${higherPrice.toFixed(2)}` : 'Price matches.'} - Confirm receipt manually`
+              },
+              receiptPartNumber: item.part_number,
+              inventoryPartNumber: matchingPart.part_number,
+              wasManualMatch: matchType === 'manual',
+              wasCrossCompatMatch: matchType === 'cross-compatible'
+            });
+          }
+        } else if (matchingParts.length === 0 && item.part_number) {
           // No match - create new part
           partsToCreate.push({
             assignment_type: assignmentType,
@@ -304,26 +332,79 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
       }
 
       // Update matched parts and save cross-compatible associations
+      const inventoryUpdates = new Map();
+      
       for (const part of partsToUpdate) {
         await base44.entities.PartsOrder.update(part.id, part.data);
         
-        // If manual match and part numbers differ, add to cross-compatible list
-        if (part.wasManualMatch && part.receiptPartNumber && part.inventoryPartNumber && 
+        // Save bidirectional cross-compatible associations
+        if ((part.wasManualMatch || part.wasCrossCompatMatch) && part.receiptPartNumber && part.inventoryPartNumber && 
             part.receiptPartNumber.trim().toLowerCase() !== part.inventoryPartNumber.trim().toLowerCase()) {
           
-          const inventoryItem = inventory.find(inv => 
+          // Find or create inventory item for the needed part's number
+          let inventoryItem = inventory.find(inv => 
             inv.part_number && inv.part_number.trim().toLowerCase() === part.inventoryPartNumber.trim().toLowerCase()
           );
           
           if (inventoryItem) {
             const existingCrossCompat = inventoryItem.cross_compatible_part_numbers || [];
             if (!existingCrossCompat.some(cpn => cpn.trim().toLowerCase() === part.receiptPartNumber.trim().toLowerCase())) {
-              await base44.entities.PartsInventory.update(inventoryItem.id, {
-                cross_compatible_part_numbers: [...existingCrossCompat, part.receiptPartNumber]
-              });
+              // Store update to avoid duplicate updates
+              if (!inventoryUpdates.has(inventoryItem.id)) {
+                inventoryUpdates.set(inventoryItem.id, {
+                  id: inventoryItem.id,
+                  cross_compatible: [...existingCrossCompat, part.receiptPartNumber]
+                });
+              } else {
+                const existing = inventoryUpdates.get(inventoryItem.id);
+                if (!existing.cross_compatible.includes(part.receiptPartNumber)) {
+                  existing.cross_compatible.push(part.receiptPartNumber);
+                }
+              }
+            }
+          } else {
+            // No inventory item found - log this for user awareness
+            toast.info(`Part #${part.inventoryPartNumber} not in inventory - cross-reference not saved`);
+          }
+          
+          // Also check for bidirectional - find inventory with receipt part number
+          const receiptInventoryItem = inventory.find(inv => 
+            inv.part_number && inv.part_number.trim().toLowerCase() === part.receiptPartNumber.trim().toLowerCase()
+          );
+          
+          if (receiptInventoryItem) {
+            const existingCrossCompat = receiptInventoryItem.cross_compatible_part_numbers || [];
+            if (!existingCrossCompat.some(cpn => cpn.trim().toLowerCase() === part.inventoryPartNumber.trim().toLowerCase())) {
+              if (!inventoryUpdates.has(receiptInventoryItem.id)) {
+                inventoryUpdates.set(receiptInventoryItem.id, {
+                  id: receiptInventoryItem.id,
+                  cross_compatible: [...existingCrossCompat, part.inventoryPartNumber]
+                });
+              } else {
+                const existing = inventoryUpdates.get(receiptInventoryItem.id);
+                if (!existing.cross_compatible.includes(part.inventoryPartNumber)) {
+                  existing.cross_compatible.push(part.inventoryPartNumber);
+                }
+              }
             }
           }
         }
+      }
+      
+      // Apply all inventory updates
+      for (const update of inventoryUpdates.values()) {
+        try {
+          await base44.entities.PartsInventory.update(update.id, {
+            cross_compatible_part_numbers: update.cross_compatible
+          });
+        } catch (error) {
+          toast.error(`Failed to update cross-compatible references: ${error.message}`);
+        }
+      }
+      
+      // Invalidate inventory query to refresh cross-compatible data
+      if (inventoryUpdates.size > 0) {
+        queryClient.invalidateQueries(['partsInventory']);
       }
 
       // Create new parts
@@ -640,6 +721,57 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Multi-Match Confirmation Dialog */}
+      {multiMatchConfirm && (
+        <Dialog open={!!multiMatchConfirm} onOpenChange={(open) => !open && setMultiMatchConfirm(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                Multiple Parts Match
+              </DialogTitle>
+              <DialogDescription>
+                Receipt item "{multiMatchConfirm.item.description}" ({multiMatchConfirm.item.part_number}) matches {multiMatchConfirm.matchingParts.length} needed parts.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                These parts will all be updated and marked as cross-compatible:
+              </p>
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {multiMatchConfirm.matchingParts.map(part => (
+                  <div key={part.id} className="p-2 bg-slate-50 rounded text-sm">
+                    <div className="font-medium">{part.part_description}</div>
+                    <div className="text-xs text-slate-500">
+                      {part.part_number && `#${part.part_number} • `}
+                      Qty: {part.quantity} • ${part.unit_cost?.toFixed(2) || '0.00'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 italic">
+                All matching parts will receive the receipt data and be linked as cross-compatible.
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setMultiMatchConfirm(null)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                setMultiMatchConfirm(null);
+                if (multiMatchConfirm.callback) {
+                  multiMatchConfirm.callback();
+                }
+              }}>
+                Confirm & Update All
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
