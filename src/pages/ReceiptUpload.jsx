@@ -39,6 +39,11 @@ export default function ReceiptUpload() {
     queryFn: () => base44.entities.PartsOrder.filter({ status: 'needed' }),
   });
 
+  const { data: inventory = [] } = useQuery({
+    queryKey: ['partsInventory'],
+    queryFn: () => base44.entities.PartsInventory.list(),
+  });
+
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -205,13 +210,36 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         
         // Check for manual match first
         let matchingPart = null;
+        let matchType = null;
+        
         if (manualMatches[idx]) {
           matchingPart = neededParts.find(p => p.id === manualMatches[idx]);
+          matchType = 'manual';
         } else if (item.part_number) {
-          // Auto-match by part number
+          // First, try direct part number match
           matchingPart = neededParts.find(p => 
             p.part_number && p.part_number.trim().toLowerCase() === item.part_number.trim().toLowerCase()
           );
+          
+          if (matchingPart) {
+            matchType = 'direct';
+          } else {
+            // Check cross-compatible part numbers in inventory
+            const inventoryItem = inventory.find(inv => 
+              inv.cross_compatible_part_numbers && 
+              inv.cross_compatible_part_numbers.some(cpn => 
+                cpn.trim().toLowerCase() === item.part_number.trim().toLowerCase()
+              )
+            );
+            
+            if (inventoryItem) {
+              // Find needed part that matches this inventory part number
+              matchingPart = neededParts.find(p => 
+                p.part_number && p.part_number.trim().toLowerCase() === inventoryItem.part_number.trim().toLowerCase()
+              );
+              matchType = 'cross-compatible';
+            }
+          }
         }
 
         // If no match and no part number, create new
@@ -238,6 +266,10 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           const priceDiff = matchingPart.unit_cost !== item.unit_price;
           const higherPrice = Math.max(matchingPart.unit_cost || 0, item.unit_price || 0);
           
+          const matchDescription = matchType === 'manual' ? 'Manually matched' : 
+                                   matchType === 'cross-compatible' ? `Auto-matched via cross-compatible part#: ${item.part_number}` :
+                                   'Auto-matched';
+          
           partsToUpdate.push({
             id: matchingPart.id,
             data: {
@@ -246,8 +278,11 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
               status: 'ordered',
               order_date: data.receipt_date,
               receipt_url: data.receipt_url,
-              notes: `${matchingPart.notes || ''}\n\n⚠️ ${manualMatches[idx] ? 'Manually matched' : 'Auto-matched'} from receipt upload. ${priceDiff ? `Price difference detected! Original: $${matchingPart.unit_cost}, Receipt: $${item.unit_price}, Using higher: $${higherPrice}` : 'Price matches.'} - Confirm receipt manually`
-            }
+              notes: `${matchingPart.notes || ''}\n\n⚠️ ${matchDescription} from receipt upload. ${priceDiff ? `Price difference detected! Original: $${matchingPart.unit_cost}, Receipt: $${item.unit_price}, Using higher: $${higherPrice}` : 'Price matches.'} - Confirm receipt manually`
+            },
+            receiptPartNumber: item.part_number,
+            inventoryPartNumber: matchingPart.part_number,
+            wasManualMatch: matchType === 'manual'
           });
         } else if (!matchingPart) {
           // No match - create new part
@@ -268,9 +303,27 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         }
       }
 
-      // Update matched parts
+      // Update matched parts and save cross-compatible associations
       for (const part of partsToUpdate) {
         await base44.entities.PartsOrder.update(part.id, part.data);
+        
+        // If manual match and part numbers differ, add to cross-compatible list
+        if (part.wasManualMatch && part.receiptPartNumber && part.inventoryPartNumber && 
+            part.receiptPartNumber.trim().toLowerCase() !== part.inventoryPartNumber.trim().toLowerCase()) {
+          
+          const inventoryItem = inventory.find(inv => 
+            inv.part_number && inv.part_number.trim().toLowerCase() === part.inventoryPartNumber.trim().toLowerCase()
+          );
+          
+          if (inventoryItem) {
+            const existingCrossCompat = inventoryItem.cross_compatible_part_numbers || [];
+            if (!existingCrossCompat.some(cpn => cpn.trim().toLowerCase() === part.receiptPartNumber.trim().toLowerCase())) {
+              await base44.entities.PartsInventory.update(inventoryItem.id, {
+                cross_compatible_part_numbers: [...existingCrossCompat, part.receiptPartNumber]
+              });
+            }
+          }
+        }
       }
 
       // Create new parts
