@@ -58,7 +58,8 @@ export default function PartsInventory() {
     location: 'storage',
     unit_cost: '',
     reorder_level: '',
-    notes: ''
+    notes: '',
+    cross_compatible_part_numbers: []
   });
 
   const queryClient = useQueryClient();
@@ -160,6 +161,14 @@ Return the data in the specified JSON format. If you cannot identify something, 
       reorder_level: formData.reorder_level ? parseInt(formData.reorder_level) : null,
     };
 
+    // If editing and part number changed, add old part number to cross-compatible list
+    if (editingPart && editingPart.part_number !== formData.part_number) {
+      const crossCompat = formData.cross_compatible_part_numbers || [];
+      if (!crossCompat.some(cpn => cpn.trim().toLowerCase() === editingPart.part_number.trim().toLowerCase())) {
+        data.cross_compatible_part_numbers = [...crossCompat, editingPart.part_number];
+      }
+    }
+
     if (editingPart) {
       updateMutation.mutate({ id: editingPart.id, data });
     } else {
@@ -178,7 +187,8 @@ Return the data in the specified JSON format. If you cannot identify something, 
       location: part.location || 'storage',
       unit_cost: part.unit_cost || '',
       reorder_level: part.reorder_level || '',
-      notes: part.notes || ''
+      notes: part.notes || '',
+      cross_compatible_part_numbers: part.cross_compatible_part_numbers || []
     });
     setShowForm(true);
   };
@@ -193,7 +203,8 @@ Return the data in the specified JSON format. If you cannot identify something, 
       location: 'storage',
       unit_cost: '',
       reorder_level: '',
-      notes: ''
+      notes: '',
+      cross_compatible_part_numbers: []
     });
     setEditingPart(null);
   };
@@ -653,6 +664,49 @@ Return the IDs of ALL matching parts.`,
                   <SelectItem value="non_stock">Non-Stock (Order as Needed)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label>Cross-Compatible Part Numbers</Label>
+              <p className="text-xs text-slate-500 mb-2">Alternative manufacturer part numbers that work with this part</p>
+              <div className="space-y-2">
+                {formData.cross_compatible_part_numbers.map((cpn, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <Input
+                      value={cpn}
+                      onChange={(e) => {
+                        const updated = [...formData.cross_compatible_part_numbers];
+                        updated[idx] = e.target.value;
+                        setFormData(prev => ({ ...prev, cross_compatible_part_numbers: updated }));
+                      }}
+                      placeholder="Alternative part number"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const updated = formData.cross_compatible_part_numbers.filter((_, i) => i !== idx);
+                        setFormData(prev => ({ ...prev, cross_compatible_part_numbers: updated }));
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      cross_compatible_part_numbers: [...prev.cross_compatible_part_numbers, ''] 
+                    }));
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Alternative Number
+                </Button>
+              </div>
             </div>
 
             <div>
