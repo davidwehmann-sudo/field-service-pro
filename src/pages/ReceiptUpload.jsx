@@ -32,6 +32,11 @@ export default function ReceiptUpload() {
     queryFn: () => base44.entities.ServiceReport.list(),
   });
 
+  const { data: neededParts = [] } = useQuery({
+    queryKey: ['neededParts'],
+    queryFn: () => base44.entities.PartsOrder.filter({ status: 'needed' }),
+  });
+
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -183,26 +188,88 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
     });
   };
 
-  const handleSaveAsPartsOrder = (assignmentType = 'inventory', serviceReportId = null, customerId = null) => {
+  const handleSaveAsPartsOrder = async (assignmentType = 'inventory', serviceReportId = null, customerId = null) => {
     const data = editedData || extractedData;
 
-    // If line items exist, create multiple parts
+    // If line items exist, process multiple parts
     if (data.line_items && data.line_items.length > 0) {
-      const partsToCreate = data.line_items.map(item => ({
-        assignment_type: assignmentType,
-        service_report_id: serviceReportId,
-        customer_id: customerId,
-        part_number: item.part_number || '',
-        part_description: item.description,
-        quantity: item.quantity || 1,
-        unit_cost: item.unit_price || 0,
-        supplier: data.vendor,
-        status: 'ordered',
-        order_date: data.receipt_date,
-        receipt_url: data.receipt_url,
-        notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
-      }));
-      savePartsOrder.mutate(partsToCreate);
+      const partsToUpdate = [];
+      const partsToCreate = [];
+
+      for (const item of data.line_items) {
+        // Skip if no part number
+        if (!item.part_number) {
+          partsToCreate.push({
+            assignment_type: assignmentType,
+            service_report_id: serviceReportId,
+            customer_id: customerId,
+            part_number: '',
+            part_description: item.description,
+            quantity: item.quantity || 1,
+            unit_cost: item.unit_price || 0,
+            supplier: data.vendor,
+            status: 'ordered',
+            order_date: data.receipt_date,
+            receipt_url: data.receipt_url,
+            notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
+          });
+          continue;
+        }
+
+        // Look for matching needed part
+        const matchingPart = neededParts.find(p => 
+          p.part_number && p.part_number.trim().toLowerCase() === item.part_number.trim().toLowerCase()
+        );
+
+        if (matchingPart) {
+          // Match found - update existing part
+          const priceDiff = matchingPart.unit_cost !== item.unit_price;
+          const higherPrice = Math.max(matchingPart.unit_cost || 0, item.unit_price || 0);
+          
+          partsToUpdate.push({
+            id: matchingPart.id,
+            data: {
+              unit_cost: higherPrice,
+              supplier: data.vendor,
+              status: 'ordered',
+              order_date: data.receipt_date,
+              receipt_url: data.receipt_url,
+              notes: `${matchingPart.notes || ''}\n\n⚠️ Matched from receipt upload. ${priceDiff ? `Price difference detected! Original: $${matchingPart.unit_cost}, Receipt: $${item.unit_price}, Using higher: $${higherPrice}` : 'Price matches.'} - Confirm receipt manually`
+            }
+          });
+        } else {
+          // No match - create new part
+          partsToCreate.push({
+            assignment_type: assignmentType,
+            service_report_id: serviceReportId,
+            customer_id: customerId,
+            part_number: item.part_number,
+            part_description: item.description,
+            quantity: item.quantity || 1,
+            unit_cost: item.unit_price || 0,
+            supplier: data.vendor,
+            status: 'ordered',
+            order_date: data.receipt_date,
+            receipt_url: data.receipt_url,
+            notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
+          });
+        }
+      }
+
+      // Update matched parts
+      for (const part of partsToUpdate) {
+        await base44.entities.PartsOrder.update(part.id, part.data);
+      }
+
+      // Create new parts
+      if (partsToCreate.length > 0) {
+        await savePartsOrder.mutateAsync(partsToCreate);
+      }
+
+      const matched = partsToUpdate.length;
+      const created = partsToCreate.length;
+      toast.success(`${matched} part${matched !== 1 ? 's' : ''} matched and updated, ${created} new part${created !== 1 ? 's' : ''} created`);
+      resetForm();
     } else {
       // Fallback to single item
       savePartsOrder.mutate({
