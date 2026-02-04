@@ -558,7 +558,7 @@ If no match possible, return "NO_MATCH".`,
         </Tabs>
       </div>
 
-      {/* Parts List */}
+      {/* Parts List - Table View */}
       {isLoading ? (
         <div className="space-y-3">
           {[1,2,3,4].map(i => (
@@ -594,101 +594,118 @@ If no match possible, return "NO_MATCH".`,
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {filteredParts.map((part) => (
-            <Card key={part.id} className={`border-0 shadow-sm hover:shadow-md transition-all cursor-pointer ${selectedParts.includes(part.id) ? 'ring-2 ring-amber-400' : ''}`} onClick={() => { setEditingPart(part); setShowForm(true); }}>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); togglePartSelection(part.id); }}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                      selectedParts.includes(part.id) 
-                        ? 'bg-amber-100 ring-2 ring-amber-400' 
-                        : 'bg-purple-100'
-                    }`}
-                  >
-                    <Package className={`w-6 h-6 ${selectedParts.includes(part.id) ? 'text-amber-600' : 'text-purple-600'}`} />
-                  </button>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
-                          {part.part_description}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
-                          {part.part_number && (
-                            <span className="flex items-center gap-1">
-                              <Hash className="w-3 h-3" />
-                              {part.part_number}
-                            </span>
-                          )}
-                          {part.supplier && (
-                            <>
-                              <span className="text-slate-300">•</span>
-                              <span>{part.supplier}</span>
-                            </>
-                          )}
-                          <span className="text-slate-300">•</span>
-                          <span>Qty: {part.quantity}</span>
-                        </div>
-                        {part.customer_id && (
-                          <p className="text-sm text-slate-400 mt-1">
-                            For: {getCustomerName(part.customer_id)}
-                          </p>
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase w-12">
+                  <input 
+                    type="checkbox"
+                    checked={filteredParts.length > 0 && selectedParts.length === filteredParts.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedParts(filteredParts.map(p => p.id));
+                      } else {
+                        setSelectedParts([]);
+                      }
+                    }}
+                    className="rounded"
+                  />
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Part</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Qty</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Assignment</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Total</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {filteredParts.map((part) => (
+                <tr 
+                  key={part.id} 
+                  className={`hover:bg-slate-50 cursor-pointer ${selectedParts.includes(part.id) ? 'bg-amber-50' : ''}`}
+                  onClick={() => { setEditingPart(part); setShowForm(true); }}
+                >
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedParts.includes(part.id)}
+                      onChange={() => togglePartSelection(part.id)}
+                      className="rounded"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="font-medium text-slate-900">{part.part_description}</p>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                        {part.part_number && (
+                          <span className="flex items-center gap-1">
+                            <Hash className="w-3 h-3" />
+                            {part.part_number}
+                          </span>
                         )}
-                        {part.service_report_id && (
-                          <p className="text-sm text-blue-600 mt-1">
-                            Report: {getServiceReportLabel(part.service_report_id)}
-                          </p>
+                        {part.supplier && (
+                          <>
+                            <span>•</span>
+                            <span>{part.supplier}</span>
+                          </>
                         )}
-                        {part.own_vehicle_id && (
-                          <p className="text-sm text-purple-600 mt-1">
-                            Vehicle: {getVehicleName(part.own_vehicle_id)}
-                            {part.paid_by && (
-                              <span className="ml-2 px-2 py-0.5 rounded text-xs bg-purple-100">
-                                {part.paid_by === 'company' ? 'Company Paid' : 'Technician Paid'}
-                              </span>
-                            )}
-                          </p>
-                        )}
-                        <div className="mt-2">
-                          <PartsAvailabilityChecker 
-                            partNumber={part.part_number}
-                            partDescription={part.part_description}
-                          />
-                        </div>
                       </div>
-                      
-                      <div className="text-right">
-                        <Badge className={statusColors[part.status]}>
-                          {part.status}
-                        </Badge>
-                        <p className="text-lg font-semibold text-slate-900 mt-2">
-                          ${calculateTotal(part).toFixed(2)}
-                        </p>
-                        {part.quantity > 1 && (
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            ${(calculateTotal(part) / part.quantity).toFixed(2)} / unit
-                          </p>
-                        )}
+                      <div className="mt-1">
+                        <PartsAvailabilityChecker 
+                          partNumber={part.part_number}
+                          partDescription={part.part_description}
+                        />
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{part.quantity}</td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm">
+                      {part.customer_id && (
+                        <p className="text-slate-600">{getCustomerName(part.customer_id)}</p>
+                      )}
+                      {part.service_report_id && (
+                        <p className="text-blue-600 text-xs">{getServiceReportLabel(part.service_report_id)}</p>
+                      )}
+                      {part.own_vehicle_id && (
+                        <p className="text-purple-600">{getVehicleName(part.own_vehicle_id)}</p>
+                      )}
+                      {!part.customer_id && !part.service_report_id && !part.own_vehicle_id && (
+                        <span className="text-slate-400 text-xs capitalize">{part.assignment_type?.replace('_', ' ')}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge className={statusColors[part.status]}>
+                      {part.status}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <p className="font-semibold text-slate-900">
+                      ${calculateTotal(part).toFixed(2)}
+                    </p>
+                    {part.quantity > 1 && (
+                      <p className="text-xs text-slate-500">
+                        ${(calculateTotal(part) / part.quantity).toFixed(2)} / unit
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <Button 
                       variant="ghost" 
-                      size="icon"
+                      size="sm"
                       onClick={() => deleteMutation.mutate(part.id)}
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <Trash2 className="w-4 h-4 text-red-400" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

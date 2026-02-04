@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle, Sparkles, X, LayoutGrid, List, Printer } from "lucide-react";
+import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle, Sparkles, X, Printer } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 
@@ -29,7 +29,7 @@ export default function PartsInventory() {
   const [aiQuery, setAiQuery] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiFilteredParts, setAiFilteredParts] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('list');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -324,24 +324,6 @@ Return the IDs of ALL matching parts.`,
             <p className="text-sm text-slate-500 no-print">Track parts in storage and on service trucks</p>
           </div>
           <div className="flex gap-2 no-print">
-            <div className="flex rounded-lg border border-slate-200">
-              <Button 
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Button>
-              <Button 
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none"
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="w-4 h-4 mr-2" />
               Print
@@ -480,9 +462,8 @@ Return the IDs of ALL matching parts.`,
         )}
       </div>
 
-      {viewMode === 'list' ? (
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <table className="w-full print-table">
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <table className="w-full print-table">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Part #</th>
@@ -537,78 +518,6 @@ Return the IDs of ALL matching parts.`,
             </tbody>
           </table>
         </div>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 no-print">
-        {filteredInventory.map(part => {
-          const isLowStock = part.reorder_level && part.quantity_on_hand <= part.reorder_level;
-          
-          return (
-            <Card key={part.id} className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                {part.photo_url && (
-                  <img 
-                    src={part.photo_url} 
-                    alt={part.part_description}
-                    className="w-full h-32 object-cover rounded-lg mb-3"
-                  />
-                )}
-                
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-900 truncate">{part.part_number}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-2">{part.part_description}</p>
-                  </div>
-                </div>
-
-                {part.manufacturer && (
-                  <p className="text-xs text-slate-400 mb-2">{part.manufacturer}</p>
-                )}
-
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={isLowStock ? "destructive" : "default"}>
-                      {part.quantity_on_hand} in stock
-                    </Badge>
-                    {isLowStock && (
-                      <AlertCircle className="w-4 h-4 text-red-500" />
-                    )}
-                  </div>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {locationLabels[part.location]}
-                  </Badge>
-                </div>
-
-                {part.unit_cost && (
-                  <p className="text-sm text-slate-600 mb-3">
-                    Cost: ${part.unit_cost.toFixed(2)}
-                  </p>
-                )}
-
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleEdit(part)}
-                    className="flex-1"
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setPartToDelete(part)}
-                    className="text-red-500"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-        </div>
-      )}
 
       {filteredInventory.length === 0 && !isLoading && (
         <Card className="border-0 shadow-sm">
