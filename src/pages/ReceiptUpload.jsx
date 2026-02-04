@@ -62,16 +62,23 @@ export default function ReceiptUpload() {
 
       // Extract data using AI
       const extractedInfo = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this receipt image and extract all relevant information. Determine what type of expense this is and provide structured data.`,
+        prompt: `Analyze this receipt/invoice and extract ALL line items. Look for:
+- Each individual part/product purchased
+- Part numbers, descriptions, quantities, and unit prices
+- Vendor/supplier information
+- Date of purchase
+- Total amount
+
+If this is a parts receipt with multiple items, extract EACH line item separately.
+If this is a single expense (fuel, service, etc), extract it as one item.`,
         file_urls: [file_url],
         add_context_from_internet: false,
         response_json_schema: {
           type: "object",
           properties: {
             vendor: { type: "string" },
-            amount: { type: "number" },
-            expense_date: { type: "string", description: "Date in YYYY-MM-DD format" },
-            description: { type: "string" },
+            receipt_date: { type: "string", description: "Date in YYYY-MM-DD format" },
+            total_amount: { type: "number", description: "Total on receipt" },
             category: { 
               type: "string", 
               enum: ["vehicle_expense", "parts_order", "other"],
@@ -79,19 +86,29 @@ export default function ReceiptUpload() {
             },
             expense_type: { 
               type: "string",
-              description: "For vehicle expenses: fuel, maintenance, repair, upgrade, insurance, registration, other. For parts: part purchase"
+              description: "For vehicle expenses: fuel, maintenance, repair, upgrade, insurance, registration, other"
             },
             vehicle_hint: { 
               type: "string",
-              description: "Any vehicle identifier mentioned (truck number, license plate, etc)"
+              description: "Any vehicle identifier mentioned"
             },
-            part_number: { type: "string" },
-            part_description: { type: "string" },
-            quantity: { type: "number" },
+            line_items: {
+              type: "array",
+              description: "Individual line items from receipt",
+              items: {
+                type: "object",
+                properties: {
+                  part_number: { type: "string" },
+                  description: { type: "string" },
+                  quantity: { type: "number" },
+                  unit_price: { type: "number" },
+                  line_total: { type: "number" }
+                }
+              }
+            },
             confidence: { 
               type: "string",
-              enum: ["high", "medium", "low"],
-              description: "Confidence level in the extraction"
+              enum: ["high", "medium", "low"]
             }
           }
         }
@@ -99,7 +116,9 @@ export default function ReceiptUpload() {
 
       setExtractedData({ ...extractedInfo, receipt_url: file_url });
       setEditedData({ ...extractedInfo, receipt_url: file_url });
-      toast.success('Receipt data extracted successfully');
+      
+      const itemCount = extractedInfo.line_items?.length || 1;
+      toast.success(`Receipt data extracted: ${itemCount} item${itemCount > 1 ? 's' : ''} found`);
     } catch (error) {
       toast.error('Failed to extract receipt data: ' + error.message);
     } finally {
@@ -121,15 +140,20 @@ export default function ReceiptUpload() {
   });
 
   const savePartsOrder = useMutation({
-    mutationFn: async (data) => {
-      return await base44.entities.PartsOrder.create(data);
+    mutationFn: async (parts) => {
+      // parts is an array
+      if (Array.isArray(parts)) {
+        return await base44.entities.PartsOrder.bulkCreate(parts);
+      }
+      return await base44.entities.PartsOrder.create(parts);
     },
-    onSuccess: () => {
-      toast.success('Parts order saved successfully');
+    onSuccess: (_, parts) => {
+      const count = Array.isArray(parts) ? parts.length : 1;
+      toast.success(`${count} part${count > 1 ? 's' : ''} saved successfully`);
       resetForm();
     },
     onError: (error) => {
-      toast.error('Failed to save parts order: ' + error.message);
+      toast.error('Failed to save parts: ' + error.message);
     }
   });
 
@@ -146,13 +170,13 @@ export default function ReceiptUpload() {
     const vehicle = vehicleId ? vehicles.find(v => v.id === vehicleId) : null;
 
     saveVehicleExpense.mutate({
-      expense_date: data.expense_date,
+      expense_date: data.receipt_date || data.expense_date,
       vehicle_name: vehicle?.name || data.vehicle_hint || 'Unassigned',
       own_vehicle_id: vehicleId,
       expense_type: data.expense_type || 'other',
-      description: data.description,
+      description: data.line_items?.[0]?.description || data.description || 'Expense',
       vendor: data.vendor,
-      amount: data.amount,
+      amount: data.total_amount || data.amount,
       receipt_url: data.receipt_url,
       paid_by: 'company',
       notes: `AI extracted (${data.confidence} confidence)`
@@ -162,19 +186,40 @@ export default function ReceiptUpload() {
   const handleSaveAsPartsOrder = (assignmentType = 'inventory', serviceReportId = null, customerId = null) => {
     const data = editedData || extractedData;
 
-    savePartsOrder.mutate({
-      assignment_type: assignmentType,
-      service_report_id: serviceReportId,
-      customer_id: customerId,
-      part_number: data.part_number || '',
-      part_description: data.part_description || data.description,
-      quantity: data.quantity || 1,
-      unit_cost: data.amount || 0,
-      supplier: data.vendor,
-      status: 'received',
-      receipt_url: data.receipt_url,
-      notes: `AI extracted (${data.confidence} confidence)`
-    });
+    // If line items exist, create multiple parts
+    if (data.line_items && data.line_items.length > 0) {
+      const partsToCreate = data.line_items.map(item => ({
+        assignment_type: assignmentType,
+        service_report_id: serviceReportId,
+        customer_id: customerId,
+        part_number: item.part_number || '',
+        part_description: item.description,
+        quantity: item.quantity || 1,
+        unit_cost: item.unit_price || 0,
+        supplier: data.vendor,
+        status: 'received',
+        order_date: data.receipt_date,
+        receipt_url: data.receipt_url,
+        notes: `AI extracted from receipt (${data.confidence} confidence)`
+      }));
+      savePartsOrder.mutate(partsToCreate);
+    } else {
+      // Fallback to single item
+      savePartsOrder.mutate({
+        assignment_type: assignmentType,
+        service_report_id: serviceReportId,
+        customer_id: customerId,
+        part_number: '',
+        part_description: data.description || 'Receipt item',
+        quantity: 1,
+        unit_cost: data.total_amount || 0,
+        supplier: data.vendor,
+        status: 'received',
+        order_date: data.receipt_date,
+        receipt_url: data.receipt_url,
+        notes: `AI extracted (${data.confidence} confidence)`
+      });
+    }
   };
 
   const handleSaveUnassigned = () => {
@@ -290,12 +335,12 @@ export default function ReceiptUpload() {
                 </div>
 
                 <div>
-                  <Label>Amount</Label>
+                  <Label>Total Amount</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={data.amount || ''}
-                    onChange={(e) => handleFieldChange('amount', parseFloat(e.target.value))}
+                    value={data.total_amount || data.amount || ''}
+                    onChange={(e) => handleFieldChange('total_amount', parseFloat(e.target.value))}
                     disabled={!manualOverride}
                   />
                 </div>
@@ -304,17 +349,8 @@ export default function ReceiptUpload() {
                   <Label>Date</Label>
                   <Input
                     type="date"
-                    value={data.expense_date || ''}
-                    onChange={(e) => handleFieldChange('expense_date', e.target.value)}
-                    disabled={!manualOverride}
-                  />
-                </div>
-
-                <div>
-                  <Label>Description</Label>
-                  <Input
-                    value={data.description || ''}
-                    onChange={(e) => handleFieldChange('description', e.target.value)}
+                    value={data.receipt_date || data.expense_date || ''}
+                    onChange={(e) => handleFieldChange('receipt_date', e.target.value)}
                     disabled={!manualOverride}
                   />
                 </div>
@@ -336,6 +372,23 @@ export default function ReceiptUpload() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {data.line_items && data.line_items.length > 0 && (
+                  <div className="pt-3 border-t">
+                    <Label className="mb-2 block">Line Items ({data.line_items.length})</Label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {data.line_items.map((item, idx) => (
+                        <div key={idx} className="p-2 bg-slate-50 rounded text-sm">
+                          <div className="font-medium">{item.description}</div>
+                          <div className="text-xs text-slate-600 mt-1">
+                            {item.part_number && <span>#{item.part_number} • </span>}
+                            Qty: {item.quantity} × ${item.unit_price?.toFixed(2)} = ${item.line_total?.toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
