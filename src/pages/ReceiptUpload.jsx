@@ -16,6 +16,8 @@ export default function ReceiptUpload() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualOverride, setManualOverride] = useState(false);
   const [editedData, setEditedData] = useState(null);
+  const [showManualMatch, setShowManualMatch] = useState(false);
+  const [manualMatches, setManualMatches] = useState({});
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['ownVehicles'],
@@ -168,6 +170,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
     setExtractedData(null);
     setEditedData(null);
     setManualOverride(false);
+    setShowManualMatch(false);
+    setManualMatches({});
   };
 
   const handleSaveAsVehicleExpense = (vehicleId = null) => {
@@ -196,9 +200,22 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
       const partsToUpdate = [];
       const partsToCreate = [];
 
-      for (const item of data.line_items) {
-        // Skip if no part number
-        if (!item.part_number) {
+      for (let idx = 0; idx < data.line_items.length; idx++) {
+        const item = data.line_items[idx];
+        
+        // Check for manual match first
+        let matchingPart = null;
+        if (manualMatches[idx]) {
+          matchingPart = neededParts.find(p => p.id === manualMatches[idx]);
+        } else if (item.part_number) {
+          // Auto-match by part number
+          matchingPart = neededParts.find(p => 
+            p.part_number && p.part_number.trim().toLowerCase() === item.part_number.trim().toLowerCase()
+          );
+        }
+
+        // If no match and no part number, create new
+        if (!matchingPart && !item.part_number) {
           partsToCreate.push({
             assignment_type: assignmentType,
             service_report_id: serviceReportId,
@@ -216,11 +233,6 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           continue;
         }
 
-        // Look for matching needed part
-        const matchingPart = neededParts.find(p => 
-          p.part_number && p.part_number.trim().toLowerCase() === item.part_number.trim().toLowerCase()
-        );
-
         if (matchingPart) {
           // Match found - update existing part
           const priceDiff = matchingPart.unit_cost !== item.unit_price;
@@ -234,16 +246,16 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
               status: 'ordered',
               order_date: data.receipt_date,
               receipt_url: data.receipt_url,
-              notes: `${matchingPart.notes || ''}\n\n⚠️ Matched from receipt upload. ${priceDiff ? `Price difference detected! Original: $${matchingPart.unit_cost}, Receipt: $${item.unit_price}, Using higher: $${higherPrice}` : 'Price matches.'} - Confirm receipt manually`
+              notes: `${matchingPart.notes || ''}\n\n⚠️ ${manualMatches[idx] ? 'Manually matched' : 'Auto-matched'} from receipt upload. ${priceDiff ? `Price difference detected! Original: $${matchingPart.unit_cost}, Receipt: $${item.unit_price}, Using higher: $${higherPrice}` : 'Price matches.'} - Confirm receipt manually`
             }
           });
-        } else {
+        } else if (!matchingPart) {
           // No match - create new part
           partsToCreate.push({
             assignment_type: assignmentType,
             service_report_id: serviceReportId,
             customer_id: customerId,
-            part_number: item.part_number,
+            part_number: item.part_number || '',
             part_description: item.description,
             quantity: item.quantity || 1,
             unit_cost: item.unit_price || 0,
@@ -461,6 +473,54 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           </Card>
         )}
       </div>
+
+      {/* Manual Matching */}
+      {extractedData && data.line_items && data.line_items.length > 0 && neededParts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Manual Part Matching</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-slate-600">Connect receipt items to needed parts (for cross-compatible parts)</p>
+            <Button
+              variant="outline"
+              onClick={() => setShowManualMatch(!showManualMatch)}
+              className="w-full"
+            >
+              {showManualMatch ? 'Hide' : 'Show'} Manual Matching
+            </Button>
+
+            {showManualMatch && (
+              <div className="space-y-4 pt-2">
+                {data.line_items.map((item, idx) => (
+                  <div key={idx} className="p-3 border rounded-lg space-y-2">
+                    <div className="font-medium text-sm">
+                      {item.description}
+                      {item.part_number && <span className="text-slate-500 ml-2">#{item.part_number}</span>}
+                    </div>
+                    <Select
+                      value={manualMatches[idx] || ''}
+                      onValueChange={(value) => setManualMatches(prev => ({ ...prev, [idx]: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Match to needed part..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>No match</SelectItem>
+                        {neededParts.map(part => (
+                          <SelectItem key={part.id} value={part.id}>
+                            {part.part_description} {part.part_number && `(#${part.part_number})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Assignment Options */}
       {extractedData && (
