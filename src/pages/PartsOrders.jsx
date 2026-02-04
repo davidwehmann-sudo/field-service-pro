@@ -451,14 +451,23 @@ If no match possible, return "NO_MATCH".`,
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-table { display: table !important; width: 100%; }
+          body { padding: 20px; }
+        }
+      `}</style>
+      
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Parts Orders</h1>
           <p className="text-slate-500 mt-1">Track parts and orders</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 no-print">
           {currentUser?.role === 'admin' && (
             <Button 
               onClick={() => setShowSettings(true)}
@@ -468,6 +477,13 @@ If no match possible, return "NO_MATCH".`,
               Markup Settings
             </Button>
           )}
+          <Button 
+            onClick={() => window.print()}
+            variant="outline"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            Print List
+          </Button>
           {selectedParts.length > 0 && (
             <Button 
               onClick={handlePrintOrders}
@@ -489,7 +505,7 @@ If no match possible, return "NO_MATCH".`,
       </div>
 
       {/* AI Search */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 no-print">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-5 h-5 text-purple-600" />
           <h3 className="font-semibold text-slate-900">AI Parts Search</h3>
@@ -524,7 +540,7 @@ If no match possible, return "NO_MATCH".`,
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 no-print">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input 
@@ -595,10 +611,10 @@ If no match possible, return "NO_MATCH".`,
         </Card>
       ) : (
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <table className="w-full">
+          <table className="w-full print-table">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase w-12">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase w-12 no-print">
                   <input 
                     type="checkbox"
                     checked={filteredParts.length > 0 && selectedParts.length === filteredParts.length}
@@ -617,7 +633,7 @@ If no match possible, return "NO_MATCH".`,
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Assignment</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Total</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase no-print">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -627,7 +643,7 @@ If no match possible, return "NO_MATCH".`,
                   className={`hover:bg-slate-50 cursor-pointer ${selectedParts.includes(part.id) ? 'bg-amber-50' : ''}`}
                   onClick={() => { setEditingPart(part); setShowForm(true); }}
                 >
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3 no-print" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedParts.includes(part.id)}
@@ -692,7 +708,7 @@ If no match possible, return "NO_MATCH".`,
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3 text-right no-print" onClick={(e) => e.stopPropagation()}>
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -1198,5 +1214,6 @@ If no match possible, return "NO_MATCH".`,
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
