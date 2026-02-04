@@ -197,10 +197,10 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         quantity: item.quantity || 1,
         unit_cost: item.unit_price || 0,
         supplier: data.vendor,
-        status: 'received',
+        status: 'ordered',
         order_date: data.receipt_date,
         receipt_url: data.receipt_url,
-        notes: `AI extracted from receipt (${data.confidence} confidence)`
+        notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
       }));
       savePartsOrder.mutate(partsToCreate);
     } else {
@@ -214,10 +214,10 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         quantity: 1,
         unit_cost: data.total_amount || 0,
         supplier: data.vendor,
-        status: 'received',
+        status: 'ordered',
         order_date: data.receipt_date,
         receipt_url: data.receipt_url,
-        notes: `AI extracted (${data.confidence} confidence)`
+        notes: `AI extracted (${data.confidence} confidence) - confirm receipt manually`
       });
     }
   };
