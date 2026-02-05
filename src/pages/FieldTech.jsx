@@ -16,15 +16,18 @@ import {
   Calendar,
   Wrench,
   Receipt,
-  ClipboardCheck
+  ClipboardCheck,
+  Droplet
 } from "lucide-react";
 import { format } from 'date-fns';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
 import AISearch from '@/components/search/AISearch';
+import ConsumableUsageForm from '@/components/consumables/ConsumableUsageForm';
 
 export default function FieldTech() {
   const [search, setSearch] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [showConsumableForm, setShowConsumableForm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -113,6 +116,13 @@ export default function FieldTech() {
               <span className="font-semibold">Capture Receipt</span>
             </Button>
           </Link>
+          <Button 
+            onClick={() => setShowConsumableForm(true)}
+            className="w-full h-24 bg-teal-600 hover:bg-teal-700 text-white flex-col gap-2"
+          >
+            <Droplet className="w-6 h-6" />
+            <span className="font-semibold">Shop Consumable</span>
+          </Button>
         </div>
 
         {/* AI Search */}
@@ -213,6 +223,12 @@ export default function FieldTech() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Consumable Usage Form */}
+      <ConsumableUsageForm 
+        open={showConsumableForm}
+        onOpenChange={setShowConsumableForm}
+      />
     </div>
   );
 }
