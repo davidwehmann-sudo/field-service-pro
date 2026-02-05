@@ -853,14 +853,21 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
 
             {data.category === 'parts_order' && (
               <div className="space-y-3">
-                <p className="text-sm text-slate-600">Assign to:</p>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900 mb-1">
+                    Parts will auto-match to needed parts on order
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    System will check part numbers and cross-compatible references to link this receipt to existing parts orders
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    variant="outline"
                     onClick={() => handleSaveAsPartsOrder('inventory')}
                     disabled={savePartsOrder.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
-                    Add to Inventory
+                    Process Receipt & Match Parts
                   </Button>
                   <Button
                     variant="outline"
