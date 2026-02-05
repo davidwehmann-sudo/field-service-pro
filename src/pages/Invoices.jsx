@@ -26,7 +26,8 @@ import {
   Mail,
   Send,
   Link as LinkIcon,
-  Copy
+  Copy,
+  FileCheck
 } from "lucide-react";
 import { format, addDays } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +50,8 @@ export default function Invoices() {
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const [calculatingTax, setCalculatingTax] = useState(false);
   const [agExempt, setAgExempt] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [customerExemption, setCustomerExemption] = useState(null);
   const queryClient = useQueryClient();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -81,6 +84,11 @@ export default function Invoices() {
     queryFn: () => base44.entities.Job.list()
   });
 
+  const { data: agExemptions = [] } = useQuery({
+    queryKey: ['agExemptions'],
+    queryFn: () => base44.entities.AgExemption.list()
+  });
+
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
@@ -106,10 +114,36 @@ export default function Invoices() {
   useEffect(() => {
     if (showForm && editingInvoice) {
       setAgExempt(editingInvoice.ag_exempt || false);
+      setSelectedCustomerId(editingInvoice.customer_id || null);
     } else {
       setAgExempt(false);
+      setSelectedCustomerId(null);
     }
   }, [showForm, editingInvoice]);
+
+  // Check for valid ag exemption when customer changes
+  useEffect(() => {
+    if (selectedCustomerId && agExemptions.length > 0) {
+      const validExemptions = agExemptions.filter(ex => 
+        ex.customer_id === selectedCustomerId && 
+        ex.status === 'active' &&
+        ex.expiration_date &&
+        new Date(ex.expiration_date) >= new Date()
+      );
+      
+      if (validExemptions.length > 0) {
+        setCustomerExemption(validExemptions[0]);
+        // Auto-check ag exempt if not already set by saved invoice
+        if (!editingInvoice?.id) {
+          setAgExempt(true);
+        }
+      } else {
+        setCustomerExemption(null);
+      }
+    } else {
+      setCustomerExemption(null);
+    }
+  }, [selectedCustomerId, agExemptions, editingInvoice]);
 
   useEffect(() => {
     if (fromReportId && serviceReports.length > 0) {
@@ -746,7 +780,12 @@ CHARGES:
               </div>
               <div>
                 <Label>Customer *</Label>
-                <Select name="customer_id" defaultValue={editingInvoice?.customer_id || ''} required>
+                <Select 
+                  name="customer_id" 
+                  defaultValue={editingInvoice?.customer_id || ''} 
+                  onValueChange={setSelectedCustomerId}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
@@ -758,6 +797,14 @@ CHARGES:
                     ))}
                   </SelectContent>
                 </Select>
+                {customerExemption && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                    <p className="text-green-800 font-medium">🌾 Valid Ag Exemption on File</p>
+                    <p className="text-green-700">
+                      Cert: {customerExemption.certificate_number} • Expires: {format(new Date(customerExemption.expiration_date), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
