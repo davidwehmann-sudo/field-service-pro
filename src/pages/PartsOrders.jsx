@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -49,6 +49,7 @@ export default function PartsOrders() {
   const [aiQuery, setAiQuery] = useState('');
   const [aiSearching, setAiSearching] = useState(false);
   const [jobsList, setJobsList] = useState([]);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -712,7 +713,7 @@ If no match possible, return "NO_MATCH".`,
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => deleteMutation.mutate(part.id)}
+                      onClick={() => setDeleteConfirm(part)}
                       className="text-red-500 hover:text-red-700"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1213,6 +1214,68 @@ If no match possible, return "NO_MATCH".`,
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Part Order?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-medium text-slate-900">{deleteConfirm.part_description}</p>
+                <div className="text-sm text-slate-600 mt-2 space-y-1">
+                  {deleteConfirm.part_number && (
+                    <p>Part #: {deleteConfirm.part_number}</p>
+                  )}
+                  {deleteConfirm.supplier && (
+                    <p>Supplier: {deleteConfirm.supplier}</p>
+                  )}
+                  <p>Quantity: {deleteConfirm.quantity}</p>
+                  <p>Cost: ${calculateTotal(deleteConfirm).toFixed(2)}</p>
+                  <p className="capitalize">Status: {deleteConfirm.status}</p>
+                </div>
+              </div>
+              
+              {deleteConfirm.status === 'received' && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ This part is marked as received. Deleting it will not update inventory.
+                  </p>
+                </div>
+              )}
+              
+              {deleteConfirm.service_report_id && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    This part is linked to a service report. Consider updating the status instead of deleting.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  deleteMutation.mutate(deleteConfirm.id);
+                  setDeleteConfirm(null);
+                }}
+              >
+                Delete Part Order
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
     </>
   );
