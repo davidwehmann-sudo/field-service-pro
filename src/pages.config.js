@@ -47,12 +47,14 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AgExemptions from './pages/AgExemptions';
 import Authorizations from './pages/Authorizations';
 import Customers from './pages/Customers';
 import Dashboard from './pages/Dashboard';
 import DataManagement from './pages/DataManagement';
 import FieldTech from './pages/FieldTech';
 import Home from './pages/Home';
+import Invoices from './pages/Invoices';
 import Jobs from './pages/Jobs';
 import OwnVehicles from './pages/OwnVehicles';
 import PartsInventory from './pages/PartsInventory';
@@ -64,18 +66,18 @@ import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import TechnicianPayroll from './pages/TechnicianPayroll';
 import VehicleExpenses from './pages/VehicleExpenses';
-import AgExemptions from './pages/AgExemptions';
-import Invoices from './pages/Invoices';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AgExemptions": AgExemptions,
     "Authorizations": Authorizations,
     "Customers": Customers,
     "Dashboard": Dashboard,
     "DataManagement": DataManagement,
     "FieldTech": FieldTech,
     "Home": Home,
+    "Invoices": Invoices,
     "Jobs": Jobs,
     "OwnVehicles": OwnVehicles,
     "PartsInventory": PartsInventory,
@@ -87,8 +89,6 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "TechnicianPayroll": TechnicianPayroll,
     "VehicleExpenses": VehicleExpenses,
-    "AgExemptions": AgExemptions,
-    "Invoices": Invoices,
 }
 
 export const pagesConfig = {

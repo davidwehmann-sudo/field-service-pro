@@ -25,9 +25,11 @@ export function calculatePartsMarkup(unitCost, settings = null) {
 
 /**
  * Calculate the total price with markup and shipping
+ * Shipping is divided per unit and added before markup
  */
 export function calculatePartTotal(unitCost, quantity, markupPercent, shippingCost = 0) {
-  const cost = unitCost * quantity;
-  const markup = cost * (markupPercent / 100);
-  return cost + markup + shippingCost;
+  const shippingPerUnit = quantity > 0 ? shippingCost / quantity : 0;
+  const adjustedUnitCost = unitCost + shippingPerUnit;
+  const markedUpPrice = adjustedUnitCost * (1 + markupPercent / 100);
+  return markedUpPrice * quantity;
 }

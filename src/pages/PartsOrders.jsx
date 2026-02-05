@@ -813,7 +813,7 @@ If no match possible, return "NO_MATCH".`,
                   placeholder="0.00"
                 />
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Added to customer total
+                  Divided per unit, marked up
                 </p>
               </div>
               <div>
