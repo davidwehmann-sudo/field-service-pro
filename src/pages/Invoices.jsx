@@ -104,6 +104,14 @@ export default function Invoices() {
   }, []);
 
   useEffect(() => {
+    if (showForm && editingInvoice) {
+      setAgExempt(editingInvoice.ag_exempt || false);
+    } else {
+      setAgExempt(false);
+    }
+  }, [showForm, editingInvoice]);
+
+  useEffect(() => {
     if (fromReportId && serviceReports.length > 0) {
       const report = serviceReports.find(r => r.id === fromReportId);
       if (report) {
