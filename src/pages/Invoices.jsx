@@ -265,6 +265,7 @@ export default function Invoices() {
     const laborTotal = parseFloat(document.querySelector('[name="labor_total"]')?.value) || 0;
     const travelTotal = parseFloat(document.querySelector('[name="travel_total"]')?.value) || 0;
     const partsTotal = parseFloat(document.querySelector('[name="parts_total"]')?.value) || 0;
+    const shippingTotal = parseFloat(document.querySelector('[name="shipping_total"]')?.value) || 0;
     const discountPercent = parseFloat(document.querySelector('[name="discount_percent"]')?.value) || 0;
 
     if (!customerId) {
@@ -280,7 +281,7 @@ export default function Invoices() {
       return;
     }
 
-    const subtotal = laborTotal + travelTotal + partsTotal;
+    const subtotal = laborTotal + travelTotal + partsTotal + shippingTotal;
     const discountAmount = subtotal * (discountPercent / 100);
     const afterDiscount = subtotal - discountAmount;
 
@@ -294,7 +295,7 @@ export default function Invoices() {
       const response = await base44.functions.invoke('calculateSalesTax', {
         customer_id: customerId,
         amount: afterDiscount,
-        shipping: 0
+        shipping: shippingTotal
       });
 
       if (response.data.success) {
@@ -320,6 +321,7 @@ export default function Invoices() {
     const laborTotal = parseFloat(formData.get('labor_total')) || 0;
     const travelTotal = parseFloat(formData.get('travel_total')) || 0;
     const partsTotal = parseFloat(formData.get('parts_total')) || 0;
+    const shippingTotal = parseFloat(formData.get('shipping_total')) || 0;
     const discountPercent = parseFloat(formData.get('discount_percent')) || 0;
     const manualOverride = formData.get('manual_price_override') ? parseFloat(formData.get('manual_price_override')) : null;
     const taxRate = agExempt ? 0 : (parseFloat(formData.get('tax_rate')) || 0);
@@ -333,7 +335,7 @@ export default function Invoices() {
       taxAmount = 0; // Tax included in override
     } else {
       // Normal calculation with optional discount
-      const subtotal = laborTotal + travelTotal + partsTotal;
+      const subtotal = laborTotal + travelTotal + partsTotal + shippingTotal;
       const discountAmount = subtotal * (discountPercent / 100);
       const afterDiscount = subtotal - discountAmount;
       taxAmount = agExempt ? 0 : afterDiscount * (taxRate / 100);
@@ -349,6 +351,7 @@ export default function Invoices() {
       labor_total: laborTotal,
       travel_total: travelTotal,
       parts_total: partsTotal,
+      shipping_total: shippingTotal,
       discount_percent: discountPercent,
       manual_price_override: manualOverride,
       tax_rate: taxRate,
@@ -455,6 +458,10 @@ CHARGES:
       });
     }
     emailBody += `Parts Total: $${(invoice.parts_total || 0).toFixed(2)}\n`;
+    
+    if (invoice.shipping_total > 0) {
+      emailBody += `Shipping (at cost): $${(invoice.shipping_total || 0).toFixed(2)}\n`;
+    }
 
     if (invoice.tax_rate > 0) {
       emailBody += `\nTax (${invoice.tax_rate}%): $${(invoice.tax_amount || 0).toFixed(2)}\n`;
@@ -831,7 +838,7 @@ CHARGES:
 
             <div className="border-t pt-4">
               <h3 className="font-semibold mb-3">Charges</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="labor_total">Labor Total ($)</Label>
                   <Input 
@@ -860,6 +867,16 @@ CHARGES:
                     type="number"
                     step="0.01"
                     defaultValue={editingInvoice?.parts_total || 0}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="shipping_total">Shipping (at cost) ($)</Label>
+                  <Input 
+                    id="shipping_total" 
+                    name="shipping_total" 
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingInvoice?.shipping_total || 0}
                   />
                 </div>
               </div>
