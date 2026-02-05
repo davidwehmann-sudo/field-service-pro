@@ -620,91 +620,159 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         {/* Extracted Data Section */}
         {extractedData && (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Extracted Data</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setManualOverride(!manualOverride)}
-              >
-                <Edit2 className="w-4 h-4 mr-2" />
-                {manualOverride ? 'Lock' : 'Edit'}
-              </Button>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Review Extracted Data</CardTitle>
+                <Button
+                  variant={manualOverride ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setManualOverride(!manualOverride)}
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  {manualOverride ? 'Editing' : 'Edit'}
+                </Button>
+              </div>
+              
+              {/* Confidence Badge */}
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium mt-2 ${
+                data.confidence === 'high' ? 'bg-green-50 text-green-700 border border-green-200' :
+                data.confidence === 'medium' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {data.confidence === 'high' && <CheckCircle2 className="w-4 h-4" />}
+                {data.confidence !== 'high' && <AlertCircle className="w-4 h-4" />}
+                <span className="capitalize">{data.confidence} Confidence</span>
+                {data.confidence !== 'high' && <span className="text-xs opacity-75">• Review carefully</span>}
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm">
-                {data.confidence === 'high' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                {data.confidence === 'medium' && <AlertCircle className="w-4 h-4 text-yellow-600" />}
-                {data.confidence === 'low' && <AlertCircle className="w-4 h-4 text-red-600" />}
-                <span className="capitalize">{data.confidence} confidence</span>
+            
+            <CardContent className="space-y-6">
+              {/* Summary Box */}
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Vendor</p>
+                    <p className="font-semibold text-slate-900">{data.vendor || 'Unknown'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Total Amount</p>
+                    <p className="font-semibold text-slate-900 text-lg">
+                      ${(data.total_amount || data.amount || 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Date</p>
+                    <p className="font-semibold text-slate-900">{data.receipt_date || data.expense_date || 'Not found'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Type</p>
+                    <p className="font-semibold text-slate-900 capitalize">{data.category?.replace('_', ' ') || 'Unknown'}</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <div>
-                  <Label>Vendor</Label>
-                  <Input
-                    value={data.vendor || ''}
-                    onChange={(e) => handleFieldChange('vendor', e.target.value)}
-                    disabled={!manualOverride}
-                  />
-                </div>
+              {/* Editable Fields */}
+              {manualOverride && (
+                <div className="space-y-3 p-4 border-2 border-amber-200 rounded-lg bg-amber-50">
+                  <p className="text-sm font-medium text-amber-900 flex items-center gap-2">
+                    <Edit2 className="w-4 h-4" />
+                    Edit Mode - Make corrections below
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Vendor/Supplier</Label>
+                      <Input
+                        value={data.vendor || ''}
+                        onChange={(e) => handleFieldChange('vendor', e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
 
-                <div>
-                  <Label>Total Amount</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={data.total_amount || data.amount || ''}
-                    onChange={(e) => handleFieldChange('total_amount', parseFloat(e.target.value))}
-                    disabled={!manualOverride}
-                  />
-                </div>
+                    <div>
+                      <Label className="text-xs">Total Amount</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={data.total_amount || data.amount || ''}
+                        onChange={(e) => handleFieldChange('total_amount', parseFloat(e.target.value))}
+                        className="bg-white"
+                      />
+                    </div>
 
-                <div>
-                  <Label>Date</Label>
-                  <Input
-                    type="date"
-                    value={data.receipt_date || data.expense_date || ''}
-                    onChange={(e) => handleFieldChange('receipt_date', e.target.value)}
-                    disabled={!manualOverride}
-                  />
-                </div>
+                    <div>
+                      <Label className="text-xs">Receipt Date</Label>
+                      <Input
+                        type="date"
+                        value={data.receipt_date || data.expense_date || ''}
+                        onChange={(e) => handleFieldChange('receipt_date', e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
 
-                <div>
-                  <Label>Category</Label>
-                  <Select
-                    value={data.category}
-                    onValueChange={(value) => handleFieldChange('category', value)}
-                    disabled={!manualOverride}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="vehicle_expense">Vehicle Expense</SelectItem>
-                      <SelectItem value="parts_order">Parts Order</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {data.line_items && data.line_items.length > 0 && (
-                  <div className="pt-3 border-t">
-                    <Label className="mb-2 block">Line Items ({data.line_items.length})</Label>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {data.line_items.map((item, idx) => (
-                        <div key={idx} className="p-2 bg-slate-50 rounded text-sm">
-                          <div className="font-medium">{item.description}</div>
-                          <div className="text-xs text-slate-600 mt-1">
-                            {item.part_number && <span>#{item.part_number} • </span>}
-                            Qty: {item.quantity} × ${item.unit_price?.toFixed(2)} = ${item.line_total?.toFixed(2)}
-                          </div>
-                        </div>
-                      ))}
+                    <div>
+                      <Label className="text-xs">Category</Label>
+                      <Select
+                        value={data.category}
+                        onValueChange={(value) => handleFieldChange('category', value)}
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vehicle_expense">Vehicle Expense</SelectItem>
+                          <SelectItem value="parts_order">Parts Order</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Line Items */}
+              {data.line_items && data.line_items.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-base font-semibold">
+                      Line Items Found ({data.line_items.length})
+                    </Label>
+                    <span className="text-xs text-slate-500">
+                      Total: ${data.line_items.reduce((sum, item) => sum + (item.line_total || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {data.line_items.map((item, idx) => (
+                      <div key={idx} className="p-3 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-900">{item.description}</p>
+                            {item.part_number && (
+                              <p className="text-xs text-slate-500 mt-1">
+                                Part #: <span className="font-mono font-semibold">{item.part_number}</span>
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="font-semibold text-slate-900">${item.line_total?.toFixed(2)}</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {item.quantity} × ${item.unit_price?.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No Line Items Message */}
+              {(!data.line_items || data.line_items.length === 0) && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-center">
+                  <p className="text-sm text-slate-600">No individual line items detected</p>
+                  <p className="text-xs text-slate-500 mt-1">This will be recorded as a single expense</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
