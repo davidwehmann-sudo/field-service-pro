@@ -410,41 +410,21 @@ export default function RequestAuthorization() {
                     </ul>
                   </div>
                   <div className="pt-2 border-t border-blue-300">
-                    <div className="flex items-start gap-2">
-                      <input
-                        type="checkbox"
-                        id="customer_initials_check"
-                        checked={!!formData.customer_initials}
-                        onChange={(e) => {
-                          if (!e.target.checked) {
-                            handleChange('customer_initials', '');
-                          }
-                        }}
-                        className="mt-1 rounded"
+                    <Label className="text-blue-900 font-semibold mb-2 block">
+                      I acknowledge the billing structure above *
+                    </Label>
+                    <p className="text-xs text-blue-700 mb-3">Please enter your initials to confirm</p>
+                    <div>
+                      <Label className="text-blue-900">Your Initials *</Label>
+                      <Input
+                        value={formData.customer_initials}
+                        onChange={(e) => handleChange('customer_initials', e.target.value.toUpperCase())}
+                        placeholder="AB"
+                        maxLength={4}
                         required
+                        className="max-w-[120px] font-semibold bg-white"
                       />
-                      <div className="flex-1">
-                        <Label htmlFor="customer_initials_check" className="cursor-pointer text-blue-900 font-semibold">
-                          I acknowledge the billing structure above *
-                        </Label>
-                        {formData.customer_initials === '' && (
-                          <p className="text-xs text-blue-700 mt-1">Please initial below to confirm</p>
-                        )}
-                      </div>
                     </div>
-                    {formData.customer_initials !== '' && (
-                      <div className="mt-3">
-                        <Label className="text-blue-900">Your Initials *</Label>
-                        <Input
-                          value={formData.customer_initials}
-                          onChange={(e) => handleChange('customer_initials', e.target.value.toUpperCase())}
-                          placeholder="AB"
-                          maxLength={4}
-                          required
-                          className="max-w-[100px] font-semibold bg-white"
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
