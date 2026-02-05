@@ -24,10 +24,10 @@ export function calculatePartsMarkup(unitCost, settings = null) {
 }
 
 /**
- * Calculate the total price with markup
+ * Calculate the total price with markup and shipping
  */
-export function calculatePartTotal(unitCost, quantity, markupPercent) {
+export function calculatePartTotal(unitCost, quantity, markupPercent, shippingCost = 0) {
   const cost = unitCost * quantity;
   const markup = cost * (markupPercent / 100);
-  return cost + markup;
+  return cost + markup + shippingCost;
 }
