@@ -803,7 +803,31 @@ If no match possible, return "NO_MATCH".`,
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="shipping_cost">Shipping Cost ($)</Label>
+                <Label htmlFor="shipping_cost">
+                  Shipping Cost ($) 
+                  {editingPart?.receipt_url && (
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="sm"
+                      className="ml-2 h-6 text-xs text-blue-600"
+                      onClick={async () => {
+                        try {
+                          const response = await base44.functions.invoke('distributeShippingCosts', {
+                            receipt_url: editingPart.receipt_url
+                          });
+                          toast.success(`Distributed ${response.data.parts_updated} parts by value`);
+                          queryClient.invalidateQueries({ queryKey: ['partsOrders'] });
+                          setShowForm(false);
+                        } catch (error) {
+                          toast.error(error.message || 'Failed to distribute shipping');
+                        }
+                      }}
+                    >
+                      Distribute by Value
+                    </Button>
+                  )}
+                </Label>
                 <Input 
                   id="shipping_cost" 
                   name="shipping_cost" 
@@ -813,7 +837,7 @@ If no match possible, return "NO_MATCH".`,
                   placeholder="0.00"
                 />
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Divided per unit, marked up
+                  Total receipt shipping (distributed by part value)
                 </p>
               </div>
               <div>
