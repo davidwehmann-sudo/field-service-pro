@@ -20,6 +20,7 @@ export default function ReceiptUpload() {
   const [showManualMatch, setShowManualMatch] = useState(false);
   const [manualMatches, setManualMatches] = useState({});
   const [multiMatchConfirm, setMultiMatchConfirm] = useState(null);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -46,6 +47,16 @@ export default function ReceiptUpload() {
   const { data: inventory = [] } = useQuery({
     queryKey: ['partsInventory'],
     queryFn: () => base44.entities.PartsInventory.list(),
+  });
+
+  const { data: existingPartsOrders = [] } = useQuery({
+    queryKey: ['allPartsOrders'],
+    queryFn: () => base44.entities.PartsOrder.list(),
+  });
+
+  const { data: existingVehicleExpenses = [] } = useQuery({
+    queryKey: ['allVehicleExpenses'],
+    queryFn: () => base44.entities.VehicleExpense.list(),
   });
 
   const handleFileSelect = (e) => {
@@ -133,6 +144,15 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
       setExtractedData({ ...extractedInfo, receipt_url: file_url });
       setEditedData({ ...extractedInfo, receipt_url: file_url });
       
+      // Check for duplicates
+      const duplicates = checkForDuplicates(extractedInfo, file_url);
+      if (duplicates.length > 0) {
+        setDuplicateWarning({
+          data: { ...extractedInfo, receipt_url: file_url },
+          duplicates
+        });
+      }
+      
       const itemCount = extractedInfo.line_items?.length || 1;
       toast.success(`Receipt data extracted: ${itemCount} item${itemCount > 1 ? 's' : ''} found`);
     } catch (error) {
@@ -181,10 +201,79 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
     setManualOverride(false);
     setShowManualMatch(false);
     setManualMatches({});
+    setDuplicateWarning(null);
+  };
+
+  const checkForDuplicates = (extractedInfo, receipt_url) => {
+    const duplicates = [];
+    
+    // Check if exact receipt URL already exists
+    const urlMatch = [...existingPartsOrders, ...existingVehicleExpenses].find(
+      record => record.receipt_url === receipt_url
+    );
+    
+    if (urlMatch) {
+      duplicates.push({
+        type: 'exact',
+        message: 'This exact receipt file has already been uploaded',
+        record: urlMatch
+      });
+      return duplicates;
+    }
+    
+    // Check for similar receipts (same vendor, date, and amount within $0.10)
+    const vendor = extractedInfo.vendor?.toLowerCase().trim();
+    const date = extractedInfo.receipt_date;
+    const amount = extractedInfo.total_amount;
+    
+    if (vendor && date && amount) {
+      const similarExpenses = existingVehicleExpenses.filter(expense => 
+        expense.vendor?.toLowerCase().trim() === vendor &&
+        expense.expense_date === date &&
+        Math.abs((expense.amount || 0) - amount) < 0.10
+      );
+      
+      const similarOrders = existingPartsOrders.filter(order => 
+        order.supplier?.toLowerCase().trim() === vendor &&
+        order.order_date === date &&
+        Math.abs((order.unit_cost || 0) * (order.quantity || 1) - amount) < 0.10
+      );
+      
+      if (similarExpenses.length > 0) {
+        duplicates.push({
+          type: 'similar',
+          message: `${similarExpenses.length} similar vehicle expense(s) already exist`,
+          records: similarExpenses
+        });
+      }
+      
+      if (similarOrders.length > 0) {
+        duplicates.push({
+          type: 'similar',
+          message: `${similarOrders.length} similar parts order(s) already exist`,
+          records: similarOrders
+        });
+      }
+    }
+    
+    return duplicates;
   };
 
   const handleSaveAsVehicleExpense = (vehicleId = null) => {
     const data = editedData || extractedData;
+    
+    // Check for duplicates before saving
+    if (!duplicateWarning) {
+      const duplicates = checkForDuplicates(data, data.receipt_url);
+      if (duplicates.length > 0) {
+        setDuplicateWarning({
+          data,
+          duplicates,
+          callback: () => handleSaveAsVehicleExpense(vehicleId)
+        });
+        return;
+      }
+    }
     const vehicle = vehicleId ? vehicles.find(v => v.id === vehicleId) : null;
 
     saveVehicleExpense.mutate({
@@ -203,6 +292,19 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
 
   const handleSaveAsPartsOrder = async (assignmentType = 'inventory', serviceReportId = null, customerId = null) => {
     const data = editedData || extractedData;
+    
+    // Check for duplicates before saving (skip if already confirmed)
+    if (!duplicateWarning) {
+      const duplicates = checkForDuplicates(data, data.receipt_url);
+      if (duplicates.length > 0) {
+        setDuplicateWarning({
+          data,
+          duplicates,
+          callback: () => handleSaveAsPartsOrder(assignmentType, serviceReportId, customerId)
+        });
+        return;
+      }
+    }
 
     // If line items exist, process multiple parts
     if (data.line_items && data.line_items.length > 0) {
@@ -768,6 +870,72 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
                 }
               }}>
                 Confirm & Update All
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Duplicate Warning Dialog */}
+      {duplicateWarning && (
+        <Dialog open={!!duplicateWarning} onOpenChange={(open) => !open && setDuplicateWarning(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                Possible Duplicate Receipt
+              </DialogTitle>
+              <DialogDescription>
+                This receipt may have already been recorded.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3">
+              {duplicateWarning.duplicates.map((dup, idx) => (
+                <div key={idx} className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="font-medium text-sm text-red-900">{dup.message}</p>
+                  {dup.type === 'exact' && (
+                    <p className="text-xs text-red-700 mt-1">
+                      This exact file was previously uploaded.
+                    </p>
+                  )}
+                  {dup.type === 'similar' && dup.records && (
+                    <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                      {dup.records.slice(0, 3).map((record, i) => (
+                        <div key={i} className="text-xs text-red-800">
+                          • {record.vendor || record.supplier} - {record.expense_date || record.order_date} - ${record.amount || (record.unit_cost * record.quantity) || 0}
+                        </div>
+                      ))}
+                      {dup.records.length > 3 && (
+                        <div className="text-xs text-red-700">
+                          ...and {dup.records.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              <p className="text-sm text-slate-600 pt-2">
+                Are you sure you want to record this receipt again?
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDuplicateWarning(null)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  const callback = duplicateWarning.callback;
+                  setDuplicateWarning(null);
+                  if (callback) {
+                    callback();
+                  }
+                }}
+              >
+                Record Anyway
               </Button>
             </DialogFooter>
           </DialogContent>
