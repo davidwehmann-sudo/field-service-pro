@@ -17,17 +17,20 @@ import {
   Wrench,
   Receipt,
   ClipboardCheck,
-  Droplet
+  Droplet,
+  ArrowRightLeft
 } from "lucide-react";
 import { format } from 'date-fns';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
 import AISearch from '@/components/search/AISearch';
 import ConsumableUsageForm from '@/components/consumables/ConsumableUsageForm';
+import InventoryTransferForm from '@/components/parts/InventoryTransferForm';
 
 export default function FieldTech() {
   const [search, setSearch] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [showConsumableForm, setShowConsumableForm] = useState(false);
+  const [showTransferForm, setShowTransferForm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -122,6 +125,13 @@ export default function FieldTech() {
           >
             <Droplet className="w-6 h-6" />
             <span className="font-semibold">Shop Consumable</span>
+          </Button>
+          <Button 
+            onClick={() => setShowTransferForm(true)}
+            className="w-full h-24 bg-indigo-600 hover:bg-indigo-700 text-white flex-col gap-2"
+          >
+            <ArrowRightLeft className="w-6 h-6" />
+            <span className="font-semibold">Transfer to Truck</span>
           </Button>
         </div>
 
@@ -228,6 +238,12 @@ export default function FieldTech() {
       <ConsumableUsageForm 
         open={showConsumableForm}
         onOpenChange={setShowConsumableForm}
+      />
+
+      {/* Inventory Transfer Form */}
+      <InventoryTransferForm 
+        open={showTransferForm}
+        onOpenChange={setShowTransferForm}
       />
     </div>
   );
