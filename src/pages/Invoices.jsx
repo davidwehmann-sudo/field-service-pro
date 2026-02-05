@@ -47,6 +47,8 @@ export default function Invoices() {
   const [showPayment, setShowPayment] = useState(false);
   const [payingInvoice, setPayingInvoice] = useState(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
+  const [calculatingTax, setCalculatingTax] = useState(false);
+  const [agExempt, setAgExempt] = useState(false);
   const queryClient = useQueryClient();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -216,6 +218,59 @@ export default function Invoices() {
     });
   }, [invoices, search, statusFilter, customerFilter, startDate, endDate, getCustomerName]);
 
+  const handleCalculateTax = useCallback(async () => {
+    const customerId = document.querySelector('[name="customer_id"]')?.value;
+    const laborTotal = parseFloat(document.querySelector('[name="labor_total"]')?.value) || 0;
+    const travelTotal = parseFloat(document.querySelector('[name="travel_total"]')?.value) || 0;
+    const partsTotal = parseFloat(document.querySelector('[name="parts_total"]')?.value) || 0;
+    const discountPercent = parseFloat(document.querySelector('[name="discount_percent"]')?.value) || 0;
+
+    if (!customerId) {
+      toast.error('Please select a customer first');
+      return;
+    }
+
+    if (agExempt) {
+      // Clear tax if ag exempt
+      const taxRateField = document.querySelector('[name="tax_rate"]');
+      if (taxRateField) taxRateField.value = 0;
+      toast.info('Agricultural exemption applied - no tax');
+      return;
+    }
+
+    const subtotal = laborTotal + travelTotal + partsTotal;
+    const discountAmount = subtotal * (discountPercent / 100);
+    const afterDiscount = subtotal - discountAmount;
+
+    if (afterDiscount <= 0) {
+      toast.error('Total amount must be greater than zero');
+      return;
+    }
+
+    setCalculatingTax(true);
+    try {
+      const response = await base44.functions.invoke('calculateSalesTax', {
+        customer_id: customerId,
+        amount: afterDiscount,
+        shipping: 0
+      });
+
+      if (response.data.success) {
+        const taxRateField = document.querySelector('[name="tax_rate"]');
+        if (taxRateField) {
+          taxRateField.value = response.data.tax_rate;
+        }
+        toast.success(`Tax calculated: ${response.data.tax_rate}% ($${response.data.tax_amount})`);
+      } else {
+        toast.error(response.data.error || 'Failed to calculate tax');
+      }
+    } catch (error) {
+      toast.error('Tax calculation failed: ' + error.message);
+    } finally {
+      setCalculatingTax(false);
+    }
+  }, [agExempt]);
+
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -225,7 +280,7 @@ export default function Invoices() {
     const partsTotal = parseFloat(formData.get('parts_total')) || 0;
     const discountPercent = parseFloat(formData.get('discount_percent')) || 0;
     const manualOverride = formData.get('manual_price_override') ? parseFloat(formData.get('manual_price_override')) : null;
-    const taxRate = parseFloat(formData.get('tax_rate')) || 0;
+    const taxRate = agExempt ? 0 : (parseFloat(formData.get('tax_rate')) || 0);
     
     let totalAmount;
     let taxAmount;
@@ -239,7 +294,7 @@ export default function Invoices() {
       const subtotal = laborTotal + travelTotal + partsTotal;
       const discountAmount = subtotal * (discountPercent / 100);
       const afterDiscount = subtotal - discountAmount;
-      taxAmount = afterDiscount * (taxRate / 100);
+      taxAmount = agExempt ? 0 : afterDiscount * (taxRate / 100);
       totalAmount = afterDiscount + taxAmount;
     }
 
@@ -256,6 +311,7 @@ export default function Invoices() {
       manual_price_override: manualOverride,
       tax_rate: taxRate,
       tax_amount: taxAmount,
+      ag_exempt: agExempt,
       total_amount: totalAmount,
       status: formData.get('status') || 'draft',
       notes: formData.get('notes')
@@ -266,7 +322,7 @@ export default function Invoices() {
     } else {
       createMutation.mutate(data);
     }
-  }, [editingInvoice, generateInvoiceNumber, createMutation, updateMutation]);
+  }, [editingInvoice, generateInvoiceNumber, createMutation, updateMutation, agExempt]);
 
   const handlePayment = useCallback((e) => {
     e.preventDefault();
@@ -593,6 +649,11 @@ CHARGES:
                             Manual override
                           </p>
                         )}
+                        {invoice.ag_exempt && (
+                          <p className="text-xs text-green-600 font-medium">
+                            🌾 Ag Exempt
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -779,31 +840,85 @@ CHARGES:
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tax_rate">Tax Rate (%)</Label>
-                <Input 
-                  id="tax_rate" 
-                  name="tax_rate" 
-                  type="number"
-                  step="0.01"
-                  defaultValue={editingInvoice?.tax_rate || 0}
-                />
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Sales Tax</h3>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={agExempt}
+                      onChange={(e) => setAgExempt(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className={agExempt ? 'text-green-700 font-medium' : 'text-slate-600'}>
+                      Ag Exempt
+                    </span>
+                  </label>
+                  <Button
+                    type="button"
+                    onClick={handleCalculateTax}
+                    disabled={calculatingTax || agExempt}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {calculatingTax ? (
+                      <>
+                        <DollarSign className="w-4 h-4 mr-2 animate-spin" />
+                        Calculating...
+                      </>
+                    ) : (
+                      <>
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        Auto-Calculate Tax
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-              <div>
-                <Label>Status</Label>
-                <Select name="status" defaultValue={editingInvoice?.status || 'draft'}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="partially_paid">Partially Paid</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                  </SelectContent>
-                </Select>
+              
+              {agExempt && (
+                <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800 font-medium">
+                    🌾 Agricultural Exemption Applied
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    No sales tax will be charged on this invoice
+                  </p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+                  <Input 
+                    id="tax_rate" 
+                    name="tax_rate" 
+                    type="number"
+                    step="0.0001"
+                    defaultValue={editingInvoice?.tax_rate || 0}
+                    disabled={agExempt}
+                    className={agExempt ? 'bg-slate-100' : ''}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Based on customer billing address
+                  </p>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select name="status" defaultValue={editingInvoice?.status || 'draft'}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="sent">Sent</SelectItem>
+                      <SelectItem value="partially_paid">Partially Paid</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
