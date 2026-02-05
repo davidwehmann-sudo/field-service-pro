@@ -310,6 +310,7 @@ export default function PartsOrders() {
       assignment_type: assignmentType,
       quantity: parseFloat(formData.get('quantity')) || 1,
       unit_cost: parseFloat(formData.get('unit_cost')) || 0,
+      shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
       markup_percent: parseFloat(formData.get('markup_percent')) || 25,
       receipt_url: receiptUrl,
       job_id: formData.get('job_id') === 'none' ? null : formData.get('job_id'),
@@ -337,7 +338,8 @@ export default function PartsOrders() {
     return calculatePartTotal(
       part.unit_cost || 0,
       part.quantity || 1,
-      part.markup_percent || 0
+      part.markup_percent || 0,
+      part.shipping_cost || 0
     );
   };
 
@@ -768,7 +770,7 @@ If no match possible, return "NO_MATCH".`,
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input 
@@ -796,6 +798,23 @@ If no match possible, return "NO_MATCH".`,
                     }
                   }}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="shipping_cost">Shipping Cost ($)</Label>
+                <Input 
+                  id="shipping_cost" 
+                  name="shipping_cost" 
+                  type="number"
+                  step="0.01"
+                  defaultValue={editingPart?.shipping_cost || 0}
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Added to customer total
+                </p>
               </div>
               <div>
                 <Label htmlFor="markup_percent">Markup % <span className="text-xs text-slate-400">(auto)</span></Label>

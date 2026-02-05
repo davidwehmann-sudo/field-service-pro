@@ -53,7 +53,6 @@ import Dashboard from './pages/Dashboard';
 import DataManagement from './pages/DataManagement';
 import FieldTech from './pages/FieldTech';
 import Home from './pages/Home';
-import Invoices from './pages/Invoices';
 import Jobs from './pages/Jobs';
 import OwnVehicles from './pages/OwnVehicles';
 import PartsInventory from './pages/PartsInventory';
@@ -66,6 +65,7 @@ import Sitemap from './pages/Sitemap';
 import TechnicianPayroll from './pages/TechnicianPayroll';
 import VehicleExpenses from './pages/VehicleExpenses';
 import AgExemptions from './pages/AgExemptions';
+import Invoices from './pages/Invoices';
 import __Layout from './Layout.jsx';
 
 
@@ -76,7 +76,6 @@ export const PAGES = {
     "DataManagement": DataManagement,
     "FieldTech": FieldTech,
     "Home": Home,
-    "Invoices": Invoices,
     "Jobs": Jobs,
     "OwnVehicles": OwnVehicles,
     "PartsInventory": PartsInventory,
@@ -89,6 +88,7 @@ export const PAGES = {
     "TechnicianPayroll": TechnicianPayroll,
     "VehicleExpenses": VehicleExpenses,
     "AgExemptions": AgExemptions,
+    "Invoices": Invoices,
 }
 
 export const pagesConfig = {
