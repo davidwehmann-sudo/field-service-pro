@@ -47,9 +47,9 @@ export default function RequestAuthorization() {
     nature_of_service: '',
     service_type: '',
     equipment_info: '',
-    estimated_cost: '',
     parts_payment_required: false,
     parts_payment_note: '',
+    customer_initials: '',
     authorization_signature: '',
     notes: '',
   });
@@ -128,9 +128,9 @@ export default function RequestAuthorization() {
         nature_of_service: data.nature_of_service,
         service_type: data.service_type,
         equipment_info: data.equipment_info,
-        estimated_cost: data.estimated_cost ? parseFloat(data.estimated_cost) : null,
         parts_payment_required: data.parts_payment_required,
         parts_payment_note: data.parts_payment_note,
+        customer_initials: data.customer_initials,
         authorization_signature: data.authorization_signature,
         authorization_date: format(new Date(), 'yyyy-MM-dd'),
         status: 'authorized',
@@ -178,8 +178,8 @@ export default function RequestAuthorization() {
     e.preventDefault();
     
     if (!formData.company_name || !formData.billing_contact_name || !formData.nature_of_service || 
-        !formData.service_type || !formData.authorization_signature) {
-      toast.error('Please fill in all required fields and sign the authorization');
+        !formData.service_type || !formData.customer_initials || !formData.authorization_signature) {
+      toast.error('Please fill in all required fields, acknowledge billing structure, and sign');
       return;
     }
 
@@ -243,7 +243,7 @@ export default function RequestAuthorization() {
             Request Equipment Service
           </h1>
           <p className="text-lg text-slate-600">
-            Complete this authorization form to request service on your equipment. We provide an AI-powered pre-repair estimate to offer some idea of what our services may cost. This is a data-driven estimate, and can be incorrect for uncommon situations.
+            Complete this authorization form to request service on your equipment.
           </p>
           {currentUser && (
             <p className="text-sm text-slate-500 mt-2">
@@ -390,17 +390,62 @@ export default function RequestAuthorization() {
               </div>
 
               <div>
-                <Label>Estimated Cost (AI Generated)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
-                  <Input 
-                    type="number"
-                    step="0.01"
-                    value={formData.estimated_cost}
-                    onChange={(e) => handleChange('estimated_cost', e.target.value)}
-                    placeholder="0.00"
-                    className="pl-7"
-                  />
+                <Label className="mb-2 block">Billing Structure</Label>
+                <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                  <div>
+                    <p className="font-semibold text-blue-900 mb-2">Standard Field Service Rates:</p>
+                    <ul className="text-blue-800 space-y-1 ml-4 list-disc">
+                      <li><strong>Diagnostic:</strong> $125/hr</li>
+                      <li><strong>Repair:</strong> $115/hr</li>
+                      <li><strong>Preventive Maintenance:</strong> $95/hr</li>
+                      <li><strong>Emergency Service:</strong> Premium rates apply</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-blue-900 mb-2">Additional Charges:</p>
+                    <ul className="text-blue-800 space-y-1 ml-4 list-disc">
+                      <li>Travel/destination fees based on location</li>
+                      <li>Parts billed at cost + standard markup</li>
+                      <li>Sales tax applied where applicable</li>
+                    </ul>
+                  </div>
+                  <div className="pt-2 border-t border-blue-300">
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        id="customer_initials_check"
+                        checked={!!formData.customer_initials}
+                        onChange={(e) => {
+                          if (!e.target.checked) {
+                            handleChange('customer_initials', '');
+                          }
+                        }}
+                        className="mt-1 rounded"
+                        required
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="customer_initials_check" className="cursor-pointer text-blue-900 font-semibold">
+                          I acknowledge the billing structure above *
+                        </Label>
+                        {formData.customer_initials === '' && (
+                          <p className="text-xs text-blue-700 mt-1">Please initial below to confirm</p>
+                        )}
+                      </div>
+                    </div>
+                    {formData.customer_initials !== '' && (
+                      <div className="mt-3">
+                        <Label className="text-blue-900">Your Initials *</Label>
+                        <Input
+                          value={formData.customer_initials}
+                          onChange={(e) => handleChange('customer_initials', e.target.value.toUpperCase())}
+                          placeholder="AB"
+                          maxLength={4}
+                          required
+                          className="max-w-[100px] font-semibold bg-white"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -531,7 +576,7 @@ export default function RequestAuthorization() {
                 </div>
                 
                 <p className="text-xs text-blue-700 italic pt-2 border-t border-blue-200">
-                  Note: Any AI-generated cost estimates are for reference only. Final costs may vary based on actual work performed.
+                  Note: Final costs will be based on actual work performed and may vary from initial estimates.
                 </p>
               </div>
             </CardContent>

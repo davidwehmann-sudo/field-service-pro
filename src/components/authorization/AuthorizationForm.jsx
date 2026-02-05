@@ -53,10 +53,9 @@ export default function AuthorizationForm({
     nature_of_service: '',
     service_type: '',
     equipment_info: '',
-    estimated_cost: '',
-    cost_is_ai_estimate: false,
     parts_payment_required: false,
     parts_payment_note: '',
+    customer_initials: '',
     authorization_signature: '',
     authorization_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
@@ -64,20 +63,12 @@ export default function AuthorizationForm({
     ...authorization
   });
 
-  const [isEstimatingCost, setIsEstimatingCost] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const [customerSearchName, setCustomerSearchName] = useState('');
 
   const handleChange = useCallback((field, value) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      // Clear AI flag if user manually edits the cost
-      if (field === 'estimated_cost' && prev.cost_is_ai_estimate) {
-        updated.cost_is_ai_estimate = false;
-      }
-      return updated;
-    });
+    setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
   const handleCustomerNameBlur = useCallback(() => {
@@ -113,54 +104,7 @@ export default function AuthorizationForm({
     }
   }, [customerSearchName, customers]);
 
-  const handleEstimateCost = useCallback(async () => {
-    if (!formData.nature_of_service || !formData.service_type) {
-      toast.error("Please fill in service type and description first");
-      return;
-    }
 
-    setIsEstimatingCost(true);
-    try {
-      const serviceTypeLabel = SERVICE_TYPES.find(t => t.value === formData.service_type)?.label || formData.service_type;
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a diesel field service technician estimating the cost of a repair job.
-
-Service Type: ${serviceTypeLabel}
-Equipment: ${formData.equipment_info || 'Not specified'}
-Service Description: ${formData.nature_of_service}
-
-Based on typical field service rates (diagnostic $125/hr, repair $115/hr, PM $95/hr, travel/destination fees, parts markup):
-- Estimate realistic labor hours needed
-- Consider typical parts costs if repairs are mentioned
-- Include travel/destination considerations
-- Factor in the service type
-
-Provide ONLY a single estimated total dollar amount (no dollar sign, no decimals if whole number, just the number).
-Example outputs: 850 or 1250.50
-
-Be realistic and professional. This is an estimate that will be shown to a customer.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            estimated_amount: { type: "number" }
-          }
-        }
-      });
-
-      if (response.estimated_amount) {
-        setFormData(prev => ({
-          ...prev,
-          estimated_cost: response.estimated_amount.toString(),
-          cost_is_ai_estimate: true
-        }));
-        toast.success("Cost estimate generated");
-      }
-    } catch (error) {
-      toast.error("Failed to generate estimate");
-    } finally {
-      setIsEstimatingCost(false);
-    }
-  }, [formData.nature_of_service, formData.service_type, formData.equipment_info]);
 
   const handleSave = async (status = 'draft') => {
     // Create new customer if no customer_id exists
@@ -213,7 +157,6 @@ Be realistic and professional. This is an estimate that will be shown to a custo
       customer_id: customerId,
       job_id: jobId,
       status,
-      estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
     };
     
     if (status === 'authorized') {
@@ -253,7 +196,6 @@ Customer: ${customer?.company_name || 'N/A'}
 Service Type: ${serviceTypeLabel}
 ${formData.equipment_info ? `Equipment: ${formData.equipment_info}` : ''}
 Authorization Date: ${format(new Date(formData.authorization_date), 'MMMM d, yyyy')}
-${formData.estimated_cost ? `Estimated Cost: $${parseFloat(formData.estimated_cost).toFixed(2)}${formData.cost_is_ai_estimate ? ' (AI-generated estimate)' : ''}` : ''}
 
 NATURE OF SERVICE:
 ${formData.nature_of_service}
@@ -294,6 +236,7 @@ Thank you for your business.
                              formData.billing_contact_name && 
                              formData.nature_of_service && 
                              formData.service_type &&
+                             formData.customer_initials &&
                              formData.authorization_signature, [formData]);
 
   const filteredJobs = useMemo(() => {
@@ -412,45 +355,60 @@ Thank you for your business.
             </div>
 
             <div>
-              <Label>Estimated Cost</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
-                  <Input 
-                    type="number"
-                    step="0.01"
-                    value={formData.estimated_cost}
-                    onChange={(e) => handleChange('estimated_cost', e.target.value)}
-                    placeholder="0.00"
-                    className={`pl-7 ${formData.cost_is_ai_estimate ? 'border-blue-200 bg-blue-50/30' : ''}`}
-                  />
+              <Label className="mb-2 block">Billing Structure Preview</Label>
+              <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                <div>
+                  <p className="font-semibold text-blue-900 mb-2">Standard Field Service Rates:</p>
+                  <ul className="text-blue-800 space-y-1 ml-4 list-disc">
+                    <li><strong>Diagnostic:</strong> $125/hr</li>
+                    <li><strong>Repair:</strong> $115/hr</li>
+                    <li><strong>Preventive Maintenance:</strong> $95/hr</li>
+                    <li><strong>Emergency Service:</strong> Premium rates apply</li>
+                  </ul>
                 </div>
-                {formData.cost_is_ai_estimate && (
-                  <p className="text-xs text-blue-600 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    AI-generated estimate
-                  </p>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEstimateCost}
-                  disabled={isEstimatingCost || !formData.nature_of_service || !formData.service_type}
-                  className="w-full text-xs"
-                >
-                  {isEstimatingCost ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Estimating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      AI Estimate Cost
-                    </>
+                <div>
+                  <p className="font-semibold text-blue-900 mb-2">Additional Charges:</p>
+                  <ul className="text-blue-800 space-y-1 ml-4 list-disc">
+                    <li>Travel/destination fees based on location</li>
+                    <li>Parts billed at cost + standard markup</li>
+                    <li>Sales tax applied where applicable</li>
+                  </ul>
+                </div>
+                <div className="pt-2 border-t border-blue-300">
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="customer_initials_check"
+                      checked={!!formData.customer_initials}
+                      onChange={(e) => {
+                        if (!e.target.checked) {
+                          handleChange('customer_initials', '');
+                        }
+                      }}
+                      className="mt-1 rounded"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="customer_initials_check" className="cursor-pointer text-blue-900 font-semibold">
+                        I acknowledge the billing structure above *
+                      </Label>
+                      {formData.customer_initials === '' && (
+                        <p className="text-xs text-blue-700 mt-1">Please initial below to confirm</p>
+                      )}
+                    </div>
+                  </div>
+                  {formData.customer_initials !== '' && (
+                    <div className="mt-3">
+                      <Label className="text-blue-900">Your Initials *</Label>
+                      <Input
+                        value={formData.customer_initials}
+                        onChange={(e) => handleChange('customer_initials', e.target.value.toUpperCase())}
+                        placeholder="AB"
+                        maxLength={4}
+                        className="max-w-[100px] font-semibold bg-white"
+                      />
+                    </div>
                   )}
-                </Button>
+                </div>
               </div>
             </div>
 
