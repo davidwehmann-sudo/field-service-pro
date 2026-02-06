@@ -19,6 +19,7 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
     notes: ''
   });
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
+  const [showNegativeWarning, setShowNegativeWarning] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -39,11 +40,11 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
       // Create usage record
       await base44.entities.ShopConsumableUsage.create(data);
       
-      // Update inventory if part exists
+      // Update inventory if part exists (allow negative for items used before check-in)
       if (selectedInventoryItem) {
         const newQuantity = selectedInventoryItem.quantity_on_hand - parseFloat(data.quantity_used);
         await base44.entities.PartsInventory.update(selectedInventoryItem.id, {
-          quantity_on_hand: Math.max(0, newQuantity)
+          quantity_on_hand: newQuantity
         });
       }
     },
@@ -86,19 +87,27 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
       return;
     }
 
-    // Validate against available inventory
-    if (selectedInventoryItem) {
-      if (quantityUsed > selectedInventoryItem.quantity_on_hand) {
-        toast.error(`Cannot use ${quantityUsed} - only ${selectedInventoryItem.quantity_on_hand} available in inventory`);
-        return;
-      }
-    }
-
     createUsageMutation.mutate({
       ...formData,
       quantity_used: quantityUsed,
       used_by: user?.full_name || user?.email || 'Unknown'
     });
+  };
+
+  // Check for negative inventory warning
+  const handleQuantityChange = (value) => {
+    setFormData({ ...formData, quantity_used: value });
+    
+    if (selectedInventoryItem && value) {
+      const quantityUsed = parseFloat(value);
+      if (quantityUsed > selectedInventoryItem.quantity_on_hand) {
+        setShowNegativeWarning(true);
+      } else {
+        setShowNegativeWarning(false);
+      }
+    } else {
+      setShowNegativeWarning(false);
+    }
   };
 
   const resetForm = () => {
@@ -162,7 +171,7 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
               step="0.01"
               min="0.01"
               value={formData.quantity_used}
-              onChange={(e) => setFormData({ ...formData, quantity_used: e.target.value })}
+              onChange={(e) => handleQuantityChange(e.target.value)}
               placeholder="e.g., 1, 2.5"
               required
             />
@@ -170,6 +179,16 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
               <p className="text-xs text-slate-500 mt-1">
                 Available: {selectedInventoryItem.quantity_on_hand}
               </p>
+            )}
+            {showNegativeWarning && (
+              <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800 font-medium">
+                  ⚠️ Item used before check-in
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Inventory will show negative qty. Check in item to correct balance.
+                </p>
+              </div>
             )}
           </div>
 
