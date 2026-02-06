@@ -21,6 +21,7 @@ import TimeTracker from '@/components/service/TimeTracker';
 import FieldBenefitInfo from '@/components/service/FieldBenefitInfo';
 import LocationCapture from '@/components/service/LocationCapture';
 import FluidSamplingSection from '@/components/service/FluidSamplingSection';
+import LitigationProtectionWarning from '@/components/service/LitigationProtectionWarning';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -66,6 +67,8 @@ export default function ServiceReportForm({
   const [formattingNotes, setFormattingNotes] = useState(false);
   const [showOriginalNotes, setShowOriginalNotes] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showLitigationWarning, setShowLitigationWarning] = useState(false);
+  const [missingLitigationFields, setMissingLitigationFields] = useState([]);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -329,7 +332,58 @@ Generate the best report possible with available information.`,
     return jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id);
   }, [jobs, formData.customer_id]);
 
+  const checkMissingLitigationFields = useCallback(() => {
+    const missing = [];
+    
+    // Check photos
+    if (!formData.photos_initial || formData.photos_initial.length === 0) {
+      missing.push('photos_initial');
+    }
+    if (!formData.photos_failure || formData.photos_failure.length === 0) {
+      missing.push('photos_failure');
+    }
+    
+    // Check fluid sampling (only if any fluid sample data exists)
+    const hasFluidData = formData.fluid_samples?.length > 0 || 
+                        formData.fluid_analysis_results_url || 
+                        formData.photos_fluid_evidence?.length > 0;
+    
+    if (hasFluidData) {
+      if (!formData.fluid_samples || formData.fluid_samples.length === 0) {
+        missing.push('fluid_samples');
+      }
+      if (!formData.fluid_analysis_results_url) {
+        missing.push('fluid_analysis_results_url');
+      }
+      if (!formData.photos_fluid_evidence || formData.photos_fluid_evidence.length === 0) {
+        missing.push('photos_fluid_evidence');
+      }
+    }
+    
+    // Check location
+    if (!formData.location_data) {
+      missing.push('location_data');
+    }
+    
+    // Check customer signature
+    if (!formData.customer_signature) {
+      missing.push('customer_signature');
+    }
+    
+    return missing;
+  }, [formData]);
+
   const handleSave = useCallback(async (status = 'open') => {
+    // Check for missing litigation protection fields when completing
+    if (status === 'completed') {
+      const missing = checkMissingLitigationFields();
+      if (missing.length > 0) {
+        setMissingLitigationFields(missing);
+        setShowLitigationWarning(true);
+        return; // Don't save yet, show warning first
+      }
+    }
+    
     const data = {
       ...formData,
       status,
@@ -348,7 +402,23 @@ Generate the best report possible with available information.`,
       // Keep in localStorage if save fails
       console.error('Save failed, data preserved locally');
     }
-  }, [formData, onSave, onComplete, storageKey]);
+  }, [formData, onSave, onComplete, storageKey, checkMissingLitigationFields]);
+
+  const handleProceedAnyway = useCallback(async () => {
+    setShowLitigationWarning(false);
+    const data = {
+      ...formData,
+      status: 'completed',
+      equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
+    };
+    
+    try {
+      await onComplete(data);
+      localStorage.removeItem(storageKey);
+    } catch (error) {
+      console.error('Save failed, data preserved locally');
+    }
+  }, [formData, onComplete, storageKey]);
 
   return (
     <div className="space-y-6">
@@ -375,11 +445,7 @@ Generate the best report possible with available information.`,
           </Button>
           <Button 
             className="bg-green-600 hover:bg-green-700"
-            onClick={() => {
-              if (window.confirm('⚠️ Mark as Complete?\n\nThis will finalize the report and redirect you to create an invoice.\n\nClick OK to proceed, or Cancel to continue editing.')) {
-                handleSave('completed');
-              }
-            }}
+            onClick={() => handleSave('completed')}
             disabled={isSaving || !formData.customer_id}
           >
             <Send className="w-4 h-4 mr-2" />
@@ -801,6 +867,14 @@ Generate the best report possible with available information.`,
         report={formData}
         open={showOriginalNotes}
         onOpenChange={setShowOriginalNotes}
+      />
+
+      <LitigationProtectionWarning
+        open={showLitigationWarning}
+        onOpenChange={setShowLitigationWarning}
+        missingFields={missingLitigationFields}
+        onProceed={handleProceedAnyway}
+        onGoBack={() => setShowLitigationWarning(false)}
       />
     </div>
   );
