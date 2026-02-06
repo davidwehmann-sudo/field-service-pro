@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Eye, Building2, Sparkles, DollarSign } from "lucide-react";
+import { ArrowLeft, Save, Eye, Building2, Sparkles, DollarSign, Check, Cloud } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { debounce } from 'lodash';
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
@@ -70,6 +71,7 @@ export default function ServiceReportForm({
   const [showLitigationWarning, setShowLitigationWarning] = useState(false);
   const [missingLitigationFields, setMissingLitigationFields] = useState([]);
   const [showReview, setShowReview] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saving' | 'saved' | 'error'
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -147,6 +149,34 @@ export default function ServiceReportForm({
 
     return () => clearTimeout(timer);
   }, [formData, storageKey]);
+
+  // Auto-save to backend (debounced)
+  useEffect(() => {
+    // Only auto-save existing reports, not new ones
+    if (!report?.id) return;
+    
+    const autoSave = debounce(async () => {
+      setAutoSaveStatus('saving');
+      try {
+        await onSave({
+          ...formData,
+          status: formData.status || 'open',
+          equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
+        });
+        setAutoSaveStatus('saved');
+        
+        // Reset to neutral after 2 seconds
+        setTimeout(() => setAutoSaveStatus('saved'), 2000);
+      } catch (error) {
+        setAutoSaveStatus('error');
+        console.error('Auto-save failed:', error);
+      }
+    }, 2000); // Wait 2 seconds after last change
+
+    autoSave();
+
+    return () => autoSave.cancel();
+  }, [formData, report?.id, onSave]);
 
   const handleChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -441,6 +471,27 @@ Generate the best report possible with available information.`,
           <p className="text-sm text-slate-500">Fill in the service details</p>
         </div>
         <OfflineIndicator />
+        {report?.id && (
+          <div className="flex items-center gap-2">
+            {autoSaveStatus === 'saving' && (
+              <Badge variant="outline" className="gap-1.5 text-slate-600">
+                <Cloud className="w-3 h-3 animate-pulse" />
+                Saving...
+              </Badge>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <Badge variant="outline" className="gap-1.5 text-green-600 border-green-200 bg-green-50">
+                <Check className="w-3 h-3" />
+                Saved
+              </Badge>
+            )}
+            {autoSaveStatus === 'error' && (
+              <Badge variant="outline" className="gap-1.5 text-red-600 border-red-200 bg-red-50">
+                Error saving
+              </Badge>
+            )}
+          </div>
+        )}
         <div className="flex gap-2">
           <Button 
             variant="outline" 
