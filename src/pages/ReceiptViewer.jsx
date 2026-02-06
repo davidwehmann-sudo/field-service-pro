@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2, Move } from "lucide-react";
+import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2, Move, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
@@ -171,6 +171,24 @@ export default function ReceiptViewer() {
     deleteReceiptMutation.mutate(selectedReceipt.receipt_url);
   };
 
+  const redistributeShippingMutation = useMutation({
+    mutationFn: async (receipt_url) => {
+      await base44.functions.invoke('distributeShippingCosts', { receipt_url });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['parts-orders-for-receipts']);
+      toast.success('Shipping costs redistributed');
+    },
+    onError: () => {
+      toast.error('Failed to redistribute shipping costs');
+    }
+  });
+
+  const handleRedistributeShipping = () => {
+    if (!selectedReceipt) return;
+    redistributeShippingMutation.mutate(selectedReceipt.receipt_url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -261,6 +279,15 @@ export default function ReceiptViewer() {
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Correct Data
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRedistributeShipping}
+                        disabled={redistributeShippingMutation.isPending}
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${redistributeShippingMutation.isPending ? 'animate-spin' : ''}`} />
+                        Redistribute Shipping
                       </Button>
                       <Button
                         variant="outline"
