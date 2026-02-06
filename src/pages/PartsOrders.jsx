@@ -48,7 +48,7 @@ export default function PartsOrders() {
   const [selectedParts, setSelectedParts] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [markupSettings, setMarkupSettings] = useState({ max_markup: 45, min_markup: 12, decay_rate: 200 });
+  const [markupSettings, setMarkupSettings] = useState({ max_markup: 40, min_markup: 15, k: 0.01, inflection: 200 });
   const [aiQuery, setAiQuery] = useState('');
   const [aiSearching, setAiSearching] = useState(false);
   const [jobsList, setJobsList] = useState([]);
@@ -1207,7 +1207,8 @@ If no match possible, return "NO_MATCH".`,
             const newSettings = {
               max_markup: parseFloat(formData.get('max_markup')),
               min_markup: parseFloat(formData.get('min_markup')),
-              decay_rate: parseFloat(formData.get('decay_rate')),
+              k: parseFloat(formData.get('k')),
+              inflection: parseFloat(formData.get('inflection')),
               service_company: currentUser?.current_company || currentUser?.company
             };
             
@@ -1228,10 +1229,10 @@ If no match possible, return "NO_MATCH".`,
           }} className="space-y-4">
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">
-                <strong>Formula:</strong> markup = min + (max - min) × e<sup>(-cost/decay)</sup>
+                <strong>Sigmoid Formula:</strong> markup = max + (min - max) / (1 + e<sup>(-k(cost - inflection))</sup>)
               </p>
               <p className="text-xs text-slate-500">
-                This creates a smooth curve where cheap parts get higher markup and expensive parts get lower markup.
+                Smooth S-curve transition: cheap parts get higher markup, expensive parts get lower markup.
               </p>
             </div>
 
@@ -1269,27 +1270,42 @@ If no match possible, return "NO_MATCH".`,
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="decay_rate">Decay Rate (Curve Steepness)</Label>
-              <Input 
-                id="decay_rate" 
-                name="decay_rate" 
-                type="range"
-                min="50"
-                max="1000"
-                step="10"
-                value={markupSettings.decay_rate}
-                onChange={(e) => setMarkupSettings({...markupSettings, decay_rate: parseFloat(e.target.value)})}
-                required
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-slate-500 mt-1">
-                <span>Fast transition ({markupSettings.decay_rate})</span>
-                <span>Slow transition</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="k">Steepness (k)</Label>
+                <Input 
+                  id="k" 
+                  name="k" 
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  max="0.1"
+                  value={markupSettings.k}
+                  onChange={(e) => setMarkupSettings({...markupSettings, k: parseFloat(e.target.value) || 0.01})}
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Higher = sharper transition (try 0.005-0.02)
+                </p>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Lower = markup drops quickly. Higher = markup stays high longer.
-              </p>
+
+              <div>
+                <Label htmlFor="inflection">Inflection Point ($)</Label>
+                <Input 
+                  id="inflection" 
+                  name="inflection" 
+                  type="number"
+                  step="10"
+                  min="50"
+                  max="1000"
+                  value={markupSettings.inflection}
+                  onChange={(e) => setMarkupSettings({...markupSettings, inflection: parseFloat(e.target.value) || 200})}
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Cost where markup is halfway between min/max
+                </p>
+              </div>
             </div>
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -1301,7 +1317,8 @@ If no match possible, return "NO_MATCH".`,
                     markup: calculatePartsMarkup(cost, {
                       max_markup: markupSettings.max_markup,
                       min_markup: markupSettings.min_markup,
-                      decay_rate: markupSettings.decay_rate
+                      k: markupSettings.k,
+                      inflection: markupSettings.inflection
                     })
                   }))}
                   margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
