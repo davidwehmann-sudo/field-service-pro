@@ -27,6 +27,7 @@ const allNavigation = {
   service_technician: [
     { name: 'Field Tech', href: 'FieldTech', icon: Wrench },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Operations' },
     { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
     { name: 'Service Reports', href: 'ServiceReports', icon: FileText },
@@ -41,6 +42,7 @@ const allNavigation = {
   ],
   parts_specialist: [
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Parts' },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Orders', href: 'PartsOrders', icon: Package },
@@ -54,6 +56,7 @@ const allNavigation = {
   ],
   bookkeeper: [
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Financial' },
     { name: 'Invoices', href: 'Invoices', icon: Receipt },
     { name: 'Payments', href: 'PaymentLog', icon: Receipt },
@@ -69,6 +72,7 @@ const allNavigation = {
   software_engineer: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Operations' },
     { name: 'Field', href: 'FieldTech', icon: Wrench },
     { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
@@ -92,6 +96,7 @@ const allNavigation = {
   service_admin: [
     { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
+    { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Operations' },
     { name: 'Field', href: 'FieldTech', icon: Wrench },
     { name: 'Jobs', href: 'Jobs', icon: ClipboardCheck },
