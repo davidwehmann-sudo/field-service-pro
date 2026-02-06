@@ -37,6 +37,12 @@ const benefitInfo = {
     benefit: "Get paid! A customer signature proves work was completed and accepted. It prevents payment disputes and ensures you get compensated for your time and effort.",
     icon: Shield,
     color: "text-teal-600"
+  },
+  photos_fluid_evidence: {
+    title: "Fluid Evidence Photos",
+    benefit: "Prove contamination and damage! Photos showing glitter in oil, discoloration, or contamination provide diagnostic proof and legal documentation of equipment condition. Critical for warranty claims and proving pre-existing damage wasn't caused by your work.",
+    icon: Shield,
+    color: "text-blue-600"
   }
 };
 
