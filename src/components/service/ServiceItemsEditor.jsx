@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, DollarSign } from "lucide-react";
+import { Plus, Trash2, DollarSign, ArrowRight } from "lucide-react";
 
 const DEFAULT_ITEMS = [
   { description: 'Diagnostic/Troubleshooting', hours: '', rate: '125', total: 0 },
@@ -66,6 +66,31 @@ export default function ServiceItemsEditor({ items = [], onChange }) {
                 className="bg-white"
               />
             </div>
+            {item.estimated_hours && (
+              <>
+                <div className="w-20">
+                  <Input
+                    type="number"
+                    step="0.25"
+                    value={item.estimated_hours}
+                    readOnly
+                    className="bg-blue-50 text-center text-blue-700 border-blue-200"
+                    title="AI estimated hours"
+                  />
+                  <p className="text-xs text-blue-600 text-center mt-0.5">AI Est.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => updateItem(index, 'hours', item.estimated_hours)}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  title="Use AI estimate"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </>
+            )}
             <div className="w-20">
               <Input
                 type="number"

@@ -308,9 +308,10 @@ Generate the best report possible with available information.`,
         work_performed: result.work_performed,
         service_items: result.billable_service_items?.map(item => ({
           description: item.description,
-          hours: item.hours,
+          estimated_hours: item.hours,
+          hours: '',
           rate: prev.service_items?.[0]?.rate || 0,
-          total: item.hours * (prev.service_items?.[0]?.rate || 0)
+          total: 0
         })) || prev.service_items || []
       }));
       
