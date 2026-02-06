@@ -1,26 +1,30 @@
 /**
- * Calculate parts markup percentage using a smooth curve
- * Higher cost parts get lower markup percentages
+ * Calculate parts markup percentage using a logistic sigmoid curve
+ * Higher cost parts get lower markup percentages with smooth transition
  * 
- * Formula: markup = minMarkup + (maxMarkup - minMarkup) * e^(-cost/decayRate)
+ * Formula: markup = maxMarkup + (minMarkup - maxMarkup) / (1 + e^(-k * (cost - inflection)))
  * 
  * Default settings:
- * - Parts under $50: ~40% markup
- * - Parts around $100: ~30% markup
- * - Parts around $500: ~20% markup
- * - Parts over $1000: ~15% markup
+ * - minMarkup: 15% (floor for high-cost parts)
+ * - maxMarkup: 40% (ceiling for low-cost parts)
+ * - k: 0.01 (steepness - higher = sharper transition)
+ * - inflection: 200 (cost midpoint where markup halves)
  */
 export function calculatePartsMarkup(unitCost, settings = null) {
-  if (!unitCost || unitCost <= 0) return 25;
-  
-  const maxMarkup = settings?.max_markup ?? 45;  // Maximum markup % for very cheap parts
-  const minMarkup = settings?.min_markup ?? 12;  // Minimum markup % for expensive parts
-  const decayRate = settings?.decay_rate ?? 200; // How quickly markup decreases with cost
-  
-  // Smooth exponential decay curve
-  const markup = minMarkup + (maxMarkup - minMarkup) * Math.exp(-unitCost / decayRate);
-  
-  return Math.round(markup * 10) / 10; // Round to 1 decimal place
+  const config = settings || {
+    min_markup: 15,    // Floor % for high-cost parts
+    max_markup: 40,    // Ceiling % for low-cost parts
+    k: 0.01,           // Steepness (higher = sharper transition)
+    inflection: 200    // Cost midpoint where markup halves
+  };
+
+  if (!unitCost || unitCost <= 0) return config.max_markup;  // Fallback for invalid/low costs
+
+  // Logistic sigmoid (decreasing): Starts near max, asymptotes to min
+  const markup = config.max_markup + (config.min_markup - config.max_markup) / 
+                 (1 + Math.exp(-config.k * (unitCost - config.inflection)));
+
+  return parseFloat(markup.toFixed(2));  // 2-decimal precision
 }
 
 /**
