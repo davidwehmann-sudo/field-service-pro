@@ -19,7 +19,6 @@ const SERVICE_TYPES = [
   { value: 'diagnostic', label: 'Diagnostic' },
   { value: 'repair', label: 'Repair' },
   { value: 'preventive_maintenance', label: 'Preventive Maintenance' },
-  { value: 'emergency_service', label: 'Emergency Service' },
 ];
 
 export default function RequestAuthorization() {
@@ -393,12 +392,9 @@ export default function RequestAuthorization() {
                 <Label className="mb-2 block">Billing Structure</Label>
                 <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
                   <div>
-                    <p className="font-semibold text-blue-900 mb-2">Standard Field Service Rates:</p>
+                    <p className="font-semibold text-blue-900 mb-2">Standard Field Service Rate:</p>
                     <ul className="text-blue-800 space-y-1 ml-4 list-disc">
-                      <li><strong>Diagnostic:</strong> $125/hr</li>
-                      <li><strong>Repair:</strong> $115/hr</li>
-                      <li><strong>Preventive Maintenance:</strong> $95/hr</li>
-                      <li><strong>Emergency Service:</strong> Premium rates apply</li>
+                      <li><strong>All Services:</strong> $200/hr (3-hour minimum)</li>
                     </ul>
                   </div>
                   <div>
@@ -406,6 +402,7 @@ export default function RequestAuthorization() {
                     <ul className="text-blue-800 space-y-1 ml-4 list-disc">
                       <li>Travel/destination fees based on location</li>
                       <li>Parts billed at cost + standard markup</li>
+                      <li>General technician supplies fee: starts at $35 (may increase for demanding jobs like engine overhauls)</li>
                       <li>Sales tax applied where applicable</li>
                     </ul>
                   </div>
