@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export default function CustomerLocationMap({ customer }) {
   const [mapUrl, setMapUrl] = useState('');
-  const apiKey = 'GOOGLE_MAPS_API_KEY'; // Will be replaced at runtime
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   useEffect(() => {
     if (customer?.address && customer?.city && customer?.state) {
