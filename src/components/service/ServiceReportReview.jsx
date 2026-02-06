@@ -143,7 +143,7 @@ export default function ServiceReportReview({
             <CardContent className="space-y-3">
               {report.service_items?.map((item, idx) => (
                 <div key={idx} className="flex justify-between text-sm">
-                  <span>{item.description} ({item.hours}h @ ${item.rate}/h)</span>
+                  <span>{item.description}</span>
                   <span className="font-semibold">${item.total.toFixed(2)}</span>
                 </div>
               ))}
