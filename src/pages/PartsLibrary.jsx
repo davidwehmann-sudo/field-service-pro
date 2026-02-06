@@ -40,6 +40,8 @@ export default function PartsLibrary() {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedParts, setSelectedParts] = useState(new Set());
   const [previewVerification, setPreviewVerification] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [newImageUrl, setNewImageUrl] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { addToCart, addMultipleToCart, cartCount } = useCart();
@@ -169,6 +171,23 @@ export default function PartsLibrary() {
     setSelectedParts(new Set());
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setNewImageUrl(file_url);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      toast.error('Failed to upload image');
+      console.error(error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmitEdit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -181,6 +200,12 @@ export default function PartsLibrary() {
       part_description: formData.get('part_description'),
       technician_notes: formData.get('technician_notes')
     };
+    
+    // Include new image if uploaded
+    if (newImageUrl) {
+      data.photo_url = newImageUrl;
+    }
+    
     updateVerificationMutation.mutate({ id: editingVerification.id, data });
   };
 
@@ -484,13 +509,73 @@ export default function PartsLibrary() {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingVerification} onOpenChange={(open) => !open && setEditingVerification(null)}>
+      <Dialog open={!!editingVerification} onOpenChange={(open) => {
+        if (!open) {
+          setEditingVerification(null);
+          setNewImageUrl(null);
+        }
+      }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Part Verification</DialogTitle>
           </DialogHeader>
           
           <form onSubmit={handleSubmitEdit} className="space-y-4">
+            {/* Image Upload Section */}
+            <div>
+              <Label>Verification Image</Label>
+              <div className="mt-2 space-y-3">
+                {/* Current or New Image Preview */}
+                {(newImageUrl || editingVerification?.photo_url) ? (
+                  <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                    <img 
+                      src={newImageUrl || editingVerification?.photo_url}
+                      alt="Verification"
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="p-8 text-center text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p>Image failed to load</p></div>';
+                      }}
+                    />
+                    {newImageUrl && (
+                      <Badge className="absolute top-2 right-2 bg-green-600">New Image</Badge>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center">
+                    <ImageIcon className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                    <p className="text-sm text-slate-500">No image available</p>
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                <div>
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('image-upload').click()}
+                    disabled={uploadingImage}
+                    className="w-full"
+                  >
+                    {uploadingImage ? (
+                      <>Uploading...</>
+                    ) : (
+                      <>
+                        <FileUp className="w-4 h-4 mr-2" />
+                        {newImageUrl || editingVerification?.photo_url ? 'Replace Image' : 'Upload Image'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
             <div>
               <Label htmlFor="part_number">Part Number *</Label>
               <Input 
