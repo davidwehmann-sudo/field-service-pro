@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import PartsOrderReviewAssistant from '@/components/parts/PartsOrderReviewAssistant';
+import DocumentPartExtractor from '@/components/parts/DocumentPartExtractor';
+import PartVerificationLibrary from '@/components/parts/PartVerificationLibrary';
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
@@ -55,6 +57,9 @@ export default function PartsOrders() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showReviewAssistant, setShowReviewAssistant] = useState(false);
   const [currentServiceReport, setCurrentServiceReport] = useState(null);
+  const [showExtractor, setShowExtractor] = useState(false);
+  const [showVerificationLibrary, setShowVerificationLibrary] = useState(false);
+  const [selectedVerification, setSelectedVerification] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -272,6 +277,7 @@ export default function PartsOrders() {
       setAssignmentType('service_report');
     }
     setCatalogSaved(false);
+    setSelectedVerification(null);
   }, [editingPart, showForm]);
 
   const handleSaveToCatalog = async (partData) => {
@@ -743,8 +749,32 @@ If no match possible, return "NO_MATCH".`,
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="part_description">Description *</Label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="part_description">Description *</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowExtractor(true)}
+                    className="text-xs"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Extract from Document
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowVerificationLibrary(!showVerificationLibrary)}
+                    className="text-xs"
+                  >
+                    <Shield className="w-3 h-3 mr-1" />
+                    Verification Library
+                  </Button>
+                </div>
+              </div>
               <Input 
                 id="part_description" 
                 name="part_description" 
@@ -752,6 +782,28 @@ If no match possible, return "NO_MATCH".`,
                 defaultValue={editingPart?.part_description}
                 placeholder="Fuel filter, injector, etc."
               />
+              
+              {showVerificationLibrary && (
+                <div className="border rounded-lg p-4 bg-slate-50">
+                  <PartVerificationLibrary
+                    partNumber={editingPart?.part_number}
+                    onSelect={(verification) => {
+                      setSelectedVerification(verification);
+                      // Pre-fill form with verification data
+                      document.getElementById('part_number').value = verification.part_number;
+                      document.getElementById('part_description').value = verification.part_description || verification.part_number;
+                      document.getElementById('verification_source').value = verification.source_name;
+                      document.getElementById('verification_details').value = verification.source_details;
+                      if (verification.photo_url) {
+                        setEditingPart({...editingPart, verification_photo_url: verification.photo_url});
+                      }
+                      toast.success('Verification data loaded');
+                      setShowVerificationLibrary(false);
+                    }}
+                    selectedVerificationId={selectedVerification?.id}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1376,6 +1428,45 @@ If no match possible, return "NO_MATCH".`,
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Document Part Extractor */}
+      <DocumentPartExtractor
+        isOpen={showExtractor}
+        onClose={() => setShowExtractor(false)}
+        onPartsExtracted={(extractedParts, extractedData, verifications) => {
+          // When multiple parts are extracted, use the first one to pre-fill the form
+          // The rest are saved to the library for future use
+          if (extractedParts.length > 0) {
+            const firstPart = extractedParts[0];
+            const firstVerification = verifications?.[0];
+            
+            // Pre-fill all form fields
+            document.getElementById('part_number').value = firstPart.part_number;
+            document.getElementById('part_description').value = firstPart.part_description;
+            document.getElementById('quantity').value = firstPart.quantity || 1;
+            if (firstPart.unit_cost) {
+              const costField = document.getElementById('unit_cost');
+              costField.value = firstPart.unit_cost;
+              // Trigger markup calculation
+              const markupField = document.getElementById('markup_percent');
+              if (markupField) {
+                markupField.value = calculatePartsMarkup(firstPart.unit_cost, markupSettings);
+              }
+            }
+            
+            // Pre-fill verification fields
+            if (firstVerification) {
+              document.getElementById('verification_source').value = firstVerification.source_name;
+              document.getElementById('verification_details').value = firstVerification.source_details;
+              if (firstVerification.photo_url) {
+                setEditingPart({...editingPart, verification_photo_url: firstVerification.photo_url});
+              }
+            }
+            
+            toast.success(`Pre-filled form with ${firstPart.part_description}. ${extractedParts.length - 1} other parts saved to library.`);
+          }
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (
