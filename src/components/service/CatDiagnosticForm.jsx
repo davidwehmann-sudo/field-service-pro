@@ -41,12 +41,6 @@ const DIAGNOSTIC_STEPS = [
     title: "Verify Repair",
     field: "step6_verify_repair",
     placeholder: "Test and verify that the repair resolved the issue. Take pictures as necessary to document successful repair..."
-  },
-  {
-    step: 7,
-    title: "Document [concern], [analysis], & [repair]",
-    field: "step7_document",
-    placeholder: "Comprehensive documentation of the concern, analysis performed, and repairs completed..."
   }
 ];
 
@@ -63,20 +57,20 @@ export default function CatDiagnosticForm({ diagnostic = {}, onChange }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-              <span className="text-amber-700 font-bold text-lg">7</span>
+              <span className="text-amber-700 font-bold text-lg">6</span>
             </div>
             <div>
-              <CardTitle className="text-lg">CAT 7-Step Diagnostic</CardTitle>
-              <p className="text-sm text-slate-500">Caterpillar systematic troubleshooting</p>
+              <CardTitle className="text-lg">CAT Diagnostic Process</CardTitle>
+              <p className="text-sm text-slate-500">Steps 1-6 of Caterpillar 7-Step (Step 7 is the report itself)</p>
             </div>
           </div>
           <Badge 
-            className={completedSteps === 7 
+            className={completedSteps === 6 
               ? "bg-green-100 text-green-700" 
               : "bg-slate-100 text-slate-600"
             }
           >
-            {completedSteps}/7 Complete
+            {completedSteps}/6 Complete
           </Badge>
         </div>
       </CardHeader>

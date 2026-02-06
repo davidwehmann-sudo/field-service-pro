@@ -223,7 +223,7 @@ CATERPILLAR 7-STEP PROCESS:
 4. Analyze Possible Causes / Determine Root Cause
 5. Repair Root Cause
 6. Verify Repair (pictures as necessary)
-7. Document [concern], [analysis], & [repair] in Service Report
+7. Document [concern], [analysis], & [repair] in Service Report (this report itself)
 
 IMPORTANT: Review ALL technician notes comprehensively. Consider the complete context from all notes entered, not just the latest addition.
 
@@ -242,8 +242,7 @@ ALWAYS provide:
 4. step4_analyze_causes - Analysis of causes and determination of root cause
 5. step5_repair - Repairs performed to address root cause
 6. step6_verify_repair - Verification testing and results (note if pictures taken)
-7. step7_document - Final documentation summary
-8. work_performed - Detailed description of repairs/work completed
+7. work_performed - Comprehensive documentation summary covering concern, analysis, and repair (CAT Step 7)
 9. billable_service_items - Break down work into distinct billable segments. IMPORTANT: Combine related operations on the SAME line to reduce line count:
    - "Remove and reinstall hydraulic pump" (not separate remove/install lines)
    - "Remove and replace damaged cylinder seal" (combines remove + replace for damaged part)
@@ -275,7 +274,6 @@ Generate the best report possible with available information.`,
             step4_analyze_causes: { type: "string" },
             step5_repair: { type: "string" },
             step6_verify_repair: { type: "string" },
-            step7_document: { type: "string" },
             work_performed: { type: "string" },
             billable_service_items: {
               type: "array",
@@ -304,8 +302,7 @@ Generate the best report possible with available information.`,
           step3_list_causes: result.step3_list_causes,
           step4_analyze_causes: result.step4_analyze_causes,
           step5_repair: result.step5_repair,
-          step6_verify_repair: result.step6_verify_repair,
-          step7_document: result.step7_document
+          step6_verify_repair: result.step6_verify_repair
         },
         work_performed: result.work_performed,
         service_items: result.billable_service_items?.map(item => ({
@@ -704,16 +701,22 @@ Generate the best report possible with available information.`,
         onChange={(val) => handleChange('cat_diagnostic', val)}
       />
 
-      {/* Work Performed */}
-      <Card className="border-0 shadow-sm">
+      {/* Work Performed - CAT Step 7 */}
+      <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
         <CardHeader>
-          <CardTitle className="text-lg">Work Performed</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            Work Performed
+            <Badge variant="outline" className="text-xs font-normal">CAT Step 7: Document</Badge>
+          </CardTitle>
+          <p className="text-sm text-slate-600 mt-1">
+            Comprehensive documentation of concern, analysis, and repair completed
+          </p>
         </CardHeader>
         <CardContent>
           <Textarea 
             value={formData.work_performed}
             onChange={(e) => handleChange('work_performed', e.target.value)}
-            placeholder="Detail all repairs, adjustments, and work completed..."
+            placeholder="Detail all repairs, adjustments, and work completed - this serves as the final documentation (Step 7) of the diagnostic process..."
             rows={4}
           />
         </CardContent>
