@@ -19,11 +19,12 @@ import {
   Wrench,
   Image as ImageIcon,
   CheckCircle2,
-  Plus,
+  FileUp,
   Pencil
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import DocumentPartExtractor from '@/components/parts/DocumentPartExtractor';
 
 export default function PartsLibrary() {
   const [search, setSearch] = useState('');
@@ -31,6 +32,7 @@ export default function PartsLibrary() {
   const [machineFilter, setMachineFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [editingVerification, setEditingVerification] = useState(null);
+  const [showExtractor, setShowExtractor] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -137,11 +139,11 @@ export default function PartsLibrary() {
           </p>
         </div>
         <Button 
-          onClick={() => navigate(createPageUrl('PartsOrders') + '?new=true')}
+          onClick={() => setShowExtractor(true)}
           className="bg-amber-500 hover:bg-amber-600"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Custom Part
+          <FileUp className="w-4 h-4 mr-2" />
+          Upload & Extract Parts
         </Button>
       </div>
 
@@ -255,9 +257,9 @@ export default function PartsLibrary() {
             <Button 
               variant="link" 
               className="text-amber-600 mt-2"
-              onClick={() => navigate(createPageUrl('PartsOrders') + '?new=true')}
+              onClick={() => setShowExtractor(true)}
             >
-              Add parts using document extraction
+              Upload document to extract parts
             </Button>
           </CardContent>
         </Card>
@@ -465,6 +467,16 @@ export default function PartsLibrary() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Document Part Extractor */}
+      <DocumentPartExtractor
+        isOpen={showExtractor}
+        onClose={() => setShowExtractor(false)}
+        onPartsExtracted={(extractedParts, extractedData, verifications) => {
+          queryClient.invalidateQueries(['partVerifications']);
+          toast.success(`${extractedParts.length} parts saved to library`);
+        }}
+      />
     </div>
   );
 }
