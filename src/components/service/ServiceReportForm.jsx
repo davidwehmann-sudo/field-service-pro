@@ -448,7 +448,7 @@ Generate the best report possible with available information.`,
             disabled={isSaving}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Save Draft
+            Save as Open
           </Button>
           <Button 
             className="bg-green-600 hover:bg-green-700"
