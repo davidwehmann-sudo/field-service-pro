@@ -23,7 +23,8 @@ import {
   CheckCircle2,
   FileUp,
   Pencil,
-  Plus
+  Plus,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +39,7 @@ export default function PartsLibrary() {
   const [showExtractor, setShowExtractor] = useState(false);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedParts, setSelectedParts] = useState(new Set());
+  const [previewVerification, setPreviewVerification] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { addToCart, addMultipleToCart, cartCount } = useCart();
@@ -439,10 +441,16 @@ export default function PartsLibrary() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm">
-                      <p className="font-medium text-green-700">{verification.source_name}</p>
+                    <button
+                      onClick={() => setPreviewVerification(verification)}
+                      className="text-sm text-left hover:bg-slate-100 p-2 rounded transition-colors"
+                    >
+                      <p className="font-medium text-green-700 flex items-center gap-1">
+                        {verification.source_name}
+                        <ExternalLink className="w-3 h-3 opacity-60" />
+                      </p>
                       <p className="text-xs text-slate-500">{verification.source_details}</p>
-                    </div>
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -575,6 +583,94 @@ export default function PartsLibrary() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Source Preview Dialog */}
+      <Dialog open={!!previewVerification} onOpenChange={(open) => !open && setPreviewVerification(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Verification Source</DialogTitle>
+          </DialogHeader>
+          
+          {previewVerification && (
+            <div className="space-y-4">
+              {/* Source Info */}
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                <div>
+                  <Label className="text-xs text-slate-500">Source Name</Label>
+                  <p className="font-medium text-slate-900">{previewVerification.source_name}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Details</Label>
+                  <p className="text-sm text-slate-700">{previewVerification.source_details}</p>
+                </div>
+                {previewVerification.source_details && 
+                 (previewVerification.source_details.startsWith('http://') || 
+                  previewVerification.source_details.startsWith('https://')) && (
+                  <a 
+                    href={previewVerification.source_details}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open Link
+                  </a>
+                )}
+              </div>
+
+              {/* Image Preview */}
+              {previewVerification.photo_url ? (
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                  <img 
+                    src={previewVerification.photo_url}
+                    alt="Verification document"
+                    className="w-full h-auto"
+                    onError={(e) => {
+                      e.target.parentElement.innerHTML = '<div class="p-8 text-center text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p>Image could not be loaded</p></div>';
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-200 rounded-lg p-12 text-center">
+                  <ImageIcon className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                  <p className="text-slate-500">No verification image available</p>
+                </div>
+              )}
+
+              {/* Part Details */}
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                <div>
+                  <Label className="text-xs text-slate-500">Part Number</Label>
+                  <p className="font-mono font-medium text-slate-900">{previewVerification.part_number}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Description</Label>
+                  <p className="text-sm text-slate-700">{previewVerification.part_description || 'N/A'}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-slate-500">Manufacturer</Label>
+                    <p className="text-sm text-slate-700">{previewVerification.manufacturer || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">Machine Model</Label>
+                    <p className="text-sm text-slate-700">{previewVerification.machine_model || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline"
+              onClick={() => setPreviewVerification(null)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
