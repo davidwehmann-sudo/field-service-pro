@@ -26,6 +26,7 @@ import {
   Loader2
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
+import PartsOrderReviewAssistant from '@/components/parts/PartsOrderReviewAssistant';
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
@@ -50,6 +51,8 @@ export default function PartsOrders() {
   const [aiSearching, setAiSearching] = useState(false);
   const [jobsList, setJobsList] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [showReviewAssistant, setShowReviewAssistant] = useState(false);
+  const [currentServiceReport, setCurrentServiceReport] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -892,7 +895,17 @@ If no match possible, return "NO_MATCH".`,
             {assignmentType === 'service_report' && (
               <div>
                 <Label>Service Report</Label>
-                <Select name="service_report_id" defaultValue={editingPart?.service_report_id || ''}>
+                <Select 
+                  name="service_report_id" 
+                  defaultValue={editingPart?.service_report_id || ''}
+                  onValueChange={(val) => {
+                    const report = serviceReports.find(r => r.id === val);
+                    setCurrentServiceReport(report);
+                    if (report && !editingPart) {
+                      setShowReviewAssistant(true);
+                    }
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Will use same as job (if assigned)" />
                   </SelectTrigger>
@@ -908,6 +921,21 @@ If no match possible, return "NO_MATCH".`,
                   Optional: Leave empty to automatically use the service report assigned to the job
                 </p>
               </div>
+            )}
+
+            {showReviewAssistant && currentServiceReport && assignmentType === 'service_report' && (
+              <PartsOrderReviewAssistant
+                serviceReport={currentServiceReport}
+                existingParts={parts.filter(p => p.service_report_id === currentServiceReport.id)}
+                onAddSuggestion={(itemName) => {
+                  const descField = document.querySelector('#part_description');
+                  if (descField && !descField.value) {
+                    descField.value = itemName;
+                    toast.success(`Added "${itemName}" to description`);
+                  }
+                }}
+                autoCheck={true}
+              />
             )}
 
             {assignmentType === 'counter_sale' && (

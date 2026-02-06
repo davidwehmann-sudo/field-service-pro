@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import PrepaymentSummary from '@/components/invoice/PrepaymentSummary';
+import InvoiceReviewAssistant from '@/components/invoice/InvoiceReviewAssistant';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 
@@ -766,6 +767,22 @@ CHARGES:
               <PrepaymentSummary 
                 jobId={editingInvoice.job_id} 
                 invoiceId={editingInvoice.id}
+              />
+            )}
+
+            {editingInvoice?.id && editingInvoice?.status !== 'paid' && (
+              <InvoiceReviewAssistant
+                invoice={editingInvoice}
+                serviceReport={serviceReports.find(r => r.id === editingInvoice.service_report_id)}
+                partsOrders={partsOrders.filter(p => p.service_report_id === editingInvoice.service_report_id)}
+                onAddSuggestion={(suggestion) => {
+                  // Add to labor total as a line item suggestion
+                  const laborField = document.querySelector('[name="labor_total"]');
+                  if (laborField) {
+                    const currentLabor = parseFloat(laborField.value) || 0;
+                    laborField.value = (currentLabor + suggestion.suggested_amount).toFixed(2);
+                  }
+                }}
               />
             )}
             
