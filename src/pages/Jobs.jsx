@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, Trash2, Plus, GripVertical } from "lucide-react";
+import { AlertCircle, Search, ClipboardCheck, FileText, Package, ChevronRight, Calendar, Trash2, Plus, GripVertical, Printer } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
@@ -340,6 +340,26 @@ export default function Jobs() {
     createEmptyJobMutation.mutate(customerId);
   };
 
+  const handlePrintComprehensiveReport = async (job) => {
+    try {
+      toast.info('Generating comprehensive job report...');
+      const response = await base44.functions.invoke('generateComprehensiveJobPDF', { job_id: job.id });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `job-${job.job_number || job.id.substring(0, 8)}-complete.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success('Comprehensive report downloaded');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate report');
+    }
+  };
+
   const hasOrphans = orphanedAuths.length > 0 || orphanedReports.length > 0 || orphanedParts.length > 0;
 
   const toggleItemSelection = (itemType, itemId) => {
@@ -617,7 +637,17 @@ export default function Jobs() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end mb-3">
+                  <div className="flex justify-end gap-2 mb-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePrintComprehensiveReport(job)}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="Print comprehensive job report"
+                    >
+                      <Printer className="w-4 h-4 mr-1" />
+                      Print Complete Report
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
