@@ -318,11 +318,16 @@ export default function Layout({ children, currentPageName }) {
         {userType !== 'unassigned_user' && userType !== 'service_customer' && (
           <Link 
             to={createPageUrl('FieldTech')}
-            className="lg:hidden fixed bottom-6 right-6 z-40"
+            className="lg:hidden fixed bottom-6 right-6 z-40 group"
           >
-            <button className="w-16 h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95">
-              <Wrench className="w-7 h-7" />
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-900 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium opacity-0 group-active:opacity-100 transition-opacity whitespace-nowrap">
+                Field Tech
+              </div>
+              <button className="w-14 h-14 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95">
+                <Wrench className="w-6 h-6" />
+              </button>
+            </div>
           </Link>
         )}
       </div>
