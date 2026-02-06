@@ -20,6 +20,7 @@ import OriginalNotesViewer from '@/components/service/OriginalNotesViewer';
 import TimeTracker from '@/components/service/TimeTracker';
 import FieldBenefitInfo from '@/components/service/FieldBenefitInfo';
 import LocationCapture from '@/components/service/LocationCapture';
+import FluidSamplingSection from '@/components/service/FluidSamplingSection';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -110,6 +111,9 @@ export default function ServiceReportForm({
       photos: [],
       photos_initial: [],
       photos_failure: [],
+      fluid_samples: [],
+      fluid_analysis_results_url: '',
+      photos_fluid_evidence: [],
       location_data: null,
       customer_signature: '',
       technician_signature: '',
@@ -732,6 +736,18 @@ Generate the best report possible with available information.`,
           </div>
         </CardContent>
       </Card>
+
+      {/* Fluid Sampling & Analysis */}
+      <FluidSamplingSection
+        samples={formData.fluid_samples || []}
+        analysisUrl={formData.fluid_analysis_results_url || ''}
+        photos={formData.photos_fluid_evidence || []}
+        onChange={(data) => {
+          handleChange('fluid_samples', data.samples);
+          handleChange('fluid_analysis_results_url', data.analysisUrl);
+          handleChange('photos_fluid_evidence', data.photos);
+        }}
+      />
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Signatures */}
