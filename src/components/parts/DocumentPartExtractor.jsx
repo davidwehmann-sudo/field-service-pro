@@ -35,6 +35,7 @@ export default function DocumentPartExtractor({
     const [extractedData, setExtractedData] = useState(null);
     const [selectedParts, setSelectedParts] = useState({});
     const [machineModel, setMachineModel] = useState(defaultMachineModel || '');
+    const [manufacturer, setManufacturer] = useState('');
     const [bypassMachineModel, setBypassMachineModel] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -95,7 +96,7 @@ export default function DocumentPartExtractor({
             const verifications = selectedPartsList.map(part => ({
                 part_number: part.part_number,
                 part_description: part.part_description,
-                manufacturer: part.manufacturer || extractedData.manufacturer,
+                manufacturer: manufacturer || part.manufacturer || extractedData.manufacturer,
                 source_name: extractedData.source_name,
                 source_details: part.source_details,
                 photo_url: extractedData.photo_url,
@@ -143,6 +144,19 @@ export default function DocumentPartExtractor({
                 </DialogHeader>
 
                 <div className="space-y-6">
+                    {/* Manufacturer Input */}
+                    <div className="space-y-2">
+                        <Label>Manufacturer (Optional)</Label>
+                        <Input
+                            placeholder="e.g., Caterpillar, John Deere, Kubota"
+                            value={manufacturer}
+                            onChange={(e) => setManufacturer(e.target.value)}
+                        />
+                        <p className="text-xs text-slate-500">
+                            Override manufacturer if AI detection is incorrect
+                        </p>
+                    </div>
+
                     {/* Machine Model Input */}
                     <div className="space-y-2">
                         <Label>Machine Model *</Label>
