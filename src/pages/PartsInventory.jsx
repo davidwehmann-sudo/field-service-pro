@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Package, Camera, Loader2, MapPin, AlertCircle, Sparkles, X, Printer } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import PartRelationshipManager from '@/components/parts/PartRelationshipManager';
 
 export default function PartsInventory() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -717,6 +718,15 @@ Return the IDs of ALL matching parts.`,
                 rows={2}
               />
             </div>
+
+            {editingPart && (
+              <div className="border-t pt-4">
+                <PartRelationshipManager 
+                  partNumber={formData.part_number}
+                  onUpdate={() => queryClient.invalidateQueries(['parts-inventory'])}
+                />
+              </div>
+            )}
 
             <div className="flex justify-between items-center gap-3">
               {!editingPart && formData.part_description && (
