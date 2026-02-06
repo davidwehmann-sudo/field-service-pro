@@ -927,10 +927,14 @@ If no match possible, return "NO_MATCH".`,
               <PartsOrderReviewAssistant
                 serviceReport={currentServiceReport}
                 existingParts={parts.filter(p => p.service_report_id === currentServiceReport.id)}
-                onAddSuggestion={(itemName) => {
+                onAddSuggestion={(itemName, verificationSource) => {
                   const descField = document.querySelector('#part_description');
+                  const verifyField = document.querySelector('#verification_source');
                   if (descField && !descField.value) {
                     descField.value = itemName;
+                    if (verifyField && verificationSource) {
+                      verifyField.value = verificationSource;
+                    }
                     toast.success(`Added "${itemName}" to description`);
                   }
                 }}
@@ -1064,6 +1068,30 @@ If no match possible, return "NO_MATCH".`,
                 placeholder="Additional notes..."
                 rows={2}
               />
+            </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-sm font-medium text-slate-700">Verification (Optional)</p>
+              <div>
+                <Label htmlFor="verification_source">Verified Against</Label>
+                <Input 
+                  id="verification_source" 
+                  name="verification_source"
+                  defaultValue={editingPart?.verification_source}
+                  placeholder="e.g., Caterpillar SIS, John Deere Service Advisor"
+                />
+                <p className="text-xs text-slate-500 mt-1">Document verification source for legal protection</p>
+              </div>
+              <div>
+                <Label htmlFor="verification_details">Verification Details</Label>
+                <Input 
+                  id="verification_details" 
+                  name="verification_details"
+                  defaultValue={editingPart?.verification_details}
+                  placeholder="e.g., Page 47, Section 5.2, Part ID: ABC-123"
+                />
+                <p className="text-xs text-slate-500 mt-1">Specific page, section, or reference number</p>
+              </div>
             </div>
 
             <div className="flex justify-between items-center gap-3 pt-4">
