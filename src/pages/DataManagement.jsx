@@ -482,19 +482,32 @@ export default function DataManagement() {
                     <CardDescription className="text-xs">{option.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button 
-                      onClick={option.action} 
-                      className="w-full" 
-                      size="sm" 
-                      variant="outline"
-                      disabled={option.title === 'Receipt Images' && downloadingReceipts}
-                    >
-                      {option.title === 'Receipt Images' && downloadingReceipts ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
-                      ) : (
-                        <><Download className="w-4 h-4 mr-2" />Export</>
-                      )}
-                    </Button>
+                    {option.title === 'Receipt Images' ? (
+                      <Button 
+                        onClick={option.action} 
+                        className="w-full" 
+                        size="sm" 
+                        variant="outline"
+                        disabled={downloadingReceipts}
+                      >
+                        {downloadingReceipts ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
+                        ) : (
+                          <><Download className="w-4 h-4 mr-2" />Export</>
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button onClick={() => option.action('csv')} className="flex-1" size="sm" variant="outline">
+                          <FileText className="w-4 h-4 mr-1" />
+                          CSV
+                        </Button>
+                        <Button onClick={() => option.action('pdf')} className="flex-1" size="sm" variant="outline">
+                          <FileText className="w-4 h-4 mr-1" />
+                          PDF
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
