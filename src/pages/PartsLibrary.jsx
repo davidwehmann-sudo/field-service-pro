@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
@@ -43,6 +44,7 @@ export default function PartsLibrary() {
   const [previewVerification, setPreviewVerification] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState(null);
+  const [confirmEditVerification, setConfirmEditVerification] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { addToCart, addMultipleToCart, cartCount } = useCart();
@@ -495,7 +497,7 @@ export default function PartsLibrary() {
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setEditingVerification(verification);
+                          setConfirmEditVerification(verification);
                         }}
                         variant="outline"
                         size="sm"
@@ -520,6 +522,38 @@ export default function PartsLibrary() {
           </table>
         </div>
       )}
+
+      {/* Edit Confirmation Dialog */}
+      <AlertDialog open={!!confirmEditVerification} onOpenChange={(open) => !open && setConfirmEditVerification(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Library Entry?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>You're about to edit a verified library entry. Changes will affect:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Future parts ordered from this library entry</li>
+                <li>Search and filter results</li>
+                <li>Verification documentation</li>
+              </ul>
+              <p className="font-medium text-slate-900 mt-3">
+                Part: <span className="font-mono">{confirmEditVerification?.part_number}</span>
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setEditingVerification(confirmEditVerification);
+                setConfirmEditVerification(null);
+              }}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              Continue to Edit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingVerification} onOpenChange={(open) => {
