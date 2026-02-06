@@ -262,7 +262,9 @@ export default function PartsOrders() {
       p.notes?.toLowerCase().includes(query) ||
       p.assignment_type?.toLowerCase().includes(query);
     
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+    const needsPricing = !p.unit_cost || p.unit_cost === 0;
+    const matchesStatus = statusFilter === 'all' || 
+                          (statusFilter === 'needs_pricing' ? needsPricing : p.status === statusFilter);
     const matchesReport = reportFilter === 'all' || p.service_report_id === reportFilter;
     return matchesSearch && matchesStatus && matchesReport;
   });
@@ -580,6 +582,7 @@ If no match possible, return "NO_MATCH".`,
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="needs_pricing">Needs Pricing</TabsTrigger>
             <TabsTrigger value="needed">Needed</TabsTrigger>
             <TabsTrigger value="ordered">Ordered</TabsTrigger>
             <TabsTrigger value="received">Received</TabsTrigger>
@@ -720,18 +723,34 @@ If no match possible, return "NO_MATCH".`,
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge className={statusColors[part.status]}>
-                      {part.status}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge className={statusColors[part.status]}>
+                        {part.status}
+                      </Badge>
+                      {(!part.unit_cost || part.unit_cost === 0) && (
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                          ⚠️ Needs Pricing
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <p className="font-semibold text-slate-900">
-                      ${calculateTotal(part).toFixed(2)}
-                    </p>
-                    {part.quantity > 1 && (
-                      <p className="text-xs text-slate-500">
-                        ${(calculateTotal(part) / part.quantity).toFixed(2)} / unit
-                      </p>
+                    {!part.unit_cost || part.unit_cost === 0 ? (
+                      <div>
+                        <p className="font-semibold text-amber-600">TBD</p>
+                        <p className="text-xs text-amber-500">Add cost before billing</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          ${calculateTotal(part).toFixed(2)}
+                        </p>
+                        {part.quantity > 1 && (
+                          <p className="text-xs text-slate-500">
+                            ${(calculateTotal(part) / part.quantity).toFixed(2)} / unit
+                          </p>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right no-print" onClick={(e) => e.stopPropagation()}>
@@ -851,14 +870,14 @@ If no match possible, return "NO_MATCH".`,
                 />
               </div>
               <div>
-                <Label htmlFor="unit_cost">Unit Cost ($)</Label>
+                <Label htmlFor="unit_cost">Unit Cost ($) <span className="text-xs text-amber-600">(can add later)</span></Label>
                 <Input 
                   id="unit_cost" 
                   name="unit_cost" 
                   type="number"
                   step="0.01"
                   defaultValue={editingPart?.unit_cost}
-                  placeholder="0.00"
+                  placeholder="Leave blank if unknown"
                   onChange={(e) => {
                     const cost = parseFloat(e.target.value) || 0;
                     const markupField = document.getElementById('markup_percent');
@@ -867,6 +886,9 @@ If no match possible, return "NO_MATCH".`,
                     }
                   }}
                 />
+                <p className="text-xs text-slate-500 mt-0.5">
+                  💡 Can be added later - just remember before billing
+                </p>
               </div>
             </div>
 
