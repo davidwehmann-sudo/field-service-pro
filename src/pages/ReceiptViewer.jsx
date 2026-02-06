@@ -25,24 +25,35 @@ export default function ReceiptViewer() {
   
   const queryClient = useQueryClient();
 
-  const { data: partsOrders = [], isLoading } = useQuery({
+  const { data: partsOrders = [], isLoading: loadingParts } = useQuery({
     queryKey: ['parts-orders-for-receipts'],
     queryFn: () => base44.entities.PartsOrder.list('-order_date'),
   });
 
-  // Group parts by receipt_url
+  const { data: vehicleExpenses = [], isLoading: loadingExpenses } = useQuery({
+    queryKey: ['vehicle-expenses-for-receipts'],
+    queryFn: () => base44.entities.VehicleExpense.list('-expense_date'),
+  });
+
+  const isLoading = loadingParts || loadingExpenses;
+
+  // Group parts and expenses by receipt_url
   const receiptGroups = useMemo(() => {
     const groups = {};
+    
+    // Add parts orders
     partsOrders.forEach(order => {
       if (order.receipt_url && order.receipt_url.trim()) {
         if (!groups[order.receipt_url]) {
           groups[order.receipt_url] = {
             receipt_url: order.receipt_url,
             parts: [],
+            expenses: [],
             totalCost: 0,
             totalShipping: 0,
             supplier: order.supplier,
-            order_date: order.order_date
+            order_date: order.order_date,
+            type: 'parts'
           };
         }
         groups[order.receipt_url].parts.push(order);
@@ -53,8 +64,36 @@ export default function ReceiptViewer() {
         );
       }
     });
+    
+    // Add vehicle expenses
+    vehicleExpenses.forEach(expense => {
+      if (expense.receipt_url && expense.receipt_url.trim()) {
+        if (!groups[expense.receipt_url]) {
+          groups[expense.receipt_url] = {
+            receipt_url: expense.receipt_url,
+            parts: [],
+            expenses: [],
+            totalCost: 0,
+            totalShipping: 0,
+            supplier: expense.vendor,
+            order_date: expense.expense_date,
+            type: 'expense'
+          };
+        }
+        groups[expense.receipt_url].expenses.push(expense);
+        groups[expense.receipt_url].totalCost += expense.amount || 0;
+        groups[expense.receipt_url].type = 'expense';
+        if (!groups[expense.receipt_url].supplier) {
+          groups[expense.receipt_url].supplier = expense.vendor;
+        }
+        if (!groups[expense.receipt_url].order_date) {
+          groups[expense.receipt_url].order_date = expense.expense_date;
+        }
+      }
+    });
+    
     return Object.values(groups);
-  }, [partsOrders]);
+  }, [partsOrders, vehicleExpenses]);
 
   const filteredReceipts = useMemo(() => {
     if (aiResults) {
@@ -383,7 +422,11 @@ Match based on: supplier name, part numbers, descriptions, dates, costs, or any 
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-600">{group.parts.length} parts</span>
+                      <span className="text-slate-600">
+                        {group.parts.length > 0 && `${group.parts.length} parts`}
+                        {group.parts.length > 0 && group.expenses.length > 0 && ' • '}
+                        {group.expenses.length > 0 && `${group.expenses.length} expense${group.expenses.length !== 1 ? 's' : ''}`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-slate-400" />
@@ -480,12 +523,14 @@ Match based on: supplier name, part numbers, descriptions, dates, costs, or any 
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Extracted Parts</CardTitle>
+                  <CardTitle className="text-base">
+                    {selectedReceipt.parts.length > 0 ? 'Extracted Parts' : 'Expense Details'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {selectedReceipt.parts.map((part, idx) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-lg">
+                      <div key={`part-${idx}`} className="p-3 bg-slate-50 rounded-lg">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm text-slate-900 truncate">
@@ -511,10 +556,32 @@ Match based on: supplier name, part numbers, descriptions, dates, costs, or any 
                         )}
                       </div>
                     ))}
+                    
+                    {selectedReceipt.expenses.map((expense, idx) => (
+                      <div key={`expense-${idx}`} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-slate-900 truncate">
+                              {expense.description}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {expense.vehicle_name} • {expense.expense_type}
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-medium text-slate-900">
+                              ${(expense.amount || 0).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <div className="mt-4 pt-4 border-t border-slate-200">
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium">Parts Total:</span>
+                      <span className="font-medium">
+                        {selectedReceipt.parts.length > 0 ? 'Parts Total:' : 'Expense Total:'}
+                      </span>
                       <span>${selectedReceipt.totalCost.toFixed(2)}</span>
                     </div>
                     {selectedReceipt.totalShipping > 0 && (
