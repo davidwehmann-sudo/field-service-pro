@@ -22,9 +22,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No parts found for this receipt' }, { status: 404 });
     }
 
-    // Find the total shipping cost from any part that has it set
-    const totalShipping = partsOrders.reduce((max, order) => 
-      Math.max(max, order.shipping_cost || 0), 0);
+    // Find total shipping cost from:
+    // 1. SHIPPING line items (unit_cost * quantity)
+    // 2. Or existing shipping_cost fields on any part
+    let totalShipping = 0;
+    let totalValue = 0;
+    let hasShippingItem = false;
+
+    partsOrders.forEach(order => {
+      if (order.part_number === 'SHIPPING') {
+        totalShipping += (order.unit_cost || 0) * (order.quantity || 1);
+        hasShippingItem = true;
+      } else {
+        totalValue += (order.unit_cost || 0) * (order.quantity || 1);
+        if (!hasShippingItem && order.shipping_cost > totalShipping) {
+          totalShipping = order.shipping_cost;
+        }
+      }
+    });
 
     if (totalShipping === 0) {
       return Response.json({ 
@@ -33,10 +48,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Calculate total value of all parts (unit_cost * quantity)
-    const totalValue = partsOrders.reduce((sum, order) => 
-      sum + ((order.unit_cost || 0) * (order.quantity || 1)), 0);
-
     if (totalValue === 0) {
       return Response.json({ error: 'Total value is zero, cannot distribute' }, { status: 400 });
     }
@@ -44,6 +55,17 @@ Deno.serve(async (req) => {
     // Distribute shipping proportionally and update each part
     const updates = [];
     for (const order of partsOrders) {
+      // Delete SHIPPING line items since we're distributing the cost
+      if (order.part_number === 'SHIPPING') {
+        await base44.asServiceRole.entities.PartsOrder.delete(order.id);
+        updates.push({
+          id: order.id,
+          part_description: order.part_description,
+          action: 'deleted'
+        });
+        continue;
+      }
+
       const partValue = (order.unit_cost || 0) * (order.quantity || 1);
       const proportionalShipping = (partValue / totalValue) * totalShipping;
       
