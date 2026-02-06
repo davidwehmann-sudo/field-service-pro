@@ -61,12 +61,12 @@ import PartsInventory from './pages/PartsInventory';
 import PartsOrders from './pages/PartsOrders';
 import PaymentLog from './pages/PaymentLog';
 import ReceiptUpload from './pages/ReceiptUpload';
+import ReceiptViewer from './pages/ReceiptViewer';
 import RequestAuthorization from './pages/RequestAuthorization';
 import ServiceReports from './pages/ServiceReports';
 import Sitemap from './pages/Sitemap';
 import TechnicianPayroll from './pages/TechnicianPayroll';
 import VehicleExpenses from './pages/VehicleExpenses';
-import ReceiptViewer from './pages/ReceiptViewer';
 import __Layout from './Layout.jsx';
 
 
@@ -85,12 +85,12 @@ export const PAGES = {
     "PartsOrders": PartsOrders,
     "PaymentLog": PaymentLog,
     "ReceiptUpload": ReceiptUpload,
+    "ReceiptViewer": ReceiptViewer,
     "RequestAuthorization": RequestAuthorization,
     "ServiceReports": ServiceReports,
     "Sitemap": Sitemap,
     "TechnicianPayroll": TechnicianPayroll,
     "VehicleExpenses": VehicleExpenses,
-    "ReceiptViewer": ReceiptViewer,
 }
 
 export const pagesConfig = {

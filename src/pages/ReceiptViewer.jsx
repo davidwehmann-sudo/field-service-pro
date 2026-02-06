@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle } from "lucide-react";
+import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ReceiptViewer() {
@@ -73,7 +73,13 @@ export default function ReceiptViewer() {
   const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
 
   const updateMutation = useMutation({
-    mutationFn: async (updates) => {
+    mutationFn: async ({ updates, deletions }) => {
+      // Delete marked parts
+      for (const id of deletions) {
+        await base44.entities.PartsOrder.delete(id);
+      }
+      
+      // Update remaining parts
       for (const part of updates) {
         await base44.entities.PartsOrder.update(part.id, {
           part_number: part.part_number,
@@ -103,9 +109,22 @@ export default function ReceiptViewer() {
       part_description: p.part_description || '',
       quantity: p.quantity || 1,
       unit_cost: p.unit_cost || 0,
-      shipping_cost: p.shipping_cost || 0
+      shipping_cost: p.shipping_cost || 0,
+      _deleted: false
     })));
     setEditDialogOpen(true);
+  };
+
+  const handleDeletePart = (idx) => {
+    const updated = [...editedParts];
+    updated[idx]._deleted = true;
+    setEditedParts(updated);
+  };
+
+  const handleRestorePart = (idx) => {
+    const updated = [...editedParts];
+    updated[idx]._deleted = false;
+    setEditedParts(updated);
   };
 
   const handleSaveClick = () => {
@@ -114,7 +133,9 @@ export default function ReceiptViewer() {
   };
 
   const handleConfirmSave = () => {
-    updateMutation.mutate(editedParts);
+    const deletions = editedParts.filter(p => p._deleted).map(p => p.id);
+    const updates = editedParts.filter(p => !p._deleted);
+    updateMutation.mutate({ updates, deletions });
   };
 
   return (
@@ -316,31 +337,57 @@ export default function ReceiptViewer() {
           </DialogHeader>
           <div className="space-y-4">
             {editedParts.map((part, idx) => (
-              <Card key={idx} className="border-amber-200 bg-amber-50/50">
+              <Card key={idx} className={part._deleted ? "border-red-300 bg-red-50/50" : "border-amber-200 bg-amber-50/50"}>
                 <CardContent className="pt-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Part Number</Label>
-                      <Input
-                        value={part.part_number}
-                        onChange={(e) => {
-                          const updated = [...editedParts];
-                          updated[idx].part_number = e.target.value;
-                          setEditedParts(updated);
-                        }}
-                      />
+                  {part._deleted && (
+                    <div className="flex items-center justify-between p-2 bg-red-100 rounded-lg border border-red-300 mb-2">
+                      <span className="text-sm text-red-800 font-medium">This part will be deleted</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRestorePart(idx)}
+                      >
+                        Undo
+                      </Button>
                     </div>
-                    <div>
-                      <Label className="text-xs">Description</Label>
-                      <Input
-                        value={part.part_description}
-                        onChange={(e) => {
-                          const updated = [...editedParts];
-                          updated[idx].part_description = e.target.value;
-                          setEditedParts(updated);
-                        }}
-                      />
+                  )}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="grid grid-cols-2 gap-3 flex-1">
+                      <div>
+                        <Label className="text-xs">Part Number</Label>
+                        <Input
+                          value={part.part_number}
+                          onChange={(e) => {
+                            const updated = [...editedParts];
+                            updated[idx].part_number = e.target.value;
+                            setEditedParts(updated);
+                          }}
+                          disabled={part._deleted}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Description</Label>
+                        <Input
+                          value={part.part_description}
+                          onChange={(e) => {
+                            const updated = [...editedParts];
+                            updated[idx].part_description = e.target.value;
+                            setEditedParts(updated);
+                          }}
+                          disabled={part._deleted}
+                        />
+                      </div>
                     </div>
+                    {!part._deleted && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-5"
+                        onClick={() => handleDeletePart(idx)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
@@ -353,6 +400,7 @@ export default function ReceiptViewer() {
                           updated[idx].quantity = e.target.value;
                           setEditedParts(updated);
                         }}
+                        disabled={part._deleted}
                       />
                     </div>
                     <div>
@@ -366,6 +414,7 @@ export default function ReceiptViewer() {
                           updated[idx].unit_cost = e.target.value;
                           setEditedParts(updated);
                         }}
+                        disabled={part._deleted}
                       />
                     </div>
                     <div>
@@ -379,6 +428,7 @@ export default function ReceiptViewer() {
                           updated[idx].shipping_cost = e.target.value;
                           setEditedParts(updated);
                         }}
+                        disabled={part._deleted}
                       />
                     </div>
                   </div>
@@ -408,7 +458,12 @@ export default function ReceiptViewer() {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-slate-600">
-              You are about to update <strong>{editedParts.length} parts</strong> from this receipt.
+              You are about to update <strong>{editedParts.filter(p => !p._deleted).length} parts</strong> from this receipt.
+              {editedParts.filter(p => p._deleted).length > 0 && (
+                <span className="text-red-600 font-medium">
+                  {' '}and delete <strong>{editedParts.filter(p => p._deleted).length} parts</strong>.
+                </span>
+              )}
             </p>
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs text-amber-800 font-medium">
