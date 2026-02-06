@@ -722,28 +722,6 @@ Generate the best report possible with available information.`,
         </CardContent>
       </Card>
 
-      {/* Service Items / Billing */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            Billable Service Items
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ServiceItemsEditor 
-            items={formData.service_items || []}
-            onChange={(items) => handleChange('service_items', items)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Destination Fee */}
-      <DestinationFeeEditor 
-        fee={formData.destination_fee || {}}
-        onChange={(fee) => handleChange('destination_fee', fee)}
-      />
-
       {/* Documentation & Evidence - Critical for Legal Protection */}
       <Card className="border-0 shadow-sm border-l-4 border-l-green-600">
         <CardHeader>
@@ -838,6 +816,28 @@ Generate the best report possible with available information.`,
           handleChange('fluid_analysis_results_url', data.analysisUrl);
           handleChange('photos_fluid_evidence', data.photos);
         }}
+      />
+
+      {/* Service Items / Billing */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-green-600" />
+            Billable Service Items
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ServiceItemsEditor 
+            items={formData.service_items || []}
+            onChange={(items) => handleChange('service_items', items)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Destination Fee */}
+      <DestinationFeeEditor 
+        fee={formData.destination_fee || {}}
+        onChange={(fee) => handleChange('destination_fee', fee)}
       />
 
       <div className="grid lg:grid-cols-2 gap-6">
