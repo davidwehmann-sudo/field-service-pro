@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2 } from "lucide-react";
+import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2, Move } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 export default function ReceiptViewer() {
@@ -15,7 +16,9 @@ export default function ReceiptViewer() {
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [deleteReceiptDialogOpen, setDeleteReceiptDialogOpen] = useState(false);
   const [editedParts, setEditedParts] = useState([]);
+  const [availableReceipts, setAvailableReceipts] = useState([]);
   
   const queryClient = useQueryClient();
 
@@ -86,7 +89,8 @@ export default function ReceiptViewer() {
           part_description: part.part_description,
           quantity: parseFloat(part.quantity),
           unit_cost: parseFloat(part.unit_cost),
-          shipping_cost: parseFloat(part.shipping_cost || 0)
+          shipping_cost: parseFloat(part.shipping_cost || 0),
+          receipt_url: part.receipt_url
         });
       }
     },
@@ -110,8 +114,10 @@ export default function ReceiptViewer() {
       quantity: p.quantity || 1,
       unit_cost: p.unit_cost || 0,
       shipping_cost: p.shipping_cost || 0,
+      receipt_url: p.receipt_url || '',
       _deleted: false
     })));
+    setAvailableReceipts(receiptGroups.map(g => g.receipt_url));
     setEditDialogOpen(true);
   };
 
@@ -136,6 +142,33 @@ export default function ReceiptViewer() {
     const deletions = editedParts.filter(p => p._deleted).map(p => p.id);
     const updates = editedParts.filter(p => !p._deleted);
     updateMutation.mutate({ updates, deletions });
+  };
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: async (receipt_url) => {
+      const partsToDelete = partsOrders.filter(p => p.receipt_url === receipt_url);
+      for (const part of partsToDelete) {
+        await base44.entities.PartsOrder.delete(part.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['parts-orders-for-receipts']);
+      setDeleteReceiptDialogOpen(false);
+      setSelectedReceipt(null);
+      toast.success('Receipt deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete receipt');
+    }
+  });
+
+  const handleDeleteReceipt = () => {
+    setDeleteReceiptDialogOpen(true);
+  };
+
+  const handleConfirmDeleteReceipt = () => {
+    if (!selectedReceipt) return;
+    deleteReceiptMutation.mutate(selectedReceipt.receipt_url);
   };
 
   return (
@@ -228,6 +261,15 @@ export default function ReceiptViewer() {
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Correct Data
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDeleteReceipt}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Receipt
                       </Button>
                       <a 
                         href={selectedReceipt.receipt_url} 
@@ -432,6 +474,32 @@ export default function ReceiptViewer() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1">
+                      <Move className="w-3 h-3" />
+                      Move to Receipt
+                    </Label>
+                    <Select
+                      value={part.receipt_url}
+                      onValueChange={(value) => {
+                        const updated = [...editedParts];
+                        updated[idx].receipt_url = value;
+                        setEditedParts(updated);
+                      }}
+                      disabled={part._deleted}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableReceipts.map((url, i) => (
+                          <SelectItem key={i} value={url}>
+                            Receipt {i + 1} {url === part.receipt_url ? '(Current)' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -481,6 +549,40 @@ export default function ReceiptViewer() {
               className="bg-amber-600 hover:bg-amber-700"
             >
               {updateMutation.isPending ? 'Updating...' : 'Confirm & Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Receipt Confirmation */}
+      <Dialog open={deleteReceiptDialogOpen} onOpenChange={setDeleteReceiptDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Delete Entire Receipt
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              You are about to permanently delete this receipt and all <strong>{selectedReceipt?.parts.length} parts</strong> associated with it.
+            </p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs text-red-800 font-medium">
+                ⚠️ This action cannot be undone. All parts data will be permanently removed.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteReceiptDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmDeleteReceipt}
+              disabled={deleteReceiptMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteReceiptMutation.isPending ? 'Deleting...' : 'Delete Receipt'}
             </Button>
           </DialogFooter>
         </DialogContent>
