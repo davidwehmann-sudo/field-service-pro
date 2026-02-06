@@ -43,6 +43,12 @@ const benefitInfo = {
     benefit: "Prove contamination and damage! Photos showing glitter in oil, discoloration, or contamination provide diagnostic proof and legal documentation of equipment condition. Critical for warranty claims and proving pre-existing damage wasn't caused by your work.",
     icon: Shield,
     color: "text-blue-600"
+  },
+  precision_measurements: {
+    title: "Precision Measurements",
+    benefit: "Document exact measurements to showcase expertise and justify your work! Record:\n\n• Component Weights: Raw gauge reading + lift factor (e.g., 500 lbs × 3 for block & tackle = 1500 lbs total)\n• Torque Specs: Actual torque applied vs. manufacturer spec (e.g., \"Head bolts: 185 ft-lbs per Cat spec\")\n• Dial Indicators: Clearances, runout, backlash measurements\n• Precision Tools Used: Digital load cells, calibrated torque wrenches, micrometers\n\nThis proves you're using professional-grade equipment and following exact specifications, not guessing. It demonstrates the value of skilled service and protects you from claims of improper procedures.",
+    icon: Shield,
+    color: "text-indigo-600"
   }
 };
 
