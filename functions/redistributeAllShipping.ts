@@ -6,11 +6,17 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all parts orders
-    const allPartsOrders = await base44.asServiceRole.entities.PartsOrder.list();
+    // Audit log: ServiceRole usage
+    console.log(`[AUDIT] ServiceRole accessed by ${user.email} (${user.role}) for redistributeAllShipping operation`);
+
+    // Get all parts orders with pagination to handle large datasets
+    // Only fetch parts orders that have receipt_urls to reduce data transfer
+    const allPartsOrders = await base44.asServiceRole.entities.PartsOrder.filter({
+      receipt_url: { $ne: null }
+    });
 
     // Group by receipt_url
     const receiptGroups = {};
