@@ -217,6 +217,7 @@ export default function DocumentPartExtractor({
     const selectedCount = Object.values(selectedParts).filter(Boolean).length;
 
     return (
+        <>
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
@@ -522,5 +523,6 @@ export default function DocumentPartExtractor({
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        </>
     );
 }
