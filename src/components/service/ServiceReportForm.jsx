@@ -698,9 +698,11 @@ Generate the best report possible with available information.`,
       {/* Location Verification - Near Time Tracking */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            📍 Service Location Verification
-          </CardTitle>
+          <FieldBenefitInfo field="location_data">
+            <CardTitle className="text-lg flex items-center gap-2">
+              📍 Service Location Verification
+            </CardTitle>
+          </FieldBenefitInfo>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600 mb-3">

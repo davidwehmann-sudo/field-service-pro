@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle } from "lucide-react";
 import PhotoUpload from './PhotoUpload';
 import FluidSamplingSection from './FluidSamplingSection';
+import FieldBenefitInfo from './FieldBenefitInfo';
 
 const DIAGNOSTIC_STEPS = [
   {
@@ -119,9 +120,11 @@ export default function CatDiagnosticForm({
               {step.step === 2 && (
                 <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200">
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                      📸 Initial Condition Photos
-                    </Label>
+                    <FieldBenefitInfo field="photos_initial">
+                      <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                        📸 Initial Condition Photos
+                      </Label>
+                    </FieldBenefitInfo>
                     <p className="text-xs text-slate-600 mb-2">
                       Photos BEFORE starting work - proves pre-existing condition
                     </p>
@@ -146,9 +149,11 @@ export default function CatDiagnosticForm({
               {step.step === 4 && (
                 <div className="mt-3 space-y-4 pl-6 border-l-2 border-amber-200">
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                      ⚖️ Safety & Precision Measurements
-                    </Label>
+                    <FieldBenefitInfo field="safety_precision_notes">
+                      <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                        ⚖️ Safety & Precision Measurements
+                      </Label>
+                    </FieldBenefitInfo>
                     <p className="text-xs text-slate-600 mb-2">
                       Document weights, torque specs, clearances, and calibrated tool usage
                     </p>
@@ -174,9 +179,11 @@ export default function CatDiagnosticForm({
               {/* Step 6: Verify Repair - Add failure photos */}
               {step.step === 6 && (
                 <div className="mt-3 pl-6 border-l-2 border-amber-200">
-                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                    📸 Component Failure & Verification Photos
-                  </Label>
+                  <FieldBenefitInfo field="photos_failure">
+                    <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                      📸 Component Failure & Verification Photos
+                    </Label>
+                  </FieldBenefitInfo>
                   <p className="text-xs text-slate-600 mb-2">
                     Document failed/broken components and successful repair
                   </p>
