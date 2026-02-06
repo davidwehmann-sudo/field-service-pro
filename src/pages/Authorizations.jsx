@@ -308,10 +308,12 @@ Thank you for your business.
             customers={customers}
             onAuthCreated={() => queryClient.invalidateQueries({ queryKey: ['authorizations'] })}
           />
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
-            <Plus className="w-4 h-4 mr-2" />
-            New Authorization
-          </Button>
+          <Link to={createPageUrl('RequestAuthorization')}>
+            <Button className="bg-amber-500 hover:bg-amber-600">
+              <Plus className="w-4 h-4 mr-2" />
+              New Authorization
+            </Button>
+          </Link>
         </div>
       </div>
 
