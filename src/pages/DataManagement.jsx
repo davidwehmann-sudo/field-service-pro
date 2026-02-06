@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
 
 export default function DataManagement() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -99,18 +101,49 @@ export default function DataManagement() {
     window.URL.revokeObjectURL(url);
   };
 
-  const exportInvoices = () => {
+  const downloadPDF = (title, headers, rows, filename) => {
+    const doc = new jsPDF('landscape');
+    
+    // Title
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+    
+    // Date range
+    doc.setFontSize(10);
+    doc.text(`Period: ${format(new Date(startDate), 'MMM d, yyyy')} - ${format(new Date(endDate), 'MMM d, yyyy')}`, 14, 32);
+    doc.text(`Generated: ${format(new Date(), 'MMM d, yyyy HH:mm')}`, 14, 38);
+    
+    // Table
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 45,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [71, 85, 105], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { top: 45 }
+    });
+    
+    doc.save(`${filename}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const exportInvoices = (format = 'csv') => {
     const filtered = filterByDate(invoices, 'invoice_date');
     const headers = ['Invoice Number', 'Customer', 'Invoice Date', 'Due Date', 'Labor Total', 'Travel Total', 'Parts Total', 'Tax Amount', 'Total Amount', 'Status', 'Payment Date', 'Payment Method', 'Payment Reference'];
     const rows = filtered.map(inv => {
       const customer = customers.find(c => c.id === inv.customer_id);
       return [inv.invoice_number || '', customer?.company_name || '', inv.invoice_date || '', inv.due_date || '', inv.labor_total || 0, inv.travel_total || 0, inv.parts_total || 0, inv.tax_amount || 0, inv.total_amount || 0, inv.status || '', inv.payment_date || '', inv.payment_method || '', inv.payment_reference || ''];
     });
-    downloadCSV(headers, rows, 'invoices');
-    toast.success(`Exported ${filtered.length} invoices`);
+    
+    if (format === 'pdf') {
+      downloadPDF('Invoices Report', headers, rows, 'invoices');
+    } else {
+      downloadCSV(headers, rows, 'invoices');
+    }
+    toast.success(`Exported ${filtered.length} invoices as ${format.toUpperCase()}`);
   };
 
-  const exportServiceReports = () => {
+  const exportServiceReports = (format = 'csv') => {
     const filtered = filterByDate(serviceReports, 'service_date');
     const headers = ['Service Date', 'Customer', 'Equipment Type', 'Equipment Make', 'Equipment Model', 'Equipment Serial', 'Equipment Hours', 'Work Performed', 'Labor Total', 'Travel Mileage', 'Travel Total', 'Status', 'Created By', 'Created Date'];
     const rows = filtered.map(report => {
@@ -119,38 +152,95 @@ export default function DataManagement() {
       const travelTotal = report.destination_fee?.total || 0;
       return [report.service_date || '', customer?.company_name || '', report.equipment_type || '', report.equipment_make || '', report.equipment_model || '', report.equipment_serial || '', report.equipment_hours || '', report.work_performed || '', laborTotal, report.destination_fee?.mileage || 0, travelTotal, report.status || '', report.created_by || '', format(new Date(report.created_date), 'yyyy-MM-dd')];
     });
-    downloadCSV(headers, rows, 'service-reports');
-    toast.success(`Exported ${filtered.length} service reports`);
+    
+    if (format === 'pdf') {
+      downloadPDF('Service Reports', headers, rows, 'service-reports');
+    } else {
+      downloadCSV(headers, rows, 'service-reports');
+    }
+    toast.success(`Exported ${filtered.length} service reports as ${format.toUpperCase()}`);
   };
 
-  const exportPayments = () => {
+  const exportPayments = (format = 'csv') => {
     const paidInvoices = filterByDate(invoices.filter(inv => inv.status === 'paid' && inv.payment_date), 'payment_date');
     const headers = ['Payment Date', 'Invoice Number', 'Customer', 'Payment Method', 'Payment Reference', 'Amount Paid', 'Labor', 'Travel', 'Parts', 'Tax'];
     const rows = paidInvoices.map(inv => {
       const customer = customers.find(c => c.id === inv.customer_id);
       return [inv.payment_date, inv.invoice_number || '', customer?.company_name || '', inv.payment_method || '', inv.payment_reference || '', inv.total_amount || 0, inv.labor_total || 0, inv.travel_total || 0, inv.parts_total || 0, inv.tax_amount || 0];
     });
-    downloadCSV(headers, rows, 'payments');
-    toast.success(`Exported ${paidInvoices.length} payments`);
+    
+    if (format === 'pdf') {
+      downloadPDF('Payments Report', headers, rows, 'payments');
+    } else {
+      downloadCSV(headers, rows, 'payments');
+    }
+    toast.success(`Exported ${paidInvoices.length} payments as ${format.toUpperCase()}`);
   };
 
-  const exportComprehensive = () => {
+  const exportComprehensive = (format = 'csv') => {
     const filteredInvoices = filterByDate(invoices, 'invoice_date');
     const filteredReports = filterByDate(serviceReports, 'service_date');
     const totalRevenue = filteredInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
     const totalPending = filteredInvoices.filter(inv => inv.status !== 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
     const totalTax = filteredInvoices.reduce((sum, inv) => sum + (inv.tax_amount || 0), 0);
     
-    const headers = ['Summary Report', `Period: ${startDate} to ${endDate}`, '', 'Metric', 'Amount'];
-    const rows = [
-      [''], ['Financial Summary', ''], ['Total Revenue (Paid)', '', '', '', totalRevenue], ['Pending Invoices', '', '', '', totalPending], ['Total Tax Collected', '', '', '', totalTax], ['Total Invoices', '', '', '', filteredInvoices.length], ['Total Service Reports', '', '', '', filteredReports.length], [''], [''], ['Detailed Invoice Data'], ['Invoice Number', 'Date', 'Customer', 'Labor', 'Travel', 'Parts', 'Tax', 'Total', 'Status', 'Payment Date'],
-      ...filteredInvoices.map(inv => {
+    if (format === 'pdf') {
+      const doc = new jsPDF('landscape');
+      
+      // Title
+      doc.setFontSize(20);
+      doc.text('Comprehensive Financial Report', 14, 22);
+      doc.setFontSize(10);
+      doc.text(`Period: ${format(new Date(startDate), 'MMM d, yyyy')} - ${format(new Date(endDate), 'MMM d, yyyy')}`, 14, 32);
+      
+      // Summary section
+      doc.setFontSize(14);
+      doc.text('Financial Summary', 14, 45);
+      doc.autoTable({
+        startY: 50,
+        head: [['Metric', 'Value']],
+        body: [
+          ['Total Revenue (Paid)', `$${totalRevenue.toFixed(2)}`],
+          ['Pending Invoices', `$${totalPending.toFixed(2)}`],
+          ['Total Tax Collected', `$${totalTax.toFixed(2)}`],
+          ['Total Invoices', filteredInvoices.length],
+          ['Total Service Reports', filteredReports.length]
+        ],
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [71, 85, 105] }
+      });
+      
+      // Detailed invoices
+      const invoiceRows = filteredInvoices.map(inv => {
         const customer = customers.find(c => c.id === inv.customer_id);
         return [inv.invoice_number || '', inv.invoice_date || '', customer?.company_name || '', inv.labor_total || 0, inv.travel_total || 0, inv.parts_total || 0, inv.tax_amount || 0, inv.total_amount || 0, inv.status || '', inv.payment_date || ''];
-      })
-    ];
-    downloadCSV(headers, rows, 'comprehensive-financial-report');
-    toast.success('Exported comprehensive financial report');
+      });
+      
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text('Detailed Invoice Data', 14, 20);
+      doc.autoTable({
+        startY: 25,
+        head: [['Invoice #', 'Date', 'Customer', 'Labor', 'Travel', 'Parts', 'Tax', 'Total', 'Status', 'Payment Date']],
+        body: invoiceRows,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [71, 85, 105] },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
+      });
+      
+      doc.save(`comprehensive-financial-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    } else {
+      const headers = ['Summary Report', `Period: ${startDate} to ${endDate}`, '', 'Metric', 'Amount'];
+      const rows = [
+        [''], ['Financial Summary', ''], ['Total Revenue (Paid)', '', '', '', totalRevenue], ['Pending Invoices', '', '', '', totalPending], ['Total Tax Collected', '', '', '', totalTax], ['Total Invoices', '', '', '', filteredInvoices.length], ['Total Service Reports', '', '', '', filteredReports.length], [''], [''], ['Detailed Invoice Data'], ['Invoice Number', 'Date', 'Customer', 'Labor', 'Travel', 'Parts', 'Tax', 'Total', 'Status', 'Payment Date'],
+        ...filteredInvoices.map(inv => {
+          const customer = customers.find(c => c.id === inv.customer_id);
+          return [inv.invoice_number || '', inv.invoice_date || '', customer?.company_name || '', inv.labor_total || 0, inv.travel_total || 0, inv.parts_total || 0, inv.tax_amount || 0, inv.total_amount || 0, inv.status || '', inv.payment_date || ''];
+        })
+      ];
+      downloadCSV(headers, rows, 'comprehensive-financial-report');
+    }
+    toast.success(`Exported comprehensive financial report as ${format.toUpperCase()}`);
   };
 
   const bulkDownloadReceipts = async () => {
