@@ -667,7 +667,12 @@ If no match possible, return "NO_MATCH".`,
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium text-slate-900">{part.part_description}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-slate-900">{part.part_description}</p>
+                        {part.verification_source && part.verification_details && (
+                          <Shield className="w-4 h-4 text-green-600 flex-shrink-0" title="Verified" />
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                         {part.part_number && (
                           <span className="flex items-center gap-1">
@@ -682,6 +687,13 @@ If no match possible, return "NO_MATCH".`,
                           </>
                         )}
                       </div>
+                      {part.verification_source && (
+                        <div className="mt-1">
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            ✓ {part.verification_source}
+                          </Badge>
+                        </div>
+                      )}
                       <div className="mt-1">
                         <PartsAvailabilityChecker 
                           partNumber={part.part_number}

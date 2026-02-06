@@ -95,6 +95,7 @@ export default function DocumentPartExtractor({
             const verifications = selectedPartsList.map(part => ({
                 part_number: part.part_number,
                 part_description: part.part_description,
+                manufacturer: part.manufacturer || extractedData.manufacturer,
                 source_name: extractedData.source_name,
                 source_details: part.source_details,
                 photo_url: extractedData.photo_url,

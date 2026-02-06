@@ -30,6 +30,7 @@ export default function PartVerificationLibrary({
         const matchesSearch = !searchTerm || 
             verification.part_number?.toLowerCase().includes(lowerSearchTerm) ||
             verification.part_description?.toLowerCase().includes(lowerSearchTerm) ||
+            verification.manufacturer?.toLowerCase().includes(lowerSearchTerm) ||
             verification.source_name?.toLowerCase().includes(lowerSearchTerm) ||
             verification.source_details?.toLowerCase().includes(lowerSearchTerm) ||
             verification.technician_notes?.toLowerCase().includes(lowerSearchTerm) ||
@@ -46,7 +47,7 @@ export default function PartVerificationLibrary({
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
-                        placeholder="Search by part number, description, source, or machine model..."
+                        placeholder="Search by part number, description, manufacturer, source, or machine model..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-9"
@@ -71,7 +72,7 @@ export default function PartVerificationLibrary({
                 <div className="text-center py-8 text-slate-400">
                     <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Start typing to search verifications</p>
-                    <p className="text-xs mt-1">Search by part number, description, source, or machine model</p>
+                    <p className="text-xs mt-1">Search by part number, description, manufacturer, source, or machine model</p>
                 </div>
             )}
 
@@ -102,6 +103,11 @@ export default function PartVerificationLibrary({
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex flex-wrap gap-2">
+                                {verification.manufacturer && (
+                                    <Badge className="text-xs bg-amber-100 text-amber-800 font-semibold">
+                                        {verification.manufacturer}
+                                    </Badge>
+                                )}
                                 <Badge variant="outline" className="text-xs">
                                     {verification.source_name}
                                 </Badge>
