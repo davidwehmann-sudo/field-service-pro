@@ -7,12 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2, Move, RefreshCw } from "lucide-react";
+import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle, Trash2, Move, RefreshCw, Sparkles, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 export default function ReceiptViewer() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const [aiSearching, setAiSearching] = useState(false);
+  const [aiResults, setAiResults] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -54,6 +57,11 @@ export default function ReceiptViewer() {
   }, [partsOrders]);
 
   const filteredReceipts = useMemo(() => {
+    if (aiResults) {
+      return receiptGroups.filter(group =>
+        aiResults.receipt_urls?.includes(group.receipt_url)
+      );
+    }
     if (!searchQuery) return receiptGroups;
     const lower = searchQuery.toLowerCase();
     return receiptGroups.filter(group => 
@@ -63,7 +71,7 @@ export default function ReceiptViewer() {
         p.part_description?.toLowerCase().includes(lower)
       )
     );
-  }, [receiptGroups, searchQuery]);
+  }, [receiptGroups, searchQuery, aiResults]);
 
   const getReceiptFileName = (url) => {
     try {
@@ -189,6 +197,74 @@ export default function ReceiptViewer() {
     redistributeShippingMutation.mutate(selectedReceipt.receipt_url);
   };
 
+  const handleAISearch = async () => {
+    if (!aiSearchQuery.trim()) return;
+    
+    setAiSearching(true);
+    setSearchQuery('');
+    
+    try {
+      const searchContext = receiptGroups.map(group => ({
+        receipt_url: group.receipt_url,
+        supplier: group.supplier,
+        order_date: group.order_date,
+        total_cost: group.totalCost,
+        parts: group.parts.map(p => ({
+          part_number: p.part_number,
+          description: p.part_description,
+          quantity: p.quantity,
+          unit_cost: p.unit_cost
+        }))
+      }));
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an AI search assistant for receipt management. Analyze this search query and return relevant receipts.
+
+Query: "${aiSearchQuery}"
+
+Available Receipts:
+${JSON.stringify(searchContext, null, 2)}
+
+Return results in this format:
+1. interpretation - What the user is looking for
+2. receipt_urls - Array of matching receipt URLs
+3. reasons - Object mapping receipt_url to reason why it matches
+
+Match based on: supplier name, part numbers, descriptions, dates, costs, or any contextual clues.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            interpretation: { type: "string" },
+            receipt_urls: {
+              type: "array",
+              items: { type: "string" }
+            },
+            reasons: {
+              type: "object",
+              additionalProperties: { type: "string" }
+            }
+          }
+        }
+      });
+
+      setAiResults(response);
+      if (response.receipt_urls?.length > 0) {
+        const firstMatch = receiptGroups.find(g => g.receipt_url === response.receipt_urls[0]);
+        if (firstMatch) setSelectedReceipt(firstMatch);
+      }
+    } catch (err) {
+      toast.error('AI search failed. Please try again.');
+      console.error(err);
+    } finally {
+      setAiSearching(false);
+    }
+  };
+
+  const clearAISearch = () => {
+    setAiSearchQuery('');
+    setAiResults(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -201,12 +277,71 @@ export default function ReceiptViewer() {
         </Badge>
       </div>
 
+      {/* AI Search */}
+      <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-slate-900">AI Search</h2>
+              <p className="text-xs text-slate-500">Find receipts using natural language</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder='E.g., "hydraulic parts from October" or "receipts over $500"'
+              value={aiSearchQuery}
+              onChange={(e) => setAiSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAISearch()}
+              disabled={aiSearching}
+              className="bg-white"
+            />
+            <Button
+              onClick={handleAISearch}
+              disabled={aiSearching || !aiSearchQuery.trim()}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {aiSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+            </Button>
+            {aiResults && (
+              <Button variant="outline" onClick={clearAISearch}>
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {aiResults && (
+            <div className="mt-3 p-3 bg-white rounded-lg border border-purple-200">
+              <p className="text-sm text-slate-700">
+                <strong className="text-purple-700">Found:</strong> {aiResults.interpretation}
+              </p>
+              {aiResults.receipt_urls?.length > 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  {aiResults.receipt_urls.length} receipt{aiResults.receipt_urls.length !== 1 ? 's' : ''} matched
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Standard Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
-          placeholder="Search by supplier or part..."
+          placeholder="Or search manually by supplier or part..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            if (e.target.value) clearAISearch();
+          }}
           className="pl-9"
         />
       </div>
@@ -215,44 +350,53 @@ export default function ReceiptViewer() {
         {/* Receipts List */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-slate-900">Receipts</h2>
-          {filteredReceipts.map((group, idx) => (
-            <Card 
-              key={idx}
-              className={`cursor-pointer transition-all ${
-                selectedReceipt === group ? 'ring-2 ring-blue-500' : 'hover:shadow-md'
-              }`}
-              onClick={() => setSelectedReceipt(group)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base truncate">
-                      {group.supplier || 'Unknown Supplier'}
-                    </CardTitle>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {group.order_date || 'No date'}
-                    </p>
+          {filteredReceipts.map((group, idx) => {
+            const aiReason = aiResults?.reasons?.[group.receipt_url];
+            return (
+              <Card 
+                key={idx}
+                className={`cursor-pointer transition-all ${
+                  selectedReceipt === group ? 'ring-2 ring-blue-500' : 'hover:shadow-md'
+                } ${aiReason ? 'border-purple-300 bg-purple-50/30' : ''}`}
+                onClick={() => setSelectedReceipt(group)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base truncate">
+                        {group.supplier || 'Unknown Supplier'}
+                      </CardTitle>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {group.order_date || 'No date'}
+                      </p>
+                      {aiReason && (
+                        <p className="text-xs text-purple-700 mt-2 flex items-start gap-1">
+                          <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>{aiReason}</span>
+                        </p>
+                      )}
+                    </div>
+                    <FileText className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   </div>
-                  <FileText className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-600">{group.parts.length} parts</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-600">{group.parts.length} parts</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-600">
+                        ${group.totalCost.toFixed(2)}
+                        {group.totalShipping > 0 && ` + $${group.totalShipping.toFixed(2)} shipping`}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-600">
-                      ${group.totalCost.toFixed(2)}
-                      {group.totalShipping > 0 && ` + $${group.totalShipping.toFixed(2)} shipping`}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
           {filteredReceipts.length === 0 && !isLoading && (
             <Card>
               <CardContent className="p-12 text-center">
