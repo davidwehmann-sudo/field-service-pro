@@ -18,7 +18,8 @@ import {
   Upload,
   CheckCircle2,
   Loader2,
-  FileUp
+  FileUp,
+  Image
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -38,6 +39,10 @@ export default function DataManagement() {
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+
+  // Receipt download states
+  const [downloadingReceipts, setDownloadingReceipts] = useState(false);
+  const [receiptDownloadResult, setReceiptDownloadResult] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -146,6 +151,64 @@ export default function DataManagement() {
     ];
     downloadCSV(headers, rows, 'comprehensive-financial-report');
     toast.success('Exported comprehensive financial report');
+  };
+
+  const bulkDownloadReceipts = async () => {
+    if (!startDate || !endDate) {
+      toast.error('Please select a date range');
+      return;
+    }
+
+    setDownloadingReceipts(true);
+    setReceiptDownloadResult(null);
+    try {
+      const response = await base44.functions.invoke('bulkDownloadReceipts', {
+        start_date: startDate,
+        end_date: endDate
+      });
+
+      setReceiptDownloadResult(response.data);
+
+      if (response.data.count === 0) {
+        toast.info('No receipts found in this date range');
+      } else {
+        toast.success(`Found ${response.data.count} receipts`);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch receipt URLs');
+    } finally {
+      setDownloadingReceipts(false);
+    }
+  };
+
+  const downloadReceiptFile = async (receipt) => {
+    try {
+      const response = await fetch(receipt.download_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = receipt.filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${receipt.filename}`);
+    } catch (error) {
+      toast.error(`Failed to download ${receipt.filename}`);
+    }
+  };
+
+  const downloadAllReceipts = async () => {
+    if (!receiptDownloadResult?.receipts) return;
+    
+    toast.info(`Downloading ${receiptDownloadResult.receipts.length} receipts...`);
+    
+    for (const receipt of receiptDownloadResult.receipts) {
+      await downloadReceiptFile(receipt);
+      // Small delay to avoid overwhelming the browser
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    toast.success('All receipts downloaded');
   };
 
   // Import functions
@@ -279,7 +342,8 @@ export default function DataManagement() {
     { title: 'Invoices', description: 'Complete invoice data with payments', icon: FileText, action: exportInvoices, color: 'bg-blue-500' },
     { title: 'Service Reports', description: 'Detailed service records with labor', icon: FileSpreadsheet, action: exportServiceReports, color: 'bg-green-500' },
     { title: 'Payments', description: 'All received payments', icon: DollarSign, action: exportPayments, color: 'bg-amber-500' },
-    { title: 'Comprehensive', description: 'All financial data in one file', icon: Download, action: exportComprehensive, color: 'bg-slate-700' }
+    { title: 'Comprehensive', description: 'All financial data in one file', icon: Download, action: exportComprehensive, color: 'bg-slate-700' },
+    { title: 'Receipt Images', description: 'Bulk download original receipt photos', icon: Image, action: bulkDownloadReceipts, color: 'bg-purple-500' }
   ];
 
   return (
@@ -328,15 +392,62 @@ export default function DataManagement() {
                     <CardDescription className="text-xs">{option.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button onClick={option.action} className="w-full" size="sm" variant="outline">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
+                    <Button 
+                      onClick={option.action} 
+                      className="w-full" 
+                      size="sm" 
+                      variant="outline"
+                      disabled={option.title === 'Receipt Images' && downloadingReceipts}
+                    >
+                      {option.title === 'Receipt Images' && downloadingReceipts ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
+                      ) : (
+                        <><Download className="w-4 h-4 mr-2" />Export</>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+
+          {receiptDownloadResult && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Receipt Images ({receiptDownloadResult.count})</CardTitle>
+                <CardDescription>
+                  Found {receiptDownloadResult.count} receipts from {receiptDownloadResult.date_range.start_date} to {receiptDownloadResult.date_range.end_date}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Button onClick={downloadAllReceipts} className="w-full bg-purple-600 hover:bg-purple-700">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download All ({receiptDownloadResult.count} files)
+                  </Button>
+                  
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {receiptDownloadResult.receipts.map((receipt, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <Image className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                          <span className="text-sm text-slate-700 truncate">{receipt.filename}</span>
+                        </div>
+                        <Button 
+                          onClick={() => downloadReceiptFile(receipt)} 
+                          size="sm" 
+                          variant="ghost"
+                          className="flex-shrink-0"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="import" className="space-y-6">
