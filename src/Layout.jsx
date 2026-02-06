@@ -182,10 +182,10 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "fixed top-0 left-0 z-50 h-full w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between p-6 border-b border-slate-800">
+        <div className="flex items-center justify-between p-6 border-b border-slate-800 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1.5">
               <img 
@@ -210,7 +210,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {currentUser && (
-            <div className="px-6 py-4 border-b border-slate-800">
+            <div className="px-6 py-4 border-b border-slate-800 flex-shrink-0">
               <p className="text-xs text-slate-500 mb-1">Logged in as</p>
               <p className="text-sm font-medium text-white truncate">{currentUser.full_name || currentUser.email}</p>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -221,9 +221,11 @@ export default function Layout({ children, currentPageName }) {
             </div>
           )}
 
-          <CompanySelector currentUser={currentUser} onCompanyChange={setDisplayCompany} />
+          <div className="flex-shrink-0">
+            <CompanySelector currentUser={currentUser} onCompanyChange={setDisplayCompany} />
+          </div>
 
-          <nav className="p-4 space-y-1 overflow-y-auto flex-1">
+          <nav className="p-4 space-y-1 overflow-y-auto flex-1 min-h-0">
           {navigation.map((item, index) => {
             if (item.type === 'section') {
               const isExpanded = expandedSections[index];
