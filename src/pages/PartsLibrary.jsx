@@ -198,15 +198,19 @@ export default function PartsLibrary() {
         )}
       </div>
 
-      {/* Parts Grid */}
+      {/* Parts List */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1,2,3,4,5,6].map(i => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <Skeleton className="h-32 w-full mb-3" />
-                <Skeleton className="h-5 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
+        <div className="space-y-3">
+          {[1,2,3,4].map(i => (
+            <Card key={i} className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-12 h-12 rounded-lg" />
+                  <div className="flex-1">
+                    <Skeleton className="h-5 w-40 mb-2" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -230,82 +234,92 @@ export default function PartsLibrary() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredVerifications.map((verification) => (
-            <Card 
-              key={verification.id}
-              className="hover:shadow-lg transition-shadow overflow-hidden group"
-            >
-              {verification.photo_url && (
-                <div className="relative h-40 bg-slate-100 overflow-hidden">
-                  <img 
-                    src={verification.photo_url} 
-                    alt={verification.part_description}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge className="bg-green-600 text-white">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Verified
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Part</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Manufacturer</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Machine</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Source</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {filteredVerifications.map((verification) => (
+                <tr key={verification.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {verification.photo_url ? (
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
+                          <img 
+                            src={verification.photo_url} 
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-slate-400" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-mono font-medium text-slate-900">
+                            {verification.part_number}
+                          </p>
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-0.5">
+                          {verification.part_description || 'No description'}
+                        </p>
+                        {verification.technician_notes && (
+                          <p className="text-xs text-slate-500 italic mt-1">
+                            {verification.technician_notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant="outline" className="text-xs">
+                      <Wrench className="w-3 h-3 mr-1" />
+                      {verification.manufacturer || 'N/A'}
                     </Badge>
-                  </div>
-                </div>
-              )}
-              
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-mono font-semibold text-slate-900 text-lg">
-                      {verification.part_number}
-                    </p>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {verification.part_description || 'No description'}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {verification.manufacturer && (
-                      <Badge variant="outline" className="text-xs">
-                        <Wrench className="w-3 h-3 mr-1" />
-                        {verification.manufacturer}
-                      </Badge>
-                    )}
-                    {verification.machine_model && (
+                  </td>
+                  <td className="px-4 py-3">
+                    {verification.machine_model ? (
                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                         {verification.machine_model}
                       </Badge>
+                    ) : (
+                      <span className="text-sm text-slate-400">N/A</span>
                     )}
-                  </div>
-
-                  <div className="pt-2 border-t">
-                    <div className="flex items-start gap-2 text-xs text-slate-600">
-                      <BookOpen className="w-3 h-3 mt-0.5 text-green-600 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-green-700">{verification.source_name}</p>
-                        <p className="text-slate-500">{verification.source_details}</p>
-                      </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm">
+                      <p className="font-medium text-green-700">{verification.source_name}</p>
+                      <p className="text-xs text-slate-500">{verification.source_details}</p>
                     </div>
-                  </div>
-
-                  {verification.technician_notes && (
-                    <div className="text-xs text-slate-600 italic border-l-2 border-slate-200 pl-2">
-                      {verification.technician_notes}
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={() => handleQuickOrder(verification)}
-                    disabled={createOrderMutation.isPending}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                    size="sm"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Orders
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      onClick={() => handleQuickOrder(verification)}
+                      disabled={createOrderMutation.isPending}
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                      size="sm"
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Add to Orders
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
