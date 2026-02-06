@@ -118,6 +118,7 @@ export default function ServiceReportForm({
       fluid_analysis_results_url: '',
       photos_fluid_evidence: [],
       location_data: null,
+      safety_precision_notes: '',
       customer_signature: '',
       technician_signature: '',
       notes: '',
@@ -786,6 +787,22 @@ Generate the best report possible with available information.`,
             <LocationCapture
               value={formData.location_data}
               onChange={(data) => handleChange('location_data', data)}
+            />
+          </div>
+
+          {/* Safety/Precision Notes */}
+          <div>
+            <FieldBenefitInfo field="safety_precision_notes">
+              <Label className="mb-2 block font-semibold">Safety/Precision Notes</Label>
+            </FieldBenefitInfo>
+            <p className="text-xs text-slate-600 mb-3">
+              ⚖️ Document exact measurements, torque specs, weights, and precision tools used
+            </p>
+            <Textarea
+              value={formData.safety_precision_notes}
+              onChange={(e) => handleChange('safety_precision_notes', e.target.value)}
+              placeholder="Example: Crane load reading 500 lbs × 3 block & tackle = 1500 lbs total weight. Head bolts torqued to 185 ft-lbs per Cat spec. Used calibrated Snap-on torque wrench."
+              rows={4}
             />
           </div>
 
