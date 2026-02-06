@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import CompanySelector from './components/CompanySelector';
+import { CartProvider } from './components/parts/CartContext';
 import { 
         Wrench, 
         FileText, 
@@ -18,7 +19,8 @@ import {
         MessageSquare,
         Download,
         Shield,
-        DollarSign
+        DollarSign,
+        ShoppingCart
       } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -46,6 +48,7 @@ const allNavigation = {
     { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Parts' },
     { name: 'Library', href: 'PartsLibrary', icon: Package },
+    { name: 'Cart', href: 'PartsCart', icon: ShoppingCart },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Orders', href: 'PartsOrders', icon: Package },
     { type: 'section', label: 'Operations' },
@@ -174,6 +177,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
+    <CartProvider>
     <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
@@ -335,5 +339,6 @@ export default function Layout({ children, currentPageName }) {
         )}
       </div>
     </div>
+    </CartProvider>
   );
 }
