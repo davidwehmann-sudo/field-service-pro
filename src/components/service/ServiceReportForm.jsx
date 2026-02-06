@@ -833,7 +833,10 @@ Generate the best report possible with available information.`,
         open={showLitigationWarning}
         onOpenChange={setShowLitigationWarning}
         missingFields={missingLitigationFields}
-        onProceed={handleReviewClick}
+        onProceed={() => {
+          setShowLitigationWarning(false);
+          setShowReview(true);
+        }}
         onGoBack={() => setShowLitigationWarning(false)}
       />
     </div>
