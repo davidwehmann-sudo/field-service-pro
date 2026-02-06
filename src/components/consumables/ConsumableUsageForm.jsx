@@ -78,9 +78,25 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
       return;
     }
 
+    const quantityUsed = parseFloat(formData.quantity_used);
+    
+    // Validate quantity is positive
+    if (quantityUsed <= 0) {
+      toast.error('Quantity must be greater than 0');
+      return;
+    }
+
+    // Validate against available inventory
+    if (selectedInventoryItem) {
+      if (quantityUsed > selectedInventoryItem.quantity_on_hand) {
+        toast.error(`Cannot use ${quantityUsed} - only ${selectedInventoryItem.quantity_on_hand} available in inventory`);
+        return;
+      }
+    }
+
     createUsageMutation.mutate({
       ...formData,
-      quantity_used: parseFloat(formData.quantity_used),
+      quantity_used: quantityUsed,
       used_by: user?.full_name || user?.email || 'Unknown'
     });
   };
@@ -144,11 +160,17 @@ export default function ConsumableUsageForm({ open, onOpenChange }) {
             <Input
               type="number"
               step="0.01"
+              min="0.01"
               value={formData.quantity_used}
               onChange={(e) => setFormData({ ...formData, quantity_used: e.target.value })}
               placeholder="e.g., 1, 2.5"
               required
             />
+            {selectedInventoryItem && (
+              <p className="text-xs text-slate-500 mt-1">
+                Available: {selectedInventoryItem.quantity_on_hand}
+              </p>
+            )}
           </div>
 
           <div>
