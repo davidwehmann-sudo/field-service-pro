@@ -1,15 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Package, DollarSign, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, FileText, Package, DollarSign, ExternalLink, Edit, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ReceiptViewer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [editedParts, setEditedParts] = useState([]);
+  
+  const queryClient = useQueryClient();
 
   const { data: partsOrders = [], isLoading } = useQuery({
     queryKey: ['parts-orders-for-receipts'],
@@ -63,6 +71,51 @@ export default function ReceiptViewer() {
   };
 
   const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates) => {
+      for (const part of updates) {
+        await base44.entities.PartsOrder.update(part.id, {
+          part_number: part.part_number,
+          part_description: part.part_description,
+          quantity: parseFloat(part.quantity),
+          unit_cost: parseFloat(part.unit_cost),
+          shipping_cost: parseFloat(part.shipping_cost || 0)
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['parts-orders-for-receipts']);
+      setEditDialogOpen(false);
+      setConfirmDialogOpen(false);
+      toast.success('Receipt data updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update receipt data');
+    }
+  });
+
+  const handleEditClick = () => {
+    if (!selectedReceipt) return;
+    setEditedParts(selectedReceipt.parts.map(p => ({
+      id: p.id,
+      part_number: p.part_number || '',
+      part_description: p.part_description || '',
+      quantity: p.quantity || 1,
+      unit_cost: p.unit_cost || 0,
+      shipping_cost: p.shipping_cost || 0
+    })));
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveClick = () => {
+    setEditDialogOpen(false);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmSave = () => {
+    updateMutation.mutate(editedParts);
+  };
 
   return (
     <div className="space-y-6">
@@ -146,14 +199,24 @@ export default function ReceiptViewer() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Receipt Document</CardTitle>
-                    <a 
-                      href={selectedReceipt.receipt_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditClick}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Correct Data
+                      </Button>
+                      <a 
+                        href={selectedReceipt.receipt_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -244,6 +307,129 @@ export default function ReceiptViewer() {
           )}
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Correct Receipt Data</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editedParts.map((part, idx) => (
+              <Card key={idx} className="border-amber-200 bg-amber-50/50">
+                <CardContent className="pt-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Part Number</Label>
+                      <Input
+                        value={part.part_number}
+                        onChange={(e) => {
+                          const updated = [...editedParts];
+                          updated[idx].part_number = e.target.value;
+                          setEditedParts(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Description</Label>
+                      <Input
+                        value={part.part_description}
+                        onChange={(e) => {
+                          const updated = [...editedParts];
+                          updated[idx].part_description = e.target.value;
+                          setEditedParts(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Quantity</Label>
+                      <Input
+                        type="number"
+                        value={part.quantity}
+                        onChange={(e) => {
+                          const updated = [...editedParts];
+                          updated[idx].quantity = e.target.value;
+                          setEditedParts(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Unit Cost</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={part.unit_cost}
+                        onChange={(e) => {
+                          const updated = [...editedParts];
+                          updated[idx].unit_cost = e.target.value;
+                          setEditedParts(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Shipping</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={part.shipping_cost}
+                        onChange={(e) => {
+                          const updated = [...editedParts];
+                          updated[idx].shipping_cost = e.target.value;
+                          setEditedParts(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveClick}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Confirm Data Correction
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              You are about to update <strong>{editedParts.length} parts</strong> from this receipt.
+            </p>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-800 font-medium">
+                ⚠️ This will permanently modify the parts order data. Make sure all corrections are accurate.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmSave}
+              disabled={updateMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {updateMutation.isPending ? 'Updating...' : 'Confirm & Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
