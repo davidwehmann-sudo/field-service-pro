@@ -47,6 +47,12 @@ export default function PartsLibrary() {
   const queryClient = useQueryClient();
   const { addToCart, addMultipleToCart, cartCount } = useCart();
 
+  // Helper to check if URL is a PDF
+  const isPDF = (url) => {
+    if (!url) return false;
+    return url.toLowerCase().endsWith('.pdf') || url.toLowerCase().includes('.pdf?');
+  };
+
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ['partVerifications'],
     queryFn: () => base44.entities.PartVerification.list('-created_date')
