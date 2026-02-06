@@ -258,7 +258,12 @@ SELF-AUDIT: Before finalizing, verify:
 - Billable items cover all work mentioned
 - No contradictions in the report
 
-IF additional information would significantly improve the report, list it in suggested_additional_info.
+IF additional information would significantly improve the report, list it in suggested_additional_info. ALWAYS suggest specific safety/precision measurements that should be documented based on the work performed, such as:
+- Component weights (with lift factors if applicable)
+- Torque specifications applied vs. manufacturer specs
+- Clearance measurements (dial indicators, micrometers)
+- Calibrated tool usage (torque wrenches, load cells)
+- Pressure readings, temperatures, or other precision measurements
 
 Generate the best report possible with available information.`,
         response_json_schema: {
