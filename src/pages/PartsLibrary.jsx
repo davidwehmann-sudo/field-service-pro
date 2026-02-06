@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Search, 
   BookOpen, 
@@ -17,7 +19,8 @@ import {
   Wrench,
   Image as ImageIcon,
   CheckCircle2,
-  Plus
+  Plus,
+  Pencil
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +30,7 @@ export default function PartsLibrary() {
   const [manufacturerFilter, setManufacturerFilter] = useState('all');
   const [machineFilter, setMachineFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [editingVerification, setEditingVerification] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -56,6 +60,15 @@ export default function PartsLibrary() {
     onSuccess: () => {
       queryClient.invalidateQueries(['partsOrders']);
       toast.success('Part added to orders - remember to set price and assignment');
+    }
+  });
+
+  const updateVerificationMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.PartVerification.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['partVerifications']);
+      setEditingVerification(null);
+      toast.success('Verification updated');
     }
   });
 
@@ -96,6 +109,21 @@ export default function PartsLibrary() {
 
   const handleQuickOrder = (verification) => {
     createOrderMutation.mutate(verification);
+  };
+
+  const handleSubmitEdit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+      part_number: formData.get('part_number'),
+      manufacturer: formData.get('manufacturer'),
+      source_name: formData.get('source_name'),
+      source_details: formData.get('source_details'),
+      machine_model: formData.get('machine_model'),
+      part_description: formData.get('part_description'),
+      technician_notes: formData.get('technician_notes')
+    };
+    updateVerificationMutation.mutate({ id: editingVerification.id, data });
   };
 
   return (
@@ -306,15 +334,27 @@ export default function PartsLibrary() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button
-                      onClick={() => handleQuickOrder(verification)}
-                      disabled={createOrderMutation.isPending}
-                      className="bg-amber-500 hover:bg-amber-600 text-white"
-                      size="sm"
-                    >
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      Add to Orders
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingVerification(verification);
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleQuickOrder(verification)}
+                        disabled={createOrderMutation.isPending}
+                        className="bg-amber-500 hover:bg-amber-600 text-white"
+                        size="sm"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Add to Orders
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -322,6 +362,109 @@ export default function PartsLibrary() {
           </table>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingVerification} onOpenChange={(open) => !open && setEditingVerification(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Part Verification</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmitEdit} className="space-y-4">
+            <div>
+              <Label htmlFor="part_number">Part Number *</Label>
+              <Input 
+                id="part_number" 
+                name="part_number"
+                defaultValue={editingVerification?.part_number}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="part_description">Description</Label>
+              <Input 
+                id="part_description" 
+                name="part_description"
+                defaultValue={editingVerification?.part_description}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="manufacturer">Manufacturer *</Label>
+              <Input 
+                id="manufacturer" 
+                name="manufacturer"
+                defaultValue={editingVerification?.manufacturer}
+                placeholder="e.g., Caterpillar, John Deere, Kubota"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="machine_model">Machine Model *</Label>
+              <Input 
+                id="machine_model" 
+                name="machine_model"
+                defaultValue={editingVerification?.machine_model}
+                placeholder="e.g., CAT 416E, JD 310K"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="source_name">Source Name *</Label>
+              <Input 
+                id="source_name" 
+                name="source_name"
+                defaultValue={editingVerification?.source_name}
+                placeholder="e.g., Caterpillar SIS, John Deere Parts Catalog"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="source_details">Source Details *</Label>
+              <Textarea 
+                id="source_details" 
+                name="source_details"
+                defaultValue={editingVerification?.source_details}
+                placeholder="Page number, section, or URL"
+                rows={2}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="technician_notes">Technician Notes</Label>
+              <Textarea 
+                id="technician_notes" 
+                name="technician_notes"
+                defaultValue={editingVerification?.technician_notes}
+                placeholder="Additional context or notes"
+                rows={2}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setEditingVerification(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                className="bg-amber-500 hover:bg-amber-600"
+                disabled={updateVerificationMutation.isPending}
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
