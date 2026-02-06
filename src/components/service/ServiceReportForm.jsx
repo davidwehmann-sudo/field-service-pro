@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2, Eye, Building2 } from "lucide-react";
+import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2, Eye, Building2, Shield } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import CustomerSelect from '@/components/customers/CustomerSelect';
@@ -18,6 +18,8 @@ import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
 import OriginalNotesViewer from '@/components/service/OriginalNotesViewer';
 import TimeTracker from '@/components/service/TimeTracker';
+import FieldBenefitInfo from '@/components/service/FieldBenefitInfo';
+import LocationCapture from '@/components/service/LocationCapture';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -106,7 +108,11 @@ export default function ServiceReportForm({
         total: 0
       },
       photos: [],
+      photos_initial: [],
+      photos_failure: [],
+      location_data: null,
       customer_signature: '',
+      technician_signature: '',
       notes: '',
       status: 'open',
       ...report
@@ -659,42 +665,118 @@ Generate the best report possible with available information.`,
         onChange={(fee) => handleChange('destination_fee', fee)}
       />
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Photos */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Photos</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Documentation & Evidence - Critical for Legal Protection */}
+      <Card className="border-0 shadow-sm border-l-4 border-l-green-600">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="w-5 h-5 text-green-600" />
+            Legal Documentation & Evidence
+          </CardTitle>
+          <p className="text-sm text-slate-600 mt-1">
+            This documentation protects you and the company in disputes or litigation
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Initial Condition Photos */}
+          <div>
+            <FieldBenefitInfo field="photos_initial">
+              <Label className="mb-2 block font-semibold">Initial Condition Photos *</Label>
+            </FieldBenefitInfo>
+            <p className="text-xs text-slate-600 mb-3">
+              📸 Take photos BEFORE starting work - proves pre-existing condition
+            </p>
+            <PhotoUpload 
+              photos={formData.photos_initial || []}
+              onChange={(photos) => handleChange('photos_initial', photos)}
+            />
+          </div>
+
+          {/* Component Failure Photos */}
+          <div>
+            <FieldBenefitInfo field="photos_failure">
+              <Label className="mb-2 block font-semibold">Component Failure Photos *</Label>
+            </FieldBenefitInfo>
+            <p className="text-xs text-slate-600 mb-3">
+              📸 Document failed/broken components - proves what was damaged
+            </p>
+            <PhotoUpload 
+              photos={formData.photos_failure || []}
+              onChange={(photos) => handleChange('photos_failure', photos)}
+            />
+          </div>
+
+          {/* Location Verification */}
+          <div>
+            <FieldBenefitInfo field="location_data">
+              <Label className="mb-2 block font-semibold">Service Location Verification</Label>
+            </FieldBenefitInfo>
+            <p className="text-xs text-slate-600 mb-3">
+              📍 Automatically proves you were on-site at a specific time
+            </p>
+            <LocationCapture
+              value={formData.location_data}
+              onChange={(data) => handleChange('location_data', data)}
+            />
+          </div>
+
+          {/* General Photos */}
+          <div>
+            <Label className="mb-2 block">Additional Service Photos</Label>
+            <p className="text-xs text-slate-600 mb-3">
+              Repair progress, final condition, etc.
+            </p>
             <PhotoUpload 
               photos={formData.photos || []}
               onChange={(photos) => handleChange('photos', photos)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Signature & Notes */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Signatures */}
         <Card className="border-0 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Completion</CardTitle>
+            <CardTitle className="text-lg">Signatures</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="mb-2 block">Additional Notes</Label>
-              <Textarea 
-                value={formData.notes}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                placeholder="Any additional notes, follow-up needed, etc."
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">Customer Signature</Label>
+              <FieldBenefitInfo field="customer_signature">
+                <Label className="mb-2 block font-semibold">Customer Signature *</Label>
+              </FieldBenefitInfo>
+              <p className="text-xs text-slate-600 mb-3">
+                ✍️ Customer acknowledges work completion
+              </p>
               <SignaturePad 
                 initialValue={formData.customer_signature}
                 onSave={(sig) => handleChange('customer_signature', sig)}
               />
             </div>
+            <div>
+              <Label className="mb-2 block">Technician Signature</Label>
+              <p className="text-xs text-slate-600 mb-3">
+                ✍️ Technician confirms work performed
+              </p>
+              <SignaturePad 
+                initialValue={formData.technician_signature}
+                onSave={(sig) => handleChange('technician_signature', sig)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Notes */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Additional Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea 
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              placeholder="Any additional notes, follow-up needed, recommendations, etc."
+              rows={10}
+            />
           </CardContent>
         </Card>
       </div>
