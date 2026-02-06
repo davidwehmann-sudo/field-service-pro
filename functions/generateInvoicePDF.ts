@@ -19,7 +19,21 @@ Deno.serve(async (req) => {
 
     // Fetch invoice, customer, and service report data
     const invoice = await base44.entities.Invoice.get(invoice_id);
+    
+    if (!invoice) {
+      return Response.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+    
+    if (!invoice.customer_id) {
+      return Response.json({ error: 'Invoice missing customer reference' }, { status: 400 });
+    }
+    
     const customer = await base44.entities.Customer.get(invoice.customer_id);
+    
+    if (!customer) {
+      return Response.json({ error: 'Customer not found' }, { status: 404 });
+    }
+    
     const serviceReport = invoice.service_report_id 
       ? await base44.entities.ServiceReport.get(invoice.service_report_id)
       : null;
