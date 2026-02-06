@@ -101,10 +101,10 @@ export default function FieldTech() {
               <span className="font-semibold">New Report</span>
             </Button>
           </Link>
-          <Link to={createPageUrl('PartsOrders') + '?new=true'}>
+          <Link to={createPageUrl('PartsLibrary')}>
             <Button className="w-full h-24 bg-blue-600 hover:bg-blue-700 text-white flex-col gap-2">
               <Package className="w-6 h-6" />
-              <span className="font-semibold">Order Parts</span>
+              <span className="font-semibold">Parts Library</span>
             </Button>
           </Link>
           <Link to={createPageUrl('Authorizations') + '?new=true'}>
