@@ -23,7 +23,8 @@ import {
   Settings,
   Check,
   Sparkles,
-  Loader2
+  Loader2,
+  Shield
 } from "lucide-react";
 import PartsAvailabilityChecker from '@/components/parts/PartsAvailabilityChecker';
 import PartsOrderReviewAssistant from '@/components/parts/PartsOrderReviewAssistant';
@@ -1070,27 +1071,71 @@ If no match possible, return "NO_MATCH".`,
               />
             </div>
 
-            <div className="border-t pt-4 space-y-3">
-              <p className="text-sm font-medium text-slate-700">Verification (Optional)</p>
+            <div className="border-t pt-4 space-y-3 bg-green-50/50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-4 h-4 text-green-600" />
+                <p className="text-sm font-semibold text-slate-900">Part Verification (Required for Legal Documentation)</p>
+              </div>
               <div>
-                <Label htmlFor="verification_source">Verified Against</Label>
+                <FieldBenefitInfo field="verification_source">
+                  <Label htmlFor="verification_source" className="font-semibold">Verification Source *</Label>
+                </FieldBenefitInfo>
+                <p className="text-xs text-slate-600 mb-2">
+                  📚 Where you verified this part specification (protects you from warranty disputes)
+                </p>
                 <Input 
                   id="verification_source" 
                   name="verification_source"
                   defaultValue={editingPart?.verification_source}
-                  placeholder="e.g., Caterpillar SIS, John Deere Service Advisor"
+                  placeholder="e.g., Caterpillar SIS, John Deere Parts Catalog, OEM Manual"
+                  required
                 />
-                <p className="text-xs text-slate-500 mt-1">Document verification source for legal protection</p>
               </div>
               <div>
-                <Label htmlFor="verification_details">Verification Details</Label>
-                <Input 
+                <Label htmlFor="verification_details" className="font-semibold">Verification Details *</Label>
+                <p className="text-xs text-slate-600 mb-2">
+                  📖 Specific reference (page, section, link) - makes verification traceable
+                </p>
+                <Textarea 
                   id="verification_details" 
                   name="verification_details"
                   defaultValue={editingPart?.verification_details}
-                  placeholder="e.g., Page 47, Section 5.2, Part ID: ABC-123"
+                  placeholder="e.g., Page 47, Section 5.2, Part Diagram A-42, or https://parts.cat.com/..."
+                  rows={2}
+                  required
                 />
-                <p className="text-xs text-slate-500 mt-1">Specific page, section, or reference number</p>
+              </div>
+              <div>
+                <Label htmlFor="verification_photo">Verification Photo/Screenshot (Optional)</Label>
+                <p className="text-xs text-slate-600 mb-2">
+                  📸 Upload photo of parts book or manual page showing specification
+                </p>
+                <Input 
+                  id="verification_photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      try {
+                        const result = await base44.integrations.Core.UploadFile({ file });
+                        setEditingPart({...editingPart, verification_photo_url: result.file_url});
+                        toast.success('Verification photo uploaded');
+                      } catch (error) {
+                        toast.error('Upload failed');
+                      }
+                    }
+                  }}
+                />
+                {editingPart?.verification_photo_url && (
+                  <div className="mt-2">
+                    <img 
+                      src={editingPart.verification_photo_url} 
+                      alt="Verification" 
+                      className="max-w-xs rounded border"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
