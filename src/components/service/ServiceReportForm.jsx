@@ -158,9 +158,9 @@ export default function ServiceReportForm({
     const autoSave = debounce(async () => {
       setAutoSaveStatus('saving');
       try {
-        await onSave({
+        // Save directly to database without triggering navigation
+        await base44.entities.ServiceReport.update(report.id, {
           ...formData,
-          status: formData.status || 'open',
           equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
         });
         setAutoSaveStatus('saved');
@@ -176,7 +176,7 @@ export default function ServiceReportForm({
     autoSave();
 
     return () => autoSave.cancel();
-  }, [formData, report?.id, onSave]);
+  }, [formData, report?.id]);
 
   const handleChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
