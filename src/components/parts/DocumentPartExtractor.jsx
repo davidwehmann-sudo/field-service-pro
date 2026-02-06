@@ -237,6 +237,29 @@ export default function DocumentPartExtractor({
                                 </Button>
                             </div>
 
+                            <div className="flex gap-2 mb-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const allSelected = {};
+                                        extractedData.parts.forEach((_, idx) => {
+                                            allSelected[idx] = true;
+                                        });
+                                        setSelectedParts(allSelected);
+                                    }}
+                                >
+                                    Select All
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedParts({})}
+                                >
+                                    Deselect All
+                                </Button>
+                            </div>
+
                             <div className="space-y-2 max-h-[400px] overflow-y-auto">
                                 {extractedData.parts.map((part, idx) => (
                                     <Card 

@@ -541,7 +541,7 @@ Return the IDs of ALL matching parts.`,
       )}
 
       <Dialog open={showForm} onOpenChange={(open) => { setShowForm(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPart ? 'Edit Part' : 'Add New Part'}</DialogTitle>
           </DialogHeader>
