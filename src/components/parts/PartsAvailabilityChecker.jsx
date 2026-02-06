@@ -12,6 +12,8 @@ export default function PartsAvailabilityChecker({ partNumber, partDescription }
       return await base44.entities.PartsInventory.filter({ part_number: partNumber });
     },
     enabled: !!partNumber,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache - inventory doesn't change frequently
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   const totalQuantity = inventory.reduce((sum, part) => sum + (part.quantity_on_hand || 0), 0);
