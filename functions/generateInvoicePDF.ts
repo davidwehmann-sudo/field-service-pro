@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
+import 'npm:jspdf-autotable@3.8.2';
 
 Deno.serve(async (req) => {
   try {
@@ -94,39 +95,33 @@ Deno.serve(async (req) => {
     doc.line(20, y, pageWidth - 20, y);
     y += 10;
 
-    // Line items
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Description', 20, y);
-    doc.text('Amount', pageWidth - 20, y, { align: 'right' });
-    y += 5;
-    doc.line(20, y, pageWidth - 20, y);
-    y += 8;
-
-    doc.setTextColor(40, 40, 40);
-    
+    // Line items using autoTable for automatic page breaks
+    const lineItems = [];
     if (invoice.labor_total > 0) {
-      doc.text('Labor', 20, y);
-      doc.text(`$${invoice.labor_total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-      y += 7;
+      lineItems.push(['Labor', `$${invoice.labor_total.toFixed(2)}`]);
     }
-
     if (invoice.travel_total > 0) {
-      doc.text('Travel / Destination Fee', 20, y);
-      doc.text(`$${invoice.travel_total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-      y += 7;
+      lineItems.push(['Travel / Destination Fee', `$${invoice.travel_total.toFixed(2)}`]);
     }
-
     if (invoice.parts_total > 0) {
-      doc.text('Parts & Materials', 20, y);
-      doc.text(`$${invoice.parts_total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-      y += 7;
+      lineItems.push(['Parts & Materials', `$${invoice.parts_total.toFixed(2)}`]);
     }
 
-    y += 5;
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, y, pageWidth - 20, y);
-    y += 8;
+    doc.autoTable({
+      startY: y,
+      head: [['Description', 'Amount']],
+      body: lineItems,
+      theme: 'plain',
+      styles: { fontSize: 10, cellPadding: 3 },
+      headStyles: { textColor: [100, 100, 100], fontStyle: 'normal' },
+      columnStyles: {
+        0: { cellWidth: 'auto' },
+        1: { halign: 'right', cellWidth: 40 }
+      },
+      margin: { left: 20, right: 20 }
+    });
+
+    y = doc.lastAutoTable.finalY + 8;
 
     // Subtotal
     const subtotal = (invoice.labor_total || 0) + (invoice.travel_total || 0) + (invoice.parts_total || 0);

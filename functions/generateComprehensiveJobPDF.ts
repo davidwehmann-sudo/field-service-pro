@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
+import 'npm:jspdf-autotable@3.8.2';
 
 Deno.serve(async (req) => {
   try {
@@ -259,48 +260,33 @@ Deno.serve(async (req) => {
       doc.setTextColor(40, 40, 40);
       doc.text('PARTS USED', 20, y);
       y += 7;
+
+      const partsRows = partsOrders.map(part => [
+        part.part_description || 'N/A',
+        part.part_number || 'N/A',
+        (part.quantity || 0).toString(),
+        part.supplier || 'N/A',
+        part.verification_source ? `✓ ${part.verification_source}` : ''
+      ]);
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Part #', 'Qty', 'Supplier', 'Verified']],
+        body: partsRows,
+        theme: 'plain',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { textColor: [100, 100, 100], fontStyle: 'normal' },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 35 },
+          2: { halign: 'center', cellWidth: 15 },
+          3: { cellWidth: 30 },
+          4: { fontSize: 7, textColor: [50, 100, 200], cellWidth: 'auto' }
+        },
+        margin: { left: 20, right: 20 }
+      });
       
-      // Table header
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Description', 20, y);
-      doc.text('Part #', 95, y);
-      doc.text('Qty', 135, y);
-      doc.text('Supplier', 150, y);
-      y += 4;
-      doc.line(20, y, pageWidth - 20, y);
-      y += 4;
-      
-      doc.setTextColor(40, 40, 40);
-      for (const part of partsOrders) {
-        checkPageBreak(15);
-        
-        doc.text(part.part_description || 'N/A', 20, y, { maxWidth: 70 });
-        doc.text(part.part_number || 'N/A', 95, y);
-        doc.text((part.quantity || 0).toString(), 135, y);
-        doc.text(part.supplier || 'N/A', 150, y);
-        y += 4;
-        
-        // Verification info (if present)
-        if (part.verification_source || part.verification_details) {
-          doc.setFontSize(7);
-          doc.setTextColor(50, 100, 200);
-          if (part.verification_source) {
-            doc.text(`✓ Verified: ${part.verification_source}`, 25, y);
-            y += 3;
-          }
-          if (part.verification_details) {
-            doc.text(`  ${part.verification_details}`, 25, y);
-            y += 3;
-          }
-          doc.setFontSize(8);
-          doc.setTextColor(40, 40, 40);
-        }
-        
-        y += 2;
-      }
-      
-      y += 8;
+      y = doc.lastAutoTable.finalY + 8;
     }
 
     // ========== INVOICE SUMMARY ==========
@@ -320,35 +306,33 @@ Deno.serve(async (req) => {
       doc.text(`Date: ${new Date(invoice.invoice_date).toLocaleDateString()}`, 20, y);
       y += 8;
       
-      // Line items
-      doc.setTextColor(100, 100, 100);
-      doc.text('Description', 20, y);
-      doc.text('Amount', pageWidth - 20, y, { align: 'right' });
-      y += 4;
-      doc.line(20, y, pageWidth - 20, y);
-      y += 5;
-      
-      doc.setTextColor(40, 40, 40);
-      
+      // Line items using autoTable
+      const invoiceRows = [];
       if (invoice.labor_total > 0) {
-        doc.text('Labor', 20, y);
-        doc.text(`$${invoice.labor_total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-        y += 5;
+        invoiceRows.push(['Labor', `$${invoice.labor_total.toFixed(2)}`]);
       }
-      
       if (invoice.travel_total > 0) {
-        doc.text('Travel/Destination', 20, y);
-        doc.text(`$${invoice.travel_total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-        y += 5;
+        invoiceRows.push(['Travel/Destination', `$${invoice.travel_total.toFixed(2)}`]);
       }
-      
       if (invoice.parts_total > 0) {
-        doc.text('Parts', 20, y);
-        doc.text(`$${invoice.parts_total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-        y += 5;
+        invoiceRows.push(['Parts', `$${invoice.parts_total.toFixed(2)}`]);
       }
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Amount']],
+        body: invoiceRows,
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { textColor: [100, 100, 100], fontStyle: 'normal' },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { halign: 'right', cellWidth: 40 }
+        },
+        margin: { left: 20, right: 20 }
+      });
       
-      y += 2;
+      y = doc.lastAutoTable.finalY + 2;
       const subtotal = (invoice.labor_total || 0) + (invoice.travel_total || 0) + (invoice.parts_total || 0);
       doc.text('Subtotal', 20, y);
       doc.text(`$${subtotal.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
@@ -419,37 +403,35 @@ Deno.serve(async (req) => {
       doc.setTextColor(40, 40, 40);
       doc.text('PAYMENT HISTORY', 20, y);
       y += 7;
-      
-      doc.setFontSize(8);
-      doc.setFont(undefined, 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('Date', 20, y);
-      doc.text('Type', 70, y);
-      doc.text('Method', 120, y);
-      doc.text('Amount', pageWidth - 20, y, { align: 'right' });
-      y += 4;
-      doc.line(20, y, pageWidth - 20, y);
-      y += 4;
-      
-      doc.setTextColor(40, 40, 40);
-      for (const payment of payments) {
-        checkPageBreak(8);
-        doc.text(new Date(payment.payment_date).toLocaleDateString(), 20, y);
-        doc.text(payment.payment_type.replace(/_/g, ' '), 70, y);
-        doc.text(payment.payment_method || 'N/A', 120, y);
-        doc.text(`$${payment.amount.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-        y += 5;
-      }
-      
-      y += 3;
-      doc.line(20, y, pageWidth - 20, y);
-      y += 5;
-      
+
+      const paymentRows = payments.map(payment => [
+        new Date(payment.payment_date).toLocaleDateString(),
+        payment.payment_type.replace(/_/g, ' '),
+        payment.payment_method || 'N/A',
+        `$${payment.amount.toFixed(2)}`
+      ]);
+
       const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      doc.setFont(undefined, 'bold');
-      doc.text('Total Paid', 20, y);
-      doc.text(`$${totalPaid.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-      doc.setFont(undefined, 'normal');
+
+      doc.autoTable({
+        startY: y,
+        head: [['Date', 'Type', 'Method', 'Amount']],
+        body: paymentRows,
+        foot: [['', '', 'Total Paid', `$${totalPaid.toFixed(2)}`]],
+        theme: 'plain',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { textColor: [100, 100, 100], fontStyle: 'normal' },
+        footStyles: { fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 35 },
+          3: { halign: 'right', cellWidth: 30 }
+        },
+        margin: { left: 20, right: 20 }
+      });
+      
+      y = doc.lastAutoTable.finalY + 5;
     }
 
     // ========== FOOTER ==========

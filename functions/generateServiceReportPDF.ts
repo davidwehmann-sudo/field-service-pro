@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
+import 'npm:jspdf-autotable@3.8.2';
 
 Deno.serve(async (req) => {
   try {
@@ -146,49 +147,46 @@ Deno.serve(async (req) => {
       y += workLines.length * 5 + 5;
     }
 
-    // Service Items
+    // Service Items using autoTable for automatic page breaks
     if (report.service_items && report.service_items.length > 0) {
-      // Check if we need a new page
-      if (y > 240) {
-        doc.addPage();
-        y = 20;
-      }
-
       doc.setFontSize(11);
       doc.setTextColor(40, 40, 40);
       doc.text('BILLABLE ITEMS', 20, y);
       y += 7;
-      
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Description', 20, y);
-      doc.text('Hours', 120, y);
-      doc.text('Rate', 145, y);
-      doc.text('Total', pageWidth - 20, y, { align: 'right' });
-      y += 5;
-      doc.line(20, y, pageWidth - 20, y);
-      y += 5;
 
-      doc.setTextColor(40, 40, 40);
-      let serviceTotal = 0;
-      for (const item of report.service_items) {
+      const serviceRows = report.service_items.map(item => {
         const total = item.total || (item.hours * item.rate);
-        serviceTotal += total;
-        doc.text(item.description || '', 20, y);
-        doc.text((item.hours || 0).toString(), 120, y);
-        doc.text(`$${(item.rate || 0).toFixed(2)}`, 145, y);
-        doc.text(`$${total.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-        y += 5;
-      }
+        return [
+          item.description || '',
+          (item.hours || 0).toString(),
+          `$${(item.rate || 0).toFixed(2)}`,
+          `$${total.toFixed(2)}`
+        ];
+      });
 
-      y += 3;
-      doc.line(20, y, pageWidth - 20, y);
-      y += 6;
-      doc.setFont(undefined, 'bold');
-      doc.text('Labor Total:', pageWidth - 50, y);
-      doc.text(`$${serviceTotal.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-      doc.setFont(undefined, 'normal');
-      y += 8;
+      const serviceTotal = report.service_items.reduce((sum, item) => 
+        sum + (item.total || (item.hours * item.rate)), 0
+      );
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Hours', 'Rate', 'Total']],
+        body: serviceRows,
+        foot: [['', '', 'Labor Total:', `$${serviceTotal.toFixed(2)}`]],
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { textColor: [100, 100, 100], fontStyle: 'normal' },
+        footStyles: { fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { halign: 'center', cellWidth: 20 },
+          2: { halign: 'right', cellWidth: 25 },
+          3: { halign: 'right', cellWidth: 30 }
+        },
+        margin: { left: 20, right: 20 }
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
     }
 
     // Destination Fee
