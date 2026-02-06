@@ -251,6 +251,22 @@ export default function DocumentPartExtractor({
                                 </Button>
                             </div>
 
+                            {/* Document Preview */}
+                            {extractedData.photo_url && (
+                                <div className="border rounded-lg overflow-hidden bg-slate-50">
+                                    <div className="bg-slate-100 px-3 py-2 border-b">
+                                        <p className="text-xs font-medium text-slate-700">Source Document</p>
+                                    </div>
+                                    <div className="p-4 max-h-[400px] overflow-auto">
+                                        <img 
+                                            src={extractedData.photo_url} 
+                                            alt="Source document"
+                                            className="w-full h-auto rounded"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex gap-2 mb-2">
                                 <Button
                                     variant="outline"
@@ -337,7 +353,7 @@ export default function DocumentPartExtractor({
                                     ) : (
                                         <>
                                             <Save className="w-4 h-4 mr-2" />
-                                            Save {selectedCount} to Library & Use
+                                            Save {selectedCount} to Library
                                         </>
                                     )}
                                 </Button>
