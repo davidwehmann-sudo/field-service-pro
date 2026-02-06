@@ -61,6 +61,7 @@ Rules:
 - Be specific to the equipment type (diesel, hydraulic, etc.)
 - Consider the work being done (major repair vs routine service)
 - Only suggest high-confidence items that are commonly needed
+- For each suggestion, recommend the appropriate manufacturer service literature for verification based on equipment make (e.g., "Caterpillar SIS" for CAT equipment, "John Deere Service Advisor/Parts Advisor" for Deere, "OEM Service Manual" for others)
 
 Return JSON:
 {
@@ -68,12 +69,14 @@ Return JSON:
     {
       "item": "Item name",
       "reason": "Why this is likely needed",
-      "confidence": "high" | "medium"
+      "confidence": "high" | "medium",
+      "verification_source": "Recommended literature (e.g., 'Caterpillar SIS', 'John Deere Service Advisor')"
     }
-  ]
+  ],
+  "verification_reminder": "Always verify AI suggestions against manufacturer specifications and service literature before proceeding."
 }
 
-If everything looks covered, return {"suggestions": []}`,
+If everything looks covered, return {"suggestions": [], "verification_reminder": "Always verify AI suggestions against manufacturer specifications and service literature before proceeding."}`,
         add_context_from_internet: false,
         response_json_schema: {
           type: "object",
@@ -85,10 +88,12 @@ If everything looks covered, return {"suggestions": []}`,
                 properties: {
                   item: { type: "string" },
                   reason: { type: "string" },
-                  confidence: { type: "string" }
+                  confidence: { type: "string" },
+                  verification_source: { type: "string" }
                 }
               }
-            }
+            },
+            verification_reminder: { type: "string" }
           }
         }
       });
@@ -162,7 +167,12 @@ If everything looks covered, return {"suggestions": []}`,
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <p className="font-semibold text-slate-900 mb-1">{item.item}</p>
-                        <p className="text-sm text-slate-600">{item.reason}</p>
+                        <p className="text-sm text-slate-600 mb-1">{item.reason}</p>
+                        {item.verification_source && (
+                          <p className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block">
+                            📚 Verify: {item.verification_source}
+                          </p>
+                        )}
                       </div>
                       {onAddSuggestion && (
                         <Button
@@ -170,7 +180,7 @@ If everything looks covered, return {"suggestions": []}`,
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            onAddSuggestion(item.item);
+                            onAddSuggestion(item.item, item.verification_source);
                             // Remove this suggestion after adding
                             setSuggestions(prev => prev.filter((_, i) => i !== idx));
                           }}

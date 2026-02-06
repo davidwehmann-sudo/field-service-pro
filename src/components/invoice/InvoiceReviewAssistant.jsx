@@ -55,6 +55,7 @@ Guidelines:
 - For routine service, suggest $35-$50 supplies fee
 - If equipment type mentions diesel/hydraulic, consider oil and filters
 - Look at work_performed and complaint for clues about what was done
+- For each suggestion, recommend the appropriate manufacturer service literature for verification based on equipment make (e.g., "Caterpillar SIS" for CAT equipment, "John Deere Service Advisor/Parts Advisor" for Deere, "OEM Service Manual" for others)
 
 Return a JSON object with this structure:
 {
@@ -63,13 +64,15 @@ Return a JSON object with this structure:
       "item": "Item name",
       "reason": "Why this might be missing",
       "suggested_amount": 50.00,
-      "confidence": "high" | "medium" | "low"
+      "confidence": "high" | "medium" | "low",
+      "verification_source": "Recommended literature (e.g., 'Caterpillar SIS', 'John Deere Service Advisor')"
     }
   ],
-  "notes": "Brief overall assessment"
+  "notes": "Brief overall assessment",
+  "verification_reminder": "Always verify AI suggestions against manufacturer specifications and service literature before proceeding."
 }
 
-If everything looks good, return {"missing_items": [], "notes": "Invoice looks complete"}`,
+If everything looks good, return {"missing_items": [], "notes": "Invoice looks complete", "verification_reminder": "Always verify AI suggestions against manufacturer specifications and service literature before proceeding."}`,
         add_context_from_internet: false,
         response_json_schema: {
           type: "object",
@@ -82,11 +85,13 @@ If everything looks good, return {"missing_items": [], "notes": "Invoice looks c
                   item: { type: "string" },
                   reason: { type: "string" },
                   suggested_amount: { type: "number" },
-                  confidence: { type: "string" }
+                  confidence: { type: "string" },
+                  verification_source: { type: "string" }
                 }
               }
             },
-            notes: { type: "string" }
+            notes: { type: "string" },
+            verification_reminder: { type: "string" }
           }
         }
       });
@@ -169,9 +174,14 @@ If everything looks good, return {"missing_items": [], "notes": "Invoice looks c
                               </span>
                             </div>
                             <p className="text-sm text-slate-600 mb-2">{item.reason}</p>
-                            <p className="text-sm font-semibold text-green-700">
+                            <p className="text-sm font-semibold text-green-700 mb-1">
                               Suggested: ${item.suggested_amount.toFixed(2)}
                             </p>
+                            {item.verification_source && (
+                              <p className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block">
+                                📚 Verify: {item.verification_source}
+                              </p>
+                            )}
                           </div>
                           {onAddSuggestion && (
                             <Button
@@ -194,6 +204,13 @@ If everything looks good, return {"missing_items": [], "notes": "Invoice looks c
                       <p className="text-xs text-slate-600 italic mt-2">
                         💡 {suggestions.notes}
                       </p>
+                    )}
+                    {suggestions.verification_reminder && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                        <p className="text-xs text-blue-800 font-medium">
+                          ⚠️ {suggestions.verification_reminder}
+                        </p>
+                      </div>
                     )}
                   </>
                 )}
