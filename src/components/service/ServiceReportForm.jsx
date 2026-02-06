@@ -695,10 +695,44 @@ Generate the best report possible with available information.`,
         />
       </div>
 
-      {/* CAT 7-Step Diagnostic */}
+      {/* Location Verification - Near Time Tracking */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            📍 Service Location Verification
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-slate-600 mb-3">
+            Automatically proves you were on-site at a specific time
+          </p>
+          <LocationCapture
+            value={formData.location_data}
+            onChange={(data) => handleChange('location_data', data)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* CAT 7-Step Diagnostic with Integrated Evidence */}
       <CatDiagnosticForm 
         diagnostic={formData.cat_diagnostic || {}}
         onChange={(val) => handleChange('cat_diagnostic', val)}
+        photosInitial={formData.photos_initial || []}
+        onPhotosInitialChange={(photos) => handleChange('photos_initial', photos)}
+        photos={formData.photos || []}
+        onPhotosChange={(photos) => handleChange('photos', photos)}
+        photosFailure={formData.photos_failure || []}
+        onPhotosFailureChange={(photos) => handleChange('photos_failure', photos)}
+        safetyPrecisionNotes={formData.safety_precision_notes || ''}
+        onSafetyPrecisionNotesChange={(notes) => handleChange('safety_precision_notes', notes)}
+        fluidSamples={formData.fluid_samples || []}
+        fluidAnalysisUrl={formData.fluid_analysis_results_url || ''}
+        fluidPhotos={formData.photos_fluid_evidence || []}
+        onFluidDataChange={(data) => {
+          handleChange('fluid_samples', data.samples);
+          handleChange('fluid_analysis_results_url', data.analysisUrl);
+          handleChange('photos_fluid_evidence', data.photos);
+        }}
       />
 
       {/* Work Performed - CAT Step 7 */}
@@ -722,101 +756,7 @@ Generate the best report possible with available information.`,
         </CardContent>
       </Card>
 
-      {/* Documentation & Evidence - Critical for Legal Protection */}
-      <Card className="border-0 shadow-sm border-l-4 border-l-green-600">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Shield className="w-5 h-5 text-green-600" />
-            Legal Documentation & Evidence
-          </CardTitle>
-          <p className="text-sm text-slate-600 mt-1">
-            This documentation protects you and the company in disputes or litigation
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Initial Condition Photos */}
-          <div>
-            <FieldBenefitInfo field="photos_initial">
-              <Label className="mb-2 block font-semibold">Initial Condition Photos *</Label>
-            </FieldBenefitInfo>
-            <p className="text-xs text-slate-600 mb-3">
-              📸 Take photos BEFORE starting work - proves pre-existing condition
-            </p>
-            <PhotoUpload 
-              photos={formData.photos_initial || []}
-              onChange={(photos) => handleChange('photos_initial', photos)}
-            />
-          </div>
 
-          {/* Component Failure Photos */}
-          <div>
-            <FieldBenefitInfo field="photos_failure">
-              <Label className="mb-2 block font-semibold">Component Failure Photos *</Label>
-            </FieldBenefitInfo>
-            <p className="text-xs text-slate-600 mb-3">
-              📸 Document failed/broken components - proves what was damaged
-            </p>
-            <PhotoUpload 
-              photos={formData.photos_failure || []}
-              onChange={(photos) => handleChange('photos_failure', photos)}
-            />
-          </div>
-
-          {/* Location Verification */}
-          <div>
-            <FieldBenefitInfo field="location_data">
-              <Label className="mb-2 block font-semibold">Service Location Verification</Label>
-            </FieldBenefitInfo>
-            <p className="text-xs text-slate-600 mb-3">
-              📍 Automatically proves you were on-site at a specific time
-            </p>
-            <LocationCapture
-              value={formData.location_data}
-              onChange={(data) => handleChange('location_data', data)}
-            />
-          </div>
-
-          {/* Safety/Precision Notes */}
-          <div>
-            <FieldBenefitInfo field="safety_precision_notes">
-              <Label className="mb-2 block font-semibold">Safety/Precision Notes</Label>
-            </FieldBenefitInfo>
-            <p className="text-xs text-slate-600 mb-3">
-              ⚖️ Document exact measurements, torque specs, weights, and precision tools used
-            </p>
-            <Textarea
-              value={formData.safety_precision_notes}
-              onChange={(e) => handleChange('safety_precision_notes', e.target.value)}
-              placeholder="Example: Crane load reading 500 lbs × 3 block & tackle = 1500 lbs total weight. Head bolts torqued to 185 ft-lbs per Cat spec. Used calibrated Snap-on torque wrench."
-              rows={4}
-            />
-          </div>
-
-          {/* General Photos */}
-          <div>
-            <Label className="mb-2 block">Additional Service Photos</Label>
-            <p className="text-xs text-slate-600 mb-3">
-              Repair progress, final condition, etc.
-            </p>
-            <PhotoUpload 
-              photos={formData.photos || []}
-              onChange={(photos) => handleChange('photos', photos)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Fluid Sampling & Analysis */}
-      <FluidSamplingSection
-        samples={formData.fluid_samples || []}
-        analysisUrl={formData.fluid_analysis_results_url || ''}
-        photos={formData.photos_fluid_evidence || []}
-        onChange={(data) => {
-          handleChange('fluid_samples', data.samples);
-          handleChange('fluid_analysis_results_url', data.analysisUrl);
-          handleChange('photos_fluid_evidence', data.photos);
-        }}
-      />
 
       {/* Service Items / Billing */}
       <Card className="border-0 shadow-sm">

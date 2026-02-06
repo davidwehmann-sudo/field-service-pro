@@ -4,6 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle } from "lucide-react";
+import PhotoUpload from './PhotoUpload';
+import FluidSamplingSection from './FluidSamplingSection';
 
 const DIAGNOSTIC_STEPS = [
   {
@@ -44,7 +46,24 @@ const DIAGNOSTIC_STEPS = [
   }
 ];
 
-export default function CatDiagnosticForm({ diagnostic = {}, onChange }) {
+export default function CatDiagnosticForm({ 
+  diagnostic = {}, 
+  onChange,
+  // Evidence fields integrated into workflow
+  photosInitial = [],
+  onPhotosInitialChange,
+  photos = [],
+  onPhotosChange,
+  photosFailure = [],
+  onPhotosFailureChange,
+  safetyPrecisionNotes = '',
+  onSafetyPrecisionNotesChange,
+  // Fluid sampling
+  fluidSamples = [],
+  fluidAnalysisUrl = '',
+  fluidPhotos = [],
+  onFluidDataChange
+}) {
   const handleChange = (field, value) => {
     onChange({ ...diagnostic, [field]: value });
   };
@@ -74,11 +93,11 @@ export default function CatDiagnosticForm({ diagnostic = {}, onChange }) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {DIAGNOSTIC_STEPS.map((step) => {
           const isCompleted = diagnostic[step.field]?.trim();
           return (
-            <div key={step.step} className="space-y-2">
+            <div key={step.step} className="space-y-3 pb-6 border-b border-slate-200 last:border-0 last:pb-0">
               <Label className="flex items-center gap-2">
                 {isCompleted ? (
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -95,6 +114,78 @@ export default function CatDiagnosticForm({ diagnostic = {}, onChange }) {
                 rows={2}
                 className={isCompleted ? "border-green-200 bg-green-50/50" : ""}
               />
+              
+              {/* Step 2: Initial Inspection - Add photos */}
+              {step.step === 2 && (
+                <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200">
+                  <div>
+                    <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                      📸 Initial Condition Photos
+                    </Label>
+                    <p className="text-xs text-slate-600 mb-2">
+                      Photos BEFORE starting work - proves pre-existing condition
+                    </p>
+                    <PhotoUpload 
+                      photos={photosInitial}
+                      onChange={onPhotosInitialChange}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                      Additional Inspection Photos
+                    </Label>
+                    <PhotoUpload 
+                      photos={photos}
+                      onChange={onPhotosChange}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Analyze Causes - Add safety notes and fluid sampling */}
+              {step.step === 4 && (
+                <div className="mt-3 space-y-4 pl-6 border-l-2 border-amber-200">
+                  <div>
+                    <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                      ⚖️ Safety & Precision Measurements
+                    </Label>
+                    <p className="text-xs text-slate-600 mb-2">
+                      Document weights, torque specs, clearances, and calibrated tool usage
+                    </p>
+                    <Textarea
+                      value={safetyPrecisionNotes}
+                      onChange={(e) => onSafetyPrecisionNotesChange(e.target.value)}
+                      placeholder="Example: Component weight 500 lbs × 3 block = 1500 lbs. Torqued to 185 ft-lbs per spec. Used calibrated Snap-on torque wrench."
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="-ml-6">
+                    <FluidSamplingSection
+                      samples={fluidSamples}
+                      analysisUrl={fluidAnalysisUrl}
+                      photos={fluidPhotos}
+                      onChange={onFluidDataChange}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 6: Verify Repair - Add failure photos */}
+              {step.step === 6 && (
+                <div className="mt-3 pl-6 border-l-2 border-amber-200">
+                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                    📸 Component Failure & Verification Photos
+                  </Label>
+                  <p className="text-xs text-slate-600 mb-2">
+                    Document failed/broken components and successful repair
+                  </p>
+                  <PhotoUpload 
+                    photos={photosFailure}
+                    onChange={onPhotosFailureChange}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
