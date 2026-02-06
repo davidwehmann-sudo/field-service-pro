@@ -11,27 +11,74 @@ Deno.serve(async (req) => {
 
         // Get current year
         const year = new Date().getFullYear();
-        
-        // Find all jobs from this year to determine next number
-        const existingJobs = await base44.asServiceRole.entities.Job.filter({});
-        
-        // Filter jobs from current year and extract sequence numbers
         const yearPrefix = `J-${year}-`;
-        const jobsThisYear = existingJobs
-            .filter(j => j.job_number?.startsWith(yearPrefix))
-            .map(j => {
-                const parts = j.job_number.split('-');
-                return parseInt(parts[2]) || 0;
-            })
-            .filter(n => !isNaN(n));
+        const currentCompany = user.current_company || user.company;
         
-        // Get next sequence number
-        const nextNumber = jobsThisYear.length > 0 
-            ? Math.max(...jobsThisYear) + 1 
-            : 1;
+        // Retry logic to handle race conditions
+        const maxRetries = 5;
+        let attempt = 0;
+        let jobNumber;
         
-        // Format as J-YYYY-###
-        const jobNumber = `${yearPrefix}${String(nextNumber).padStart(3, '0')}`;
+        while (attempt < maxRetries) {
+            try {
+                // Get or create sequence record for this year and company
+                const sequences = await base44.asServiceRole.entities.JobSequence.filter({
+                    year: year,
+                    service_company: currentCompany
+                });
+                
+                let sequence;
+                let nextNumber;
+                
+                if (sequences.length === 0) {
+                    // First job of the year - create sequence
+                    sequence = await base44.asServiceRole.entities.JobSequence.create({
+                        year: year,
+                        last_number: 1,
+                        service_company: currentCompany
+                    });
+                    nextNumber = 1;
+                } else {
+                    // Increment existing sequence
+                    sequence = sequences[0];
+                    nextNumber = (sequence.last_number || 0) + 1;
+                    
+                    // Update with optimistic concurrency check
+                    await base44.asServiceRole.entities.JobSequence.update(sequence.id, {
+                        last_number: nextNumber
+                    });
+                }
+                
+                // Format as J-YYYY-###
+                jobNumber = `${yearPrefix}${String(nextNumber).padStart(3, '0')}`;
+                
+                // Verify uniqueness (safety check)
+                const existing = await base44.asServiceRole.entities.Job.filter({
+                    job_number: jobNumber
+                });
+                
+                if (existing.length === 0) {
+                    // Success - unique number generated
+                    break;
+                }
+                
+                // Collision detected - retry
+                attempt++;
+                if (attempt >= maxRetries) {
+                    throw new Error('Failed to generate unique job number after retries');
+                }
+                
+                // Small delay before retry
+                await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+                
+            } catch (error) {
+                attempt++;
+                if (attempt >= maxRetries) {
+                    throw error;
+                }
+                await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            }
+        }
         
         return Response.json({ job_number: jobNumber });
         
