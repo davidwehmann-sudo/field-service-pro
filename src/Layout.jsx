@@ -45,6 +45,7 @@ const allNavigation = {
     { name: 'Receipts', href: 'ReceiptUpload', icon: Receipt },
     { name: 'View Receipts', href: 'ReceiptViewer', icon: FileText },
     { type: 'section', label: 'Parts' },
+    { name: 'Library', href: 'PartsLibrary', icon: Package },
     { name: 'Inventory', href: 'PartsInventory', icon: Package },
     { name: 'Orders', href: 'PartsOrders', icon: Package },
     { type: 'section', label: 'Operations' },

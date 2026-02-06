@@ -68,6 +68,7 @@ import SignReport from './pages/SignReport';
 import Sitemap from './pages/Sitemap';
 import TechnicianPayroll from './pages/TechnicianPayroll';
 import VehicleExpenses from './pages/VehicleExpenses';
+import PartsLibrary from './pages/PartsLibrary';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "TechnicianPayroll": TechnicianPayroll,
     "VehicleExpenses": VehicleExpenses,
+    "PartsLibrary": PartsLibrary,
 }
 
 export const pagesConfig = {
