@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, DollarSign, Sparkles, Wand2, Eye, Building2, Shield } from "lucide-react";
+import { ArrowLeft, Save, Eye, Building2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import CustomerSelect from '@/components/customers/CustomerSelect';
@@ -20,7 +20,7 @@ import OriginalNotesViewer from '@/components/service/OriginalNotesViewer';
 import TimeTracker from '@/components/service/TimeTracker';
 import FieldBenefitInfo from '@/components/service/FieldBenefitInfo';
 import LocationCapture from '@/components/service/LocationCapture';
-import FluidSamplingSection from '@/components/service/FluidSamplingSection';
+import ServiceReportReview from '@/components/service/ServiceReportReview';
 import LitigationProtectionWarning from '@/components/service/LitigationProtectionWarning';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
@@ -69,6 +69,7 @@ export default function ServiceReportForm({
   const [currentUser, setCurrentUser] = useState(null);
   const [showLitigationWarning, setShowLitigationWarning] = useState(false);
   const [missingLitigationFields, setMissingLitigationFields] = useState([]);
+  const [showReview, setShowReview] = useState(false);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -376,17 +377,18 @@ Generate the best report possible with available information.`,
     return missing;
   }, [formData]);
 
-  const handleSave = useCallback(async (status = 'open') => {
-    // Check for missing litigation protection fields when completing
-    if (status === 'completed') {
-      const missing = checkMissingLitigationFields();
-      if (missing.length > 0) {
-        setMissingLitigationFields(missing);
-        setShowLitigationWarning(true);
-        return; // Don't save yet, show warning first
-      }
+  const handleReviewClick = useCallback(() => {
+    // Check for missing litigation protection fields before review
+    const missing = checkMissingLitigationFields();
+    if (missing.length > 0) {
+      setMissingLitigationFields(missing);
+      setShowLitigationWarning(true);
+      return;
     }
-    
+    setShowReview(true);
+  }, [checkMissingLitigationFields]);
+
+  const handleSave = useCallback(async (status = 'open') => {
     const data = {
       ...formData,
       status,
@@ -401,11 +403,12 @@ Generate the best report possible with available information.`,
       }
       // Clear localStorage after successful save
       localStorage.removeItem(storageKey);
+      setShowReview(false);
     } catch (error) {
       // Keep in localStorage if save fails
       console.error('Save failed, data preserved locally');
     }
-  }, [formData, onSave, onComplete, storageKey, checkMissingLitigationFields]);
+  }, [formData, onSave, onComplete, storageKey]);
 
   const handleProceedAnyway = useCallback(async () => {
     setShowLitigationWarning(false);
@@ -443,16 +446,16 @@ Generate the best report possible with available information.`,
             onClick={() => handleSave('open')}
             disabled={isSaving}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save as Open
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Save Draft
           </Button>
           <Button 
             className="bg-green-600 hover:bg-green-700"
-            onClick={() => handleSave('completed')}
+            onClick={handleReviewClick}
             disabled={isSaving || !formData.customer_id}
           >
-            <Send className="w-4 h-4 mr-2" />
-            Complete & Invoice
+            <Eye className="w-4 h-4 mr-2" />
+            Review & Complete
           </Button>
         </div>
       </div>
@@ -737,26 +740,7 @@ Generate the best report possible with available information.`,
         }}
       />
 
-      {/* Work Performed - CAT Step 7 */}
-      <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            Work Performed
-            <Badge variant="outline" className="text-xs font-normal">CAT Step 7: Document</Badge>
-          </CardTitle>
-          <p className="text-sm text-slate-600 mt-1">
-            Comprehensive documentation of concern, analysis, and repair completed
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Textarea 
-            value={formData.work_performed}
-            onChange={(e) => handleChange('work_performed', e.target.value)}
-            placeholder="Detail all repairs, adjustments, and work completed - this serves as the final documentation (Step 7) of the diagnostic process..."
-            rows={4}
-          />
-        </CardContent>
-      </Card>
+
 
 
 
@@ -830,6 +814,15 @@ Generate the best report possible with available information.`,
         </Card>
       </div>
 
+      <ServiceReportReview
+        report={formData}
+        customer={customers.find(c => c.id === formData.customer_id)}
+        open={showReview}
+        onOpenChange={setShowReview}
+        onComplete={() => handleSave('completed')}
+        isSaving={isSaving}
+      />
+
       <OriginalNotesViewer
         report={formData}
         open={showOriginalNotes}
@@ -840,7 +833,7 @@ Generate the best report possible with available information.`,
         open={showLitigationWarning}
         onOpenChange={setShowLitigationWarning}
         missingFields={missingLitigationFields}
-        onProceed={handleProceedAnyway}
+        onProceed={handleReviewClick}
         onGoBack={() => setShowLitigationWarning(false)}
       />
     </div>
