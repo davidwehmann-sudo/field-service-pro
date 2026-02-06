@@ -9,6 +9,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Audit log: ServiceRole usage
+        console.log(`[AUDIT] ServiceRole accessed by ${user.email} (${user.role}) for deleteShippingPart operation`);
+
         // Find the SHIPPING part
         const shippingParts = await base44.asServiceRole.entities.PartsInventory.filter({
             part_number: "SHIPPING"

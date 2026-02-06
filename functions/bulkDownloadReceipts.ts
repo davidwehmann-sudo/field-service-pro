@@ -11,6 +11,9 @@ Deno.serve(async (req) => {
 
     const { start_date, end_date } = await req.json();
 
+    // Audit log: ServiceRole usage
+    console.log(`[AUDIT] ServiceRole accessed by ${user.email} (${user.role}) for bulkDownloadReceipts - Date range: ${start_date} to ${end_date}`);
+
     if (!start_date || !end_date) {
       return Response.json({ error: 'start_date and end_date are required' }, { status: 400 });
     }
