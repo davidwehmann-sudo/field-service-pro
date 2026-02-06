@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, CheckCircle2, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Search, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function PartVerificationLibrary({ 
@@ -17,18 +17,27 @@ export default function PartVerificationLibrary({
     const [searchTerm, setSearchTerm] = useState(partNumber || '');
 
     const { data: verifications = [], isLoading } = useQuery({
-        queryKey: ['part-verifications', searchTerm, machineModel],
+        queryKey: ['part-verifications-all'],
         queryFn: async () => {
-            if (!searchTerm) return [];
-            
-            const filters = { part_number: searchTerm };
-            if (machineModel) {
-                filters.machine_model = machineModel;
-            }
-            
-            return await base44.entities.PartVerification.filter(filters);
+            return await base44.entities.PartVerification.list('-created_date', 1000);
         },
-        enabled: searchTerm.length > 0
+        staleTime: 60000 // Cache for 1 minute
+    });
+
+    const filteredVerifications = verifications.filter(verification => {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        
+        const matchesSearch = !searchTerm || 
+            verification.part_number?.toLowerCase().includes(lowerSearchTerm) ||
+            verification.part_description?.toLowerCase().includes(lowerSearchTerm) ||
+            verification.source_name?.toLowerCase().includes(lowerSearchTerm) ||
+            verification.source_details?.toLowerCase().includes(lowerSearchTerm) ||
+            verification.technician_notes?.toLowerCase().includes(lowerSearchTerm) ||
+            verification.machine_model?.toLowerCase().includes(lowerSearchTerm);
+
+        const matchesMachineModel = !machineModel || verification.machine_model === machineModel;
+
+        return matchesSearch && matchesMachineModel;
     });
 
     return (
@@ -37,7 +46,7 @@ export default function PartVerificationLibrary({
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
-                        placeholder="Search by part number..."
+                        placeholder="Search by part number, description, source, or machine model..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-9"
@@ -47,19 +56,27 @@ export default function PartVerificationLibrary({
 
             {isLoading && (
                 <div className="text-center py-8 text-slate-500">
-                    Searching verification library...
+                    Loading verification library...
                 </div>
             )}
 
-            {!isLoading && searchTerm && verifications.length === 0 && (
+            {!isLoading && searchTerm && filteredVerifications.length === 0 && (
                 <div className="text-center py-8 text-slate-500">
                     No verifications found for "{searchTerm}"
                     {machineModel && ` on ${machineModel}`}
                 </div>
             )}
 
+            {!isLoading && !searchTerm && (
+                <div className="text-center py-8 text-slate-400">
+                    <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Start typing to search verifications</p>
+                    <p className="text-xs mt-1">Search by part number, description, source, or machine model</p>
+                </div>
+            )}
+
             <div className="grid gap-3 max-h-[400px] overflow-y-auto">
-                {verifications.map((verification) => (
+                {filteredVerifications.map((verification) => (
                     <Card 
                         key={verification.id}
                         className={cn(
