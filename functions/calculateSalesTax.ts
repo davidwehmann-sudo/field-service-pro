@@ -48,47 +48,79 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Call TaxJar API
-    const taxjarResponse = await fetch('https://api.taxjar.com/v2/taxes', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${taxjarApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from_country: 'US',
-        from_zip: '68137', // Your business zip code - adjust as needed
-        from_state: 'NE',
-        from_city: 'Omaha',
-        from_street: '',
-        to_country: 'US',
-        to_zip: customer.zip,
-        to_state: customer.state,
-        to_city: customer.city,
-        to_street: customer.address,
-        amount: amount,
-        shipping: shipping,
-        line_items: [{
-          id: '1',
-          quantity: 1,
-          unit_price: amount,
-          discount: 0
-        }]
-      })
-    });
+    // Call TaxJar API with exponential backoff retry
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+    let taxData;
+    let lastError;
 
-    if (!taxjarResponse.ok) {
-      const errorText = await taxjarResponse.text();
-      console.error('TaxJar API error:', errorText);
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const taxjarResponse = await fetch('https://api.taxjar.com/v2/taxes', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${taxjarApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from_country: 'US',
+            from_zip: '68137', // Your business zip code - adjust as needed
+            from_state: 'NE',
+            from_city: 'Omaha',
+            from_street: '',
+            to_country: 'US',
+            to_zip: customer.zip,
+            to_state: customer.state,
+            to_city: customer.city,
+            to_street: customer.address,
+            amount: amount,
+            shipping: shipping,
+            line_items: [{
+              id: '1',
+              quantity: 1,
+              unit_price: amount,
+              discount: 0
+            }]
+          })
+        });
+
+        if (!taxjarResponse.ok) {
+          const errorText = await taxjarResponse.text();
+          lastError = `TaxJar API error (${taxjarResponse.status}): ${errorText}`;
+          console.error(lastError);
+          
+          // Don't retry on client errors (4xx)
+          if (taxjarResponse.status >= 400 && taxjarResponse.status < 500) {
+            break;
+          }
+          
+          throw new Error(lastError);
+        }
+
+        taxData = await taxjarResponse.json();
+        break; // Success - exit retry loop
+        
+      } catch (error) {
+        lastError = error.message;
+        
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+          console.log(`TaxJar attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          console.error(`TaxJar failed after ${maxRetries + 1} attempts:`, lastError);
+        }
+      }
+    }
+
+    if (!taxData) {
       return Response.json({ 
         success: false,
-        error: 'Failed to calculate tax',
+        error: 'Tax calculation service unavailable after retries',
         tax_rate: 0,
         tax_amount: 0
       });
     }
-
-    const taxData = await taxjarResponse.json();
     
     return Response.json({
       success: true,
