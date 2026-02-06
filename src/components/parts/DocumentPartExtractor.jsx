@@ -13,6 +13,17 @@ import {
     DialogTitle,
     DialogDescription 
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
     Upload, 
     Loader2, 
@@ -38,6 +49,8 @@ export default function DocumentPartExtractor({
     const [manufacturer, setManufacturer] = useState('');
     const [bypassMachineModel, setBypassMachineModel] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [duplicateData, setDuplicateData] = useState(null);
+    const [duplicateAction, setDuplicateAction] = useState('skip');
 
     const handleFileUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -92,35 +105,105 @@ export default function DocumentPartExtractor({
         try {
             const user = await base44.auth.me();
             
-            // Save all selected parts to PartVerification entity
-            const verifications = selectedPartsList.map(part => ({
-                part_number: part.part_number,
-                part_description: part.part_description,
-                manufacturer: manufacturer || part.manufacturer || extractedData.manufacturer,
-                source_name: extractedData.source_name,
-                source_details: part.source_details,
-                photo_url: extractedData.photo_url,
-                machine_model: bypassMachineModel ? 'N/A' : machineModel,
-                service_company: user.current_company || user.company
-            }));
-
-            await base44.entities.PartVerification.bulkCreate(verifications);
-
-            toast.success(`Saved ${verifications.length} parts to verification library`);
+            // Check for duplicates
+            const existingVerifications = await base44.entities.PartVerification.list();
+            const duplicates = [];
+            const newParts = [];
             
-            // Pass back to parent for immediate use
-            if (onPartsExtracted) {
-                onPartsExtracted(selectedPartsList, extractedData, verifications);
+            selectedPartsList.forEach(part => {
+                const existing = existingVerifications.find(v => 
+                    v.part_number?.toLowerCase() === part.part_number?.toLowerCase() &&
+                    v.machine_model?.toLowerCase() === (bypassMachineModel ? 'n/a' : machineModel.toLowerCase())
+                );
+                
+                if (existing) {
+                    duplicates.push({
+                        newPart: part,
+                        existing: existing
+                    });
+                } else {
+                    newParts.push(part);
+                }
+            });
+
+            // If duplicates found, show dialog
+            if (duplicates.length > 0) {
+                setDuplicateData({
+                    duplicates,
+                    newParts,
+                    selectedPartsList,
+                    user
+                });
+                setSaving(false);
+                return;
             }
-            
+
+            // No duplicates, proceed with save
+            await saveParts(selectedPartsList, user);
+        } catch (error) {
+            toast.error('Error saving to library: ' + error.message);
+            setSaving(false);
+        }
+    };
+
+    const handleDuplicateResolution = async () => {
+        if (!duplicateData) return;
+
+        setSaving(true);
+        try {
+            const { duplicates, newParts, selectedPartsList, user } = duplicateData;
+
+            if (duplicateAction === 'skip') {
+                // Only save new parts
+                if (newParts.length > 0) {
+                    await saveParts(newParts, user);
+                    toast.success(`Saved ${newParts.length} new parts, skipped ${duplicates.length} duplicates`);
+                } else {
+                    toast.info('No new parts to save - all were duplicates');
+                }
+            } else if (duplicateAction === 'replace') {
+                // Delete existing duplicates and save all
+                for (const dup of duplicates) {
+                    await base44.entities.PartVerification.delete(dup.existing.id);
+                }
+                await saveParts(selectedPartsList, user);
+                toast.success(`Replaced ${duplicates.length} duplicates and saved ${newParts.length} new parts`);
+            } else if (duplicateAction === 'manual') {
+                toast.info('Cancelled - review duplicates manually');
+                setDuplicateData(null);
+                setSaving(false);
+                return;
+            }
+
             // Reset and close
             setExtractedData(null);
             setSelectedParts({});
+            setDuplicateData(null);
             onClose();
         } catch (error) {
-            toast.error('Error saving to library: ' + error.message);
+            toast.error('Error handling duplicates: ' + error.message);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const saveParts = async (partsList, user) => {
+        const verifications = partsList.map(part => ({
+            part_number: part.part_number,
+            part_description: part.part_description,
+            manufacturer: manufacturer || part.manufacturer || extractedData.manufacturer,
+            source_name: extractedData.source_name,
+            source_details: part.source_details,
+            photo_url: extractedData.photo_url,
+            machine_model: bypassMachineModel ? 'N/A' : machineModel,
+            service_company: user.current_company || user.company
+        }));
+
+        await base44.entities.PartVerification.bulkCreate(verifications);
+
+        // Pass back to parent for immediate use
+        if (onPartsExtracted) {
+            onPartsExtracted(partsList, extractedData, verifications);
         }
     };
 
@@ -363,5 +446,81 @@ export default function DocumentPartExtractor({
                 </div>
             </DialogContent>
         </Dialog>
+
+        {/* Duplicate Handling Dialog */}
+        <AlertDialog open={!!duplicateData} onOpenChange={(open) => !open && setDuplicateData(null)}>
+            <AlertDialogContent className="max-w-2xl">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Duplicate Parts Detected</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Found {duplicateData?.duplicates.length} part(s) already in the library with the same part number and machine model.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                {duplicateData && (
+                    <div className="space-y-4">
+                        {/* Duplicate List */}
+                        <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-lg p-3 bg-slate-50">
+                            {duplicateData.duplicates.map((dup, idx) => (
+                                <div key={idx} className="text-sm bg-white p-2 rounded border">
+                                    <p className="font-mono font-semibold">{dup.newPart.part_number}</p>
+                                    <p className="text-xs text-slate-600">
+                                        Existing: {dup.existing.source_name} • {dup.existing.source_details}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Action Selection */}
+                        <RadioGroup value={duplicateAction} onValueChange={setDuplicateAction}>
+                            <div className="space-y-3">
+                                <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                                    <RadioGroupItem value="skip" id="skip" />
+                                    <Label htmlFor="skip" className="cursor-pointer flex-1">
+                                        <p className="font-medium">Skip Duplicates</p>
+                                        <p className="text-xs text-slate-600">
+                                            Only save {duplicateData.newParts.length} new part(s), keep existing entries unchanged
+                                        </p>
+                                    </Label>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                                    <RadioGroupItem value="replace" id="replace" />
+                                    <Label htmlFor="replace" className="cursor-pointer flex-1">
+                                        <p className="font-medium">Replace Duplicates</p>
+                                        <p className="text-xs text-slate-600">
+                                            Delete existing entries and save all {duplicateData.selectedPartsList.length} part(s) with new data
+                                        </p>
+                                    </Label>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                                    <RadioGroupItem value="manual" id="manual" />
+                                    <Label htmlFor="manual" className="cursor-pointer flex-1">
+                                        <p className="font-medium">Cancel & Review Manually</p>
+                                        <p className="text-xs text-slate-600">
+                                            Stop the process and handle duplicates yourself
+                                        </p>
+                                    </Label>
+                                </div>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                )}
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDuplicateData(null)}>
+                        Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleDuplicateResolution}
+                        disabled={saving}
+                        className="bg-amber-500 hover:bg-amber-600"
+                    >
+                        {saving ? 'Processing...' : 'Proceed'}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
