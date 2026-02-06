@@ -28,19 +28,52 @@ Deno.serve(async (req) => {
     const eventDescription = `Equipment: ${report.equipment_make || ''} ${report.equipment_model || ''}\nComplaint: ${report.complaint || 'N/A'}`;
     const location = customer ? `${customer.address}, ${customer.city}, ${customer.state} ${customer.zip}` : '';
 
-    // Create all-day event
-    const eventDate = new Date(report.service_date);
-    const event = {
-      summary: eventTitle,
-      description: eventDescription,
-      location: location,
-      start: {
-        date: report.service_date
-      },
-      end: {
-        date: report.service_date
+    // Parse time entries to determine event duration
+    let event;
+    const timeEntries = report.time_entries || [];
+    
+    if (timeEntries.length > 0) {
+      // Use time entries to create timed event
+      const startTimes = timeEntries.map(e => new Date(e.start_time)).filter(d => !isNaN(d));
+      const endTimes = timeEntries.map(e => new Date(e.end_time)).filter(d => !isNaN(d));
+      
+      if (startTimes.length > 0 && endTimes.length > 0) {
+        const earliestStart = new Date(Math.min(...startTimes));
+        const latestEnd = new Date(Math.max(...endTimes));
+        
+        event = {
+          summary: eventTitle,
+          description: eventDescription,
+          location: location,
+          start: {
+            dateTime: earliestStart.toISOString(),
+            timeZone: 'America/Chicago' // Default timezone - can be made configurable
+          },
+          end: {
+            dateTime: latestEnd.toISOString(),
+            timeZone: 'America/Chicago'
+          }
+        };
+      } else {
+        // Fallback to all-day if time parsing fails
+        event = {
+          summary: eventTitle,
+          description: eventDescription,
+          location: location,
+          start: { date: report.service_date },
+          end: { date: report.service_date }
+        };
       }
-    };
+    } else {
+      // Create all-day event when no time entries
+      event = {
+        summary: eventTitle,
+        description: eventDescription,
+        location: location,
+        start: { date: report.service_date },
+        end: { date: report.service_date }
+      };
+    }
 
     if (action === 'delete' && report.calendar_event_id) {
       // Delete event
