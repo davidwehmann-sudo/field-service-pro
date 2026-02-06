@@ -64,10 +64,10 @@ import ReceiptUpload from './pages/ReceiptUpload';
 import ReceiptViewer from './pages/ReceiptViewer';
 import RequestAuthorization from './pages/RequestAuthorization';
 import ServiceReports from './pages/ServiceReports';
+import SignReport from './pages/SignReport';
 import Sitemap from './pages/Sitemap';
 import TechnicianPayroll from './pages/TechnicianPayroll';
 import VehicleExpenses from './pages/VehicleExpenses';
-import SignReport from './pages/SignReport';
 import __Layout from './Layout.jsx';
 
 
@@ -89,10 +89,10 @@ export const PAGES = {
     "ReceiptViewer": ReceiptViewer,
     "RequestAuthorization": RequestAuthorization,
     "ServiceReports": ServiceReports,
+    "SignReport": SignReport,
     "Sitemap": Sitemap,
     "TechnicianPayroll": TechnicianPayroll,
     "VehicleExpenses": VehicleExpenses,
-    "SignReport": SignReport,
 }
 
 export const pagesConfig = {

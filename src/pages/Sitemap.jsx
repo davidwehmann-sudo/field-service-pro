@@ -38,6 +38,7 @@ export default function Sitemap() {
     { name: 'TechnicianPayroll', icon: DollarSign, description: 'Technician time tracking and payroll' },
     { name: 'ReceiptUpload', icon: Upload, description: 'Upload and process receipt images' },
     { name: 'ReceiptViewer', icon: Eye, description: 'View and manage uploaded receipts' },
+    { name: 'SignReport', icon: FileText, description: 'Customer remote signature for service reports' },
     { name: 'Customers', icon: Users, description: 'Customer management' },
     { name: 'DataManagement', icon: Download, description: 'Export reports and import data' },
   ];
