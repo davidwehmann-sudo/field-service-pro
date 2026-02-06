@@ -31,6 +31,7 @@ import PartsOrderReviewAssistant from '@/components/parts/PartsOrderReviewAssist
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerSelect from '@/components/customers/CustomerSelect';
+import FieldBenefitInfo from '@/components/service/FieldBenefitInfo';
 import { toast } from "sonner";
 import { calculatePartsMarkup, calculatePartTotal } from '../components/parts/partsMarkupCalculator';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
