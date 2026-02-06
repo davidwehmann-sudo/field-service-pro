@@ -142,12 +142,12 @@ export default function Layout({ children, currentPageName }) {
           setCurrentUser(user);
           setDisplayCompany(user.current_company || user.company);
           
-          // Initialize all sections as expanded by default
+          // Initialize all sections as collapsed by default
           const nav = allNavigation[user.user_type || 'unassigned_user'] || allNavigation.unassigned_user;
           const sections = {};
           nav.forEach((item, idx) => {
             if (item.type === 'section') {
-              sections[idx] = true;
+              sections[idx] = false;
             }
           });
           setExpandedSections(sections);
