@@ -735,7 +735,7 @@ If no match possible, return "NO_MATCH".`,
 
       {/* Parts Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingPart ? 'Edit Part' : 'Add New Part'}
