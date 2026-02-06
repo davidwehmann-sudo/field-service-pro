@@ -24,7 +24,8 @@ import {
   FileUp,
   Pencil,
   Plus,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -413,17 +414,23 @@ export default function PartsLibrary() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {verification.photo_url ? (
-                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
-                          <img 
-                            src={verification.photo_url} 
-                            alt=""
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>';
-                            }}
-                          />
-                        </div>
+                        isPDF(verification.photo_url) ? (
+                          <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-red-50 flex items-center justify-center">
+                            <FileText className="w-6 h-6 text-red-600" />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
+                            <img 
+                              src={verification.photo_url} 
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>';
+                              }}
+                            />
+                          </div>
+                        )
                       ) : (
                         <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-slate-100 flex items-center justify-center">
                           <ImageIcon className="w-5 h-5 text-slate-400" />
@@ -525,27 +532,52 @@ export default function PartsLibrary() {
             <div>
               <Label>Verification Image</Label>
               <div className="mt-2 space-y-3">
-                {/* Current or New Image Preview */}
+                {/* Current or New Document Preview */}
                 {(newImageUrl || editingVerification?.photo_url) ? (
-                  <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                    <img 
-                      src={newImageUrl || editingVerification?.photo_url}
-                      alt="Verification"
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        if (e.target && e.target.parentElement) {
-                          e.target.style.display = 'none';
-                          const errorDiv = document.createElement('div');
-                          errorDiv.className = 'p-8 text-center text-slate-500';
-                          errorDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p>Image failed to load</p>';
-                          e.target.parentElement.appendChild(errorDiv);
-                        }
-                      }}
-                    />
-                    {newImageUrl && (
-                      <Badge className="absolute top-2 right-2 bg-green-600">New Image</Badge>
-                    )}
-                  </div>
+                  isPDF(newImageUrl || editingVerification?.photo_url) ? (
+                    <div className="space-y-2">
+                      <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50" style={{ height: '400px' }}>
+                        <iframe
+                          src={newImageUrl || editingVerification?.photo_url}
+                          className="w-full h-full"
+                          title="PDF Preview"
+                        />
+                        {newImageUrl && (
+                          <Badge className="absolute top-2 right-2 bg-green-600">New File</Badge>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => window.open(newImageUrl || editingVerification?.photo_url, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open PDF in New Tab
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                      <img 
+                        src={newImageUrl || editingVerification?.photo_url}
+                        alt="Verification"
+                        className="w-full h-auto"
+                        onError={(e) => {
+                          if (e.target && e.target.parentElement) {
+                            e.target.style.display = 'none';
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'p-8 text-center text-slate-500';
+                            errorDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p>Image failed to load</p>';
+                            e.target.parentElement.appendChild(errorDiv);
+                          }
+                        }}
+                      />
+                      {newImageUrl && (
+                        <Badge className="absolute top-2 right-2 bg-green-600">New Image</Badge>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div className="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center">
                     <ImageIcon className="w-12 h-12 mx-auto mb-2 text-slate-300" />
@@ -558,7 +590,7 @@ export default function PartsLibrary() {
                   <input
                     type="file"
                     id="image-upload"
-                    accept="image/*"
+                    accept="image/*,application/pdf"
                     onChange={handleImageUpload}
                     className="hidden"
                   />
@@ -710,24 +742,44 @@ export default function PartsLibrary() {
                 )}
               </div>
 
-              {/* Image Preview */}
+              {/* Document Preview */}
               {previewVerification.photo_url ? (
-                <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                  <img 
-                    src={previewVerification.photo_url}
-                    alt="Verification document"
-                    className="w-full h-auto"
-                    onError={(e) => {
-                      if (e.target && e.target.parentElement) {
-                        e.target.style.display = 'none';
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'p-8 text-center text-slate-500';
-                        errorDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p>Image could not be loaded</p>';
-                        e.target.parentElement.appendChild(errorDiv);
-                      }
-                    }}
-                  />
-                </div>
+                isPDF(previewVerification.photo_url) ? (
+                  <div className="space-y-3">
+                    <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50" style={{ height: '600px' }}>
+                      <iframe
+                        src={previewVerification.photo_url}
+                        className="w-full h-full"
+                        title="PDF Preview"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => window.open(previewVerification.photo_url, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open PDF in New Tab
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                    <img 
+                      src={previewVerification.photo_url}
+                      alt="Verification document"
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        if (e.target && e.target.parentElement) {
+                          e.target.style.display = 'none';
+                          const errorDiv = document.createElement('div');
+                          errorDiv.className = 'p-8 text-center text-slate-500';
+                          errorDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p>Image could not be loaded</p>';
+                          e.target.parentElement.appendChild(errorDiv);
+                        }
+                      }}
+                    />
+                  </div>
+                )
               ) : (
                 <div className="border-2 border-dashed border-slate-200 rounded-lg p-12 text-center">
                   <ImageIcon className="w-12 h-12 mx-auto mb-2 text-slate-300" />
