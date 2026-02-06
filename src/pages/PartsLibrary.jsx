@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { useCart } from '@/components/parts/CartContext';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Search, 
   BookOpen, 
@@ -20,7 +22,8 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   FileUp,
-  Pencil
+  Pencil,
+  Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,8 +36,11 @@ export default function PartsLibrary() {
   const [sourceFilter, setSourceFilter] = useState('all');
   const [editingVerification, setEditingVerification] = useState(null);
   const [showExtractor, setShowExtractor] = useState(false);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedParts, setSelectedParts] = useState(new Set());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addToCart, addMultipleToCart, cartCount } = useCart();
 
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ['partVerifications'],
@@ -113,6 +119,54 @@ export default function PartsLibrary() {
     createOrderMutation.mutate(verification);
   };
 
+  const handleAddToCart = (verification) => {
+    addToCart({
+      part_number: verification.part_number,
+      part_description: verification.part_description,
+      manufacturer: verification.manufacturer,
+      verification_source: verification.source_name,
+      verification_details: verification.source_details,
+      verification_photo_url: verification.photo_url,
+      supplier: verification.manufacturer,
+      unit_cost: 0,
+      quantity: 1
+    });
+    toast.success('Added to cart');
+  };
+
+  const handleToggleSelection = (verificationId) => {
+    setSelectedParts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(verificationId)) {
+        newSet.delete(verificationId);
+      } else {
+        newSet.add(verificationId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAddSelectedToCart = () => {
+    const partsToAdd = filteredVerifications
+      .filter(v => selectedParts.has(v.id))
+      .map(v => ({
+        part_number: v.part_number,
+        part_description: v.part_description,
+        manufacturer: v.manufacturer,
+        verification_source: v.source_name,
+        verification_details: v.source_details,
+        verification_photo_url: v.photo_url,
+        supplier: v.manufacturer,
+        unit_cost: 0,
+        quantity: 1
+      }));
+    
+    addMultipleToCart(partsToAdd);
+    toast.success(`Added ${partsToAdd.length} parts to cart`);
+    setMultiSelectMode(false);
+    setSelectedParts(new Set());
+  };
+
   const handleSubmitEdit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -138,13 +192,26 @@ export default function PartsLibrary() {
             Browse {verifications.length} verified parts from manuals and documentation
           </p>
         </div>
-        <Button 
-          onClick={() => setShowExtractor(true)}
-          className="bg-amber-500 hover:bg-amber-600"
-        >
-          <FileUp className="w-4 h-4 mr-2" />
-          Upload & Extract Parts
-        </Button>
+        <div className="flex gap-2">
+          {cartCount > 0 && (
+            <Button 
+              onClick={() => navigate(createPageUrl('PartsCart'))}
+              variant="outline"
+              className="relative"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              View Cart
+              <Badge className="ml-2 bg-amber-500">{cartCount}</Badge>
+            </Button>
+          )}
+          <Button 
+            onClick={() => setShowExtractor(true)}
+            className="bg-amber-500 hover:bg-amber-600"
+          >
+            <FileUp className="w-4 h-4 mr-2" />
+            Upload & Extract
+          </Button>
+        </div>
       </div>
 
       {/* Search & Filters */}
@@ -206,26 +273,53 @@ export default function PartsLibrary() {
           </div>
         </div>
 
-        {(manufacturerFilter !== 'all' || machineFilter !== 'all' || sourceFilter !== 'all' || search) && (
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
+            {(manufacturerFilter !== 'all' || machineFilter !== 'all' || sourceFilter !== 'all' || search) && (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setManufacturerFilter('all');
+                    setMachineFilter('all');
+                    setSourceFilter('all');
+                    setSearch('');
+                  }}
+                  className="text-slate-500 hover:text-slate-700"
+                >
+                  Clear Filters
+                </Button>
+                <span className="text-sm text-slate-500">
+                  {filteredVerifications.length} {filteredVerifications.length === 1 ? 'part' : 'parts'} found
+                </span>
+              </>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {multiSelectMode && selectedParts.size > 0 && (
+              <Button 
+                onClick={handleAddSelectedToCart}
+                className="bg-amber-500 hover:bg-amber-600"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add {selectedParts.size} to Cart
+              </Button>
+            )}
+            <Button
+              variant={multiSelectMode ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                setManufacturerFilter('all');
-                setMachineFilter('all');
-                setSourceFilter('all');
-                setSearch('');
+                setMultiSelectMode(!multiSelectMode);
+                setSelectedParts(new Set());
               }}
-              className="text-slate-500 hover:text-slate-700"
             >
-              Clear Filters
+              {multiSelectMode ? 'Done' : 'Multi-Select'}
             </Button>
-            <span className="text-sm text-slate-500">
-              {filteredVerifications.length} {filteredVerifications.length === 1 ? 'part' : 'parts'} found
-            </span>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Parts List */}
@@ -268,6 +362,9 @@ export default function PartsLibrary() {
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
+                {multiSelectMode && (
+                  <th className="px-4 py-3 w-10"></th>
+                )}
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Part</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Manufacturer</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Machine</th>
@@ -278,6 +375,14 @@ export default function PartsLibrary() {
             <tbody className="divide-y divide-slate-200">
               {filteredVerifications.map((verification) => (
                 <tr key={verification.id} className="hover:bg-slate-50">
+                  {multiSelectMode && (
+                    <td className="px-4 py-3">
+                      <Checkbox
+                        checked={selectedParts.has(verification.id)}
+                        onCheckedChange={() => handleToggleSelection(verification.id)}
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {verification.photo_url ? (
@@ -347,15 +452,16 @@ export default function PartsLibrary() {
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button
-                        onClick={() => handleQuickOrder(verification)}
-                        disabled={createOrderMutation.isPending}
-                        className="bg-amber-500 hover:bg-amber-600 text-white"
-                        size="sm"
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        Add to Orders
-                      </Button>
+                      {!multiSelectMode && (
+                        <Button
+                          onClick={() => handleAddToCart(verification)}
+                          className="bg-amber-500 hover:bg-amber-600 text-white"
+                          size="sm"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Add to Cart
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
