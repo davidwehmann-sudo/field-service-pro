@@ -24,7 +24,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
+import "jspdf-autotable";
 
 export default function DataManagement() {
   const [currentUser, setCurrentUser] = useState(null);
