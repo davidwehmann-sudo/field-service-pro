@@ -380,6 +380,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
+            verification_source: 'Receipt Upload',
+            verification_details: 'Extracted from receipt via AI',
             notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
           });
           continue;
@@ -428,6 +430,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
+            verification_source: 'Receipt Upload',
+            verification_details: 'Extracted from receipt via AI',
             notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
           });
         }
@@ -532,6 +536,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         status: 'ordered',
         order_date: data.receipt_date,
         receipt_url: data.receipt_url,
+        verification_source: 'Receipt Upload',
+        verification_details: 'Extracted from receipt via AI',
         notes: `AI extracted (${data.confidence} confidence) - confirm receipt manually`
       });
     }
