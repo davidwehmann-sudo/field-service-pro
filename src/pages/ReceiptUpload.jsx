@@ -316,14 +316,15 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
   const handleSaveAsPartsOrder = async (assignmentType = 'inventory', serviceReportId = null, customerId = null) => {
     const data = editedData || extractedData;
     
-    // Check verification for all line items (except shipping)
+    // Check verification for all line items (except shipping and consumables)
     if (data.line_items && data.line_items.length > 0) {
       const missingVerification = data.line_items.some((item, idx) => {
         const isShipping = /shipping|freight|delivery|transport/i.test(item.description || '');
-        return !isShipping && !verificationMatches[idx];
+        const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
+        return !isShipping && !isConsumable && !verificationMatches[idx];
       });
       if (missingVerification) {
-        toast.error('Please verify all parts against the library before saving');
+        toast.error('Please verify all parts and fluids against the library before saving');
         return;
       }
     }
@@ -404,6 +405,7 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         // Get verification from matched library entry
         const verification = verificationMatches[idx];
         const isShipping = /shipping|freight|delivery|transport/i.test(item.description || '');
+        const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
         
         // If no matches and no part number, create new
         if (matchingParts.length === 0 && !item.part_number) {
@@ -458,8 +460,6 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           }
         } else if (matchingParts.length === 0 && item.part_number) {
           // No match - create new part with verification
-          const verification = verificationMatches[idx];
-          const isShipping = /shipping|freight|delivery|transport/i.test(item.description || '');
           partsToCreate.push({
             assignment_type: assignmentType,
             service_report_id: serviceReportId,
@@ -472,8 +472,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
-            verification_source: isShipping ? 'Shipping Cost' : (verification?.source_name || 'Unknown'),
-            verification_details: isShipping ? 'Shipping/freight charge' : (verification?.source_details || 'Verification required'),
+            verification_source: isShipping ? 'Shipping Cost' : isConsumable ? 'Shop Consumable' : (verification?.source_name || 'Unknown'),
+            verification_details: isShipping ? 'Shipping/freight charge' : isConsumable ? 'General shop consumable item' : (verification?.source_details || 'Verification required'),
             verification_photo_url: verification?.photo_url,
             notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
           });
@@ -855,10 +855,12 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-blue-900 font-medium mb-2">⚠️ Important: Part Verification Required</p>
+              <p className="text-sm text-blue-900 font-medium mb-2">⚠️ Important: Part & Fluid Verification Required</p>
+              <p className="text-xs text-blue-800 mb-2">
+                <strong>Parts and fluids</strong> must be verified against technical documentation (parts diagrams, manuals, fluid specs) before saving.
+              </p>
               <p className="text-xs text-blue-800">
-                Each part must be verified against technical documentation (parts diagrams, manuals, etc.) before it can be saved. 
-                Select a matching verification from the library or add a new verification if needed.
+                <strong>Auto-verified items:</strong> Shipping/freight charges and shop consumables (towels, gloves, cleaners, etc.) don't require verification.
               </p>
             </div>
 
@@ -866,9 +868,15 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
               const selectedVerification = verificationMatches[idx] ? 
                 verificationLibrary.find(v => v.id === verificationMatches[idx]) : null;
               const isShipping = /shipping|freight|delivery|transport/i.test(item.description || '');
+              const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
+              const isFluid = /hydraulic|coolant|gear\s*oil|grease|engine\s*oil|transmission\s*fluid|brake\s*fluid|antifreeze/i.test(item.description || '');
               
               return (
-                <div key={idx} className={`p-4 border-2 rounded-lg ${isShipping ? 'border-blue-200 bg-blue-50' : selectedVerification ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                <div key={idx} className={`p-4 border-2 rounded-lg ${
+                  isShipping || isConsumable ? 'border-blue-200 bg-blue-50' : 
+                  selectedVerification ? 'border-green-200 bg-green-50' : 
+                  'border-red-200 bg-red-50'
+                }`}>
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -882,8 +890,20 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
                             Shipping cost - no verification required
                           </p>
                         )}
+                        {isConsumable && (
+                          <p className="text-xs text-blue-700 mt-1 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Shop consumable - no verification required
+                          </p>
+                        )}
+                        {isFluid && !selectedVerification && (
+                          <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Fluid/lubricant - must verify meets machine specs
+                          </p>
+                        )}
                       </div>
-                      {isShipping ? (
+                      {isShipping || isConsumable ? (
                         <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
                       ) : selectedVerification ? (
                         <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
@@ -892,7 +912,7 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
                       )}
                     </div>
 
-                    {!isShipping && (
+                    {!isShipping && !isConsumable && (
                     <div>
                       <Label className="text-xs mb-2 block">Match to Library Verification *</Label>
                       <Select
@@ -965,14 +985,15 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
 
             {data.line_items.some((item, idx) => {
               const isShipping = /shipping|freight|delivery|transport/i.test(item.description || '');
-              return !isShipping && !verificationMatches[idx];
+              const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
+              return !isShipping && !isConsumable && !verificationMatches[idx];
             }) && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-900 font-medium">
-                  ⚠️ Missing verifications - all parts must be verified before saving
+                  ⚠️ Missing verifications - all parts and fluids must be verified before saving
                 </p>
                 <p className="text-xs text-amber-800 mt-1">
-                  Note: Shipping/freight items don't require verification
+                  Note: Shipping and consumables (shop supplies) don't require verification. Fluids and parts must be verified against technical documentation.
                 </p>
               </div>
             )}
