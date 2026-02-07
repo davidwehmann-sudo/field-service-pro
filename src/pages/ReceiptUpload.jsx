@@ -563,9 +563,22 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         await savePartsOrder.mutateAsync(partsToCreate);
       }
 
+      // Distribute shipping costs if there are shipping line items
+      const hasShipping = data.line_items.some(item => 
+        /shipping|freight|delivery|transport/i.test(item.description || '')
+      );
+      if (hasShipping) {
+        try {
+          await base44.functions.invoke('distributeShippingCosts', { receipt_url: data.receipt_url });
+        } catch (error) {
+          console.error('Failed to distribute shipping:', error);
+          toast.error('Parts saved but shipping distribution failed');
+        }
+      }
+
       const matched = partsToUpdate.length;
       const created = partsToCreate.length;
-      toast.success(`${matched} part${matched !== 1 ? 's' : ''} matched and updated, ${created} new part${created !== 1 ? 's' : ''} created`);
+      toast.success(`${matched} part${matched !== 1 ? 's' : ''} matched and updated, ${created} new part${created !== 1 ? 's' : ''} created${hasShipping ? ' • Shipping distributed' : ''}`);
       resetForm();
     } else {
       // Fallback to single item - requires verification
