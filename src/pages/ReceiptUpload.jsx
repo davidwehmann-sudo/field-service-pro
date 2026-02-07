@@ -22,6 +22,7 @@ export default function ReceiptUpload() {
   const [multiMatchConfirm, setMultiMatchConfirm] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [verificationMatches, setVerificationMatches] = useState({});
+  const [acknowledgeUnverified, setAcknowledgeUnverified] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -323,8 +324,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
         return !isShipping && !isConsumable && !verificationMatches[idx];
       });
-      if (missingVerification) {
-        toast.error('Please verify all parts and fluids against the library before saving');
+      if (missingVerification && !acknowledgeUnverified) {
+        toast.error('Please verify all parts/fluids or acknowledge they will be verified later');
         return;
       }
     }
@@ -472,10 +473,10 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
-            verification_source: isShipping ? 'Shipping Cost' : isConsumable ? 'Shop Consumable' : (verification?.source_name || 'Unknown'),
-            verification_details: isShipping ? 'Shipping/freight charge' : isConsumable ? 'General shop consumable item' : (verification?.source_details || 'Verification required'),
+            verification_source: isShipping ? 'Shipping Cost' : isConsumable ? 'Shop Consumable' : (verification?.source_name || 'PENDING VERIFICATION'),
+            verification_details: isShipping ? 'Shipping/freight charge' : isConsumable ? 'General shop consumable item' : (verification?.source_details || '⚠️ NEEDS VERIFICATION - Upload to library'),
             verification_photo_url: verification?.photo_url,
-            notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
+            notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually${!verification && !isShipping && !isConsumable ? '\n\n⚠️ VERIFICATION PENDING - Add to parts library with proper diagram/spec documentation' : ''}`
           });
         }
       }
@@ -988,13 +989,36 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
               const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
               return !isShipping && !isConsumable && !verificationMatches[idx];
             }) && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-900 font-medium">
-                  ⚠️ Missing verifications - all parts and fluids must be verified before saving
-                </p>
-                <p className="text-xs text-amber-800 mt-1">
-                  Note: Shipping and consumables (shop supplies) don't require verification. Fluids and parts must be verified against technical documentation.
-                </p>
+              <div className="space-y-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-900 font-medium">
+                    ⚠️ Missing verifications - parts and fluids need verification
+                  </p>
+                  <p className="text-xs text-amber-800 mt-1">
+                    Note: Shipping and consumables (shop supplies) don't require verification. Fluids and parts must be verified against technical documentation.
+                  </p>
+                </div>
+                
+                <div className="bg-slate-50 border-2 border-slate-300 rounded-lg p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acknowledgeUnverified}
+                      onChange={(e) => setAcknowledgeUnverified(e.target.checked)}
+                      className="mt-1 w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        I acknowledge these items need verification
+                      </p>
+                      <p className="text-xs text-slate-600 mt-1">
+                        By checking this box, I understand that unverified parts/fluids must be properly verified 
+                        through the Parts Library page with appropriate diagrams, manuals, or specification documentation 
+                        before they can be installed or used.
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
             )}
           </CardContent>
