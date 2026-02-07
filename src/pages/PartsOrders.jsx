@@ -327,6 +327,8 @@ export default function PartsOrders() {
       markup_percent: parseFloat(formData.get('markup_percent')) || 25,
       receipt_url: receiptUrl,
       job_id: formData.get('job_id') === 'none' ? null : formData.get('job_id'),
+      verification_source: formData.get('verification_source') || 'Manual Entry',
+      verification_details: formData.get('verification_details') || 'Added manually',
       // Clear fields that don't apply to this assignment type
       service_report_id: assignmentType === 'service_report' ? formData.get('service_report_id') : null,
       customer_id: assignmentType === 'counter_sale' ? formData.get('customer_id') : null,
