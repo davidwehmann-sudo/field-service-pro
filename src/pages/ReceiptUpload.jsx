@@ -572,7 +572,17 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           <CardContent className="space-y-4">
             <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
               {preview ? (
-                <img src={preview} alt="Receipt preview" className="max-h-64 mx-auto rounded-lg" />
+                file?.type === 'application/pdf' ? (
+                  <div className="space-y-2">
+                    <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12h4"/><path d="M10 16h4"/></svg>
+                    </div>
+                    <p className="text-sm font-medium text-slate-700">{file.name}</p>
+                    <p className="text-xs text-slate-500">PDF Receipt</p>
+                  </div>
+                ) : (
+                  <img src={preview} alt="Receipt preview" className="max-h-64 mx-auto rounded-lg" />
+                )
               ) : (
                 <div className="space-y-3">
                   <Upload className="w-12 h-12 mx-auto text-slate-400" />
