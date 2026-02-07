@@ -146,12 +146,7 @@ export default function PartsCart() {
                       </Button>
                     </div>
 
-                    {(!item.verification_source || !item.verification_details) && (
-                      <Badge variant="destructive" className="mb-2">
-                        <AlertTriangle className="w-3 h-3 mr-1" />
-                        Missing Verification
-                      </Badge>
-                    )}
+
 
                     <div className="grid grid-cols-2 gap-3 mt-3">
                       <div>
