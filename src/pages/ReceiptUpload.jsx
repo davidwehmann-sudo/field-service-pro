@@ -21,6 +21,7 @@ export default function ReceiptUpload() {
   const [manualMatches, setManualMatches] = useState({});
   const [multiMatchConfirm, setMultiMatchConfirm] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [verificationMatches, setVerificationMatches] = useState({});
 
   const queryClient = useQueryClient();
 
@@ -57,6 +58,11 @@ export default function ReceiptUpload() {
   const { data: existingVehicleExpenses = [] } = useQuery({
     queryKey: ['allVehicleExpenses'],
     queryFn: () => base44.entities.VehicleExpense.list(),
+  });
+
+  const { data: verificationLibrary = [] } = useQuery({
+    queryKey: ['partVerifications'],
+    queryFn: () => base44.entities.PartVerification.list(),
   });
 
   const handleFileSelect = (e) => {
@@ -293,6 +299,15 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
   const handleSaveAsPartsOrder = async (assignmentType = 'inventory', serviceReportId = null, customerId = null) => {
     const data = editedData || extractedData;
     
+    // Check verification for all line items
+    if (data.line_items && data.line_items.length > 0) {
+      const missingVerification = data.line_items.some((item, idx) => !verificationMatches[idx]);
+      if (missingVerification) {
+        toast.error('Please verify all parts against the library before saving');
+        return;
+      }
+    }
+    
     // Check for duplicates before saving (skip if already confirmed)
     if (!duplicateWarning) {
       const duplicates = checkForDuplicates(data, data.receipt_url);
@@ -366,6 +381,9 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           return;
         }
 
+        // Get verification from matched library entry
+        const verification = verificationMatches[idx];
+        
         // If no matches and no part number, create new
         if (matchingParts.length === 0 && !item.part_number) {
           partsToCreate.push({
@@ -380,8 +398,9 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
-            verification_source: 'Receipt Upload',
-            verification_details: 'Extracted from receipt via AI',
+            verification_source: verification?.source_name || 'Unknown',
+            verification_details: verification?.source_details || 'Verification required',
+            verification_photo_url: verification?.photo_url,
             notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
           });
           continue;
@@ -417,7 +436,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             });
           }
         } else if (matchingParts.length === 0 && item.part_number) {
-          // No match - create new part
+          // No match - create new part with verification
+          const verification = verificationMatches[idx];
           partsToCreate.push({
             assignment_type: assignmentType,
             service_report_id: serviceReportId,
@@ -430,8 +450,9 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
-            verification_source: 'Receipt Upload',
-            verification_details: 'Extracted from receipt via AI',
+            verification_source: verification?.source_name || 'Unknown',
+            verification_details: verification?.source_details || 'Verification required',
+            verification_photo_url: verification?.photo_url,
             notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
           });
         }
@@ -523,7 +544,13 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
       toast.success(`${matched} part${matched !== 1 ? 's' : ''} matched and updated, ${created} new part${created !== 1 ? 's' : ''} created`);
       resetForm();
     } else {
-      // Fallback to single item
+      // Fallback to single item - requires verification
+      const verification = verificationMatches[0];
+      if (!verification) {
+        toast.error('Please verify the part against the library before saving');
+        return;
+      }
+      
       savePartsOrder.mutate({
         assignment_type: assignmentType,
         service_report_id: serviceReportId,
@@ -536,8 +563,9 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         status: 'ordered',
         order_date: data.receipt_date,
         receipt_url: data.receipt_url,
-        verification_source: 'Receipt Upload',
-        verification_details: 'Extracted from receipt via AI',
+        verification_source: verification.source_name,
+        verification_details: verification.source_details,
+        verification_photo_url: verification.photo_url,
         notes: `AI extracted (${data.confidence} confidence) - confirm receipt manually`
       });
     }
@@ -793,6 +821,96 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
           </Card>
         )}
       </div>
+
+      {/* Verification Library Matching - REQUIRED */}
+      {extractedData && data.line_items && data.line_items.length > 0 && (
+        <Card className="border-2 border-amber-500">
+          <CardHeader className="bg-amber-50">
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              Verify Parts (Required)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-900 font-medium mb-2">⚠️ Important: Part Verification Required</p>
+              <p className="text-xs text-blue-800">
+                Each part must be verified against technical documentation (parts diagrams, manuals, etc.) before it can be saved. 
+                Select a matching verification from the library or add a new verification if needed.
+              </p>
+            </div>
+
+            {data.line_items.map((item, idx) => {
+              const selectedVerification = verificationMatches[idx] ? 
+                verificationLibrary.find(v => v.id === verificationMatches[idx]) : null;
+              
+              return (
+                <div key={idx} className={`p-4 border-2 rounded-lg ${selectedVerification ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900">{item.description}</p>
+                        {item.part_number && (
+                          <p className="text-sm text-slate-600 mt-1">Receipt Part #: {item.part_number}</p>
+                        )}
+                      </div>
+                      {selectedVerification ? (
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-xs mb-2 block">Match to Library Verification *</Label>
+                      <Select
+                        value={verificationMatches[idx] || ''}
+                        onValueChange={(value) => setVerificationMatches(prev => ({ ...prev, [idx]: value }))}
+                      >
+                        <SelectTrigger className={selectedVerification ? "border-green-300 bg-white" : "border-red-300 bg-white"}>
+                          <SelectValue placeholder="Select verification source..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {verificationLibrary.map(verification => (
+                            <SelectItem key={verification.id} value={verification.id}>
+                              <div className="py-1">
+                                <div className="font-medium">{verification.part_number} - {verification.machine_model}</div>
+                                <div className="text-xs text-slate-600">{verification.source_name}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedVerification && (
+                      <div className="p-3 bg-white rounded border border-green-200">
+                        <p className="text-xs text-slate-500 mb-2">Verification Details:</p>
+                        <div className="space-y-1 text-sm">
+                          <p><strong>Source:</strong> {selectedVerification.source_name}</p>
+                          <p><strong>Details:</strong> {selectedVerification.source_details}</p>
+                          <p><strong>Machine:</strong> {selectedVerification.machine_model}</p>
+                          {selectedVerification.part_description && (
+                            <p><strong>Description:</strong> {selectedVerification.part_description}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {data.line_items.some((_, idx) => !verificationMatches[idx]) && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-900 font-medium">
+                  ⚠️ Missing verifications - all parts must be verified before saving
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Manual Matching */}
       {extractedData && data.line_items && data.line_items.length > 0 && neededParts.length > 0 && (
