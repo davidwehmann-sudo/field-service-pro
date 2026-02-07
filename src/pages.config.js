@@ -57,6 +57,7 @@ import Home from './pages/Home';
 import Invoices from './pages/Invoices';
 import Jobs from './pages/Jobs';
 import OwnVehicles from './pages/OwnVehicles';
+import PartsCart from './pages/PartsCart';
 import PartsInventory from './pages/PartsInventory';
 import PartsLibrary from './pages/PartsLibrary';
 import PartsOrders from './pages/PartsOrders';
@@ -69,7 +70,6 @@ import SignReport from './pages/SignReport';
 import Sitemap from './pages/Sitemap';
 import TechnicianPayroll from './pages/TechnicianPayroll';
 import VehicleExpenses from './pages/VehicleExpenses';
-import PartsCart from './pages/PartsCart';
 import __Layout from './Layout.jsx';
 
 
@@ -84,6 +84,7 @@ export const PAGES = {
     "Invoices": Invoices,
     "Jobs": Jobs,
     "OwnVehicles": OwnVehicles,
+    "PartsCart": PartsCart,
     "PartsInventory": PartsInventory,
     "PartsLibrary": PartsLibrary,
     "PartsOrders": PartsOrders,
@@ -96,7 +97,6 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "TechnicianPayroll": TechnicianPayroll,
     "VehicleExpenses": VehicleExpenses,
-    "PartsCart": PartsCart,
 }
 
 export const pagesConfig = {

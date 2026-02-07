@@ -89,8 +89,8 @@ export default function PartsCart() {
       unit_cost: item.unit_cost || 0,
       supplier: item.supplier || '',
       status: 'needed',
-      verification_source: item.verification_source,
-      verification_details: item.verification_details,
+      verification_source: item.verification_source || 'Parts Library',
+      verification_details: item.verification_details || 'Added from verified parts library',
       verification_photo_url: item.verification_photo_url,
       notes: item.notes || '',
     }));
