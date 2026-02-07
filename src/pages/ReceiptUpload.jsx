@@ -473,8 +473,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
-            verification_source: isShipping ? 'Shipping Cost' : isConsumable ? 'Shop Consumable' : (verification?.source_name || 'PENDING VERIFICATION'),
-            verification_details: isShipping ? 'Shipping/freight charge' : isConsumable ? 'General shop consumable item' : (verification?.source_details || '⚠️ NEEDS VERIFICATION - Upload to library'),
+            verification_source: isShipping ? 'Shipping Cost' : isConsumable ? 'Shop Consumable' : verification ? verification.source_name : 'PENDING VERIFICATION',
+            verification_details: isShipping ? 'Shipping/freight charge' : isConsumable ? 'General shop consumable item' : verification ? verification.source_details : '⚠️ NEEDS VERIFICATION - Upload to library',
             verification_photo_url: verification?.photo_url,
             notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually${!verification && !isShipping && !isConsumable ? '\n\n⚠️ VERIFICATION PENDING - Add to parts library with proper diagram/spec documentation' : ''}`
           });
