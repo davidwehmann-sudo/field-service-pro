@@ -58,14 +58,7 @@ export default function PartsCart() {
       return;
     }
 
-    const missingVerification = cartItems.filter(
-      item => !item.verification_source || !item.verification_details
-    );
 
-    if (missingVerification.length > 0) {
-      toast.error('Some parts are missing verification information');
-      return;
-    }
 
     if (assignmentType === 'service_report' && !jobId) {
       toast.error('Please select a job for service report assignment');
