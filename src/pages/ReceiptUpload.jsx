@@ -150,6 +150,23 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
       setExtractedData({ ...extractedInfo, receipt_url: file_url });
       setEditedData({ ...extractedInfo, receipt_url: file_url });
       
+      // Auto-suggest verification matches
+      if (extractedInfo.line_items && extractedInfo.line_items.length > 0) {
+        const suggestions = {};
+        extractedInfo.line_items.forEach((item, idx) => {
+          if (item.part_number) {
+            // Find best match by part number
+            const match = verificationLibrary.find(v => 
+              v.part_number.toLowerCase().trim() === item.part_number.toLowerCase().trim()
+            );
+            if (match) {
+              suggestions[idx] = match.id;
+            }
+          }
+        });
+        setVerificationMatches(suggestions);
+      }
+      
       // Check for duplicates
       const duplicates = checkForDuplicates(extractedInfo, file_url);
       if (duplicates.length > 0) {
@@ -871,14 +888,43 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
                           <SelectValue placeholder="Select verification source..." />
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
-                          {verificationLibrary.map(verification => (
-                            <SelectItem key={verification.id} value={verification.id}>
-                              <div className="py-1">
-                                <div className="font-medium">{verification.part_number} - {verification.machine_model}</div>
-                                <div className="text-xs text-slate-600">{verification.source_name}</div>
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {(() => {
+                            // Sort verifications to show best matches first
+                            const sortedVerifications = [...verificationLibrary].sort((a, b) => {
+                              const aPartMatch = item.part_number && a.part_number.toLowerCase().trim() === item.part_number.toLowerCase().trim();
+                              const bPartMatch = item.part_number && b.part_number.toLowerCase().trim() === item.part_number.toLowerCase().trim();
+                              
+                              if (aPartMatch && !bPartMatch) return -1;
+                              if (!aPartMatch && bPartMatch) return 1;
+                              
+                              const aDescMatch = item.description && a.part_description && 
+                                a.part_description.toLowerCase().includes(item.description.toLowerCase().substring(0, 20));
+                              const bDescMatch = item.description && b.part_description && 
+                                b.part_description.toLowerCase().includes(item.description.toLowerCase().substring(0, 20));
+                              
+                              if (aDescMatch && !bDescMatch) return -1;
+                              if (!aDescMatch && bDescMatch) return 1;
+                              
+                              return 0;
+                            });
+                            
+                            return sortedVerifications.map((verification, vIdx) => {
+                              const isTopMatch = vIdx === 0 && item.part_number && 
+                                verification.part_number.toLowerCase().trim() === item.part_number.toLowerCase().trim();
+                              
+                              return (
+                                <SelectItem key={verification.id} value={verification.id}>
+                                  <div className="py-1">
+                                    <div className={`font-medium ${isTopMatch ? 'text-green-700' : ''}`}>
+                                      {isTopMatch && '⭐ '}
+                                      {verification.part_number} - {verification.machine_model}
+                                    </div>
+                                    <div className="text-xs text-slate-600">{verification.source_name}</div>
+                                  </div>
+                                </SelectItem>
+                              );
+                            });
+                          })()}
                         </SelectContent>
                       </Select>
                     </div>
