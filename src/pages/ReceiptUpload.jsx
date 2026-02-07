@@ -404,7 +404,8 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
         }
 
         // Get verification from matched library entry
-        const verification = verificationMatches[idx];
+        const verificationId = verificationMatches[idx];
+        const verification = verificationId ? verificationLibrary.find(v => v.id === verificationId) : null;
         const isShipping = /shipping|freight|delivery|transport/i.test(item.description || '');
         const isConsumable = /shop\s*(towel|rag|cloth)|glove|wipe|cleaner|degreaser|soap|hand\s*clean|safety\s*glass|ppe|first\s*aid/i.test(item.description || '');
         
@@ -422,10 +423,10 @@ If this is a single expense (fuel, service, etc), extract it as one item.`,
             status: 'ordered',
             order_date: data.receipt_date,
             receipt_url: data.receipt_url,
-            verification_source: verification?.source_name || 'Unknown',
-            verification_details: verification?.source_details || 'Verification required',
+            verification_source: isShipping ? 'Shipping Cost' : isConsumable ? 'Shop Consumable' : verification ? verification.source_name : 'PENDING VERIFICATION',
+            verification_details: isShipping ? 'Shipping/freight charge' : isConsumable ? 'General shop consumable item' : verification ? verification.source_details : '⚠️ NEEDS VERIFICATION - Upload to library',
             verification_photo_url: verification?.photo_url,
-            notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually`
+            notes: `AI extracted from receipt (${data.confidence} confidence) - confirm receipt manually${!verification && !isShipping && !isConsumable ? '\n\n⚠️ VERIFICATION PENDING - Add to parts library with proper diagram/spec documentation' : ''}`
           });
           continue;
         }
