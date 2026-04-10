@@ -54,6 +54,16 @@ export default function MobileServiceForm({
       technician_notes: '',
       time_entries: [],
       work_performed: '',
+      service_items: [],
+      destination_fee: {
+        mileage: '',
+        mileage_rate: '0.65',
+        travel_hours: '',
+        travel_rate: '75',
+        location_condition: 'standard',
+        condition_surcharge: 0,
+        total: 0
+      },
       photos: [],
       customer_signature: '',
       notes: '',

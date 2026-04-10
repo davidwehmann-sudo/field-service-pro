@@ -28,7 +28,15 @@ export default function DestinationFeeEditor({ fee = {}, onChange }) {
           setDieselPeriod(res.data.period);
           // Auto-populate if not already set
           if (!fee.diesel_price_per_gallon) {
-            onChange({ ...fee, diesel_price_per_gallon: res.data.price, fuel_surcharge_percent: fee.fuel_surcharge_percent ?? 15 });
+            onChange({
+              mileage_rate: '0.65',
+              travel_rate: '75',
+              location_condition: 'standard',
+              condition_surcharge: 0,
+              ...fee,
+              diesel_price_per_gallon: res.data.price,
+              fuel_surcharge_percent: fee.fuel_surcharge_percent ?? 15
+            });
           }
         }
       } catch (e) {
