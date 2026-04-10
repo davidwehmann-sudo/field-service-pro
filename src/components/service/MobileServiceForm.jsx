@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Send, Camera, Sparkles, Building2 } from "lucide-react";
+import { ArrowLeft, Save, Send, Camera, Sparkles, Building2, DollarSign, MapPin } from "lucide-react";
+import ServiceItemsEditor from '@/components/service/ServiceItemsEditor';
+import DestinationFeeEditor from '@/components/service/DestinationFeeEditor';
 import PhotoUpload from '@/components/service/PhotoUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 import OfflineIndicator from '@/components/service/OfflineIndicator';
@@ -387,6 +389,35 @@ IF additional specific information would help, list in suggested_additional_info
               onChange={(e) => handleChange('work_performed', e.target.value)}
               placeholder="What did you do?"
               rows={4}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Service Items */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign className="w-4 h-4 text-slate-600" />
+              <h3 className="font-semibold text-sm">Billable Service Items</h3>
+            </div>
+            <p className="text-xs text-slate-500 mb-3">Itemized labor for invoice — click AI Compile above to auto-generate from notes</p>
+            <ServiceItemsEditor
+              items={formData.service_items || []}
+              onChange={(items) => handleChange('service_items', items)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Destination Fee */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="w-4 h-4 text-slate-600" />
+              <h3 className="font-semibold text-sm">Destination / Travel Fee</h3>
+            </div>
+            <DestinationFeeEditor
+              fee={formData.destination_fee || {}}
+              onChange={(fee) => handleChange('destination_fee', fee)}
             />
           </CardContent>
         </Card>
