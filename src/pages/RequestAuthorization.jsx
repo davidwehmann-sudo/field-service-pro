@@ -58,7 +58,14 @@ export default function RequestAuthorization() {
       try {
         const user = await base44.auth.me();
         setCurrentUser(user);
-        
+
+        // Staff users don't belong here — send them home
+        const staffTypes = ['service_technician', 'parts_specialist', 'bookkeeper', 'software_engineer', 'service_admin'];
+        if (staffTypes.includes(user?.user_type)) {
+          window.location.href = '/Dashboard';
+          return;
+        }
+
         // Pre-fill email if user is logged in
         if (user?.email && !formData.billing_contact_email) {
           setFormData(prev => ({ ...prev, billing_contact_email: user.email }));

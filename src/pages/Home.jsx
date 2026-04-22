@@ -27,6 +27,10 @@ export default function Home() {
           case 'bookkeeper':
             navigate(createPageUrl('Invoices'), { replace: true });
             break;
+          case 'unassigned_user':
+            // Customers land on the service request form
+            navigate(createPageUrl('RequestAuthorization'), { replace: true });
+            break;
           case 'software_engineer':
           case 'service_admin':
           default:

@@ -7,6 +7,10 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import StaffOnlyRoute from '@/components/StaffOnlyRoute';
+
+// Pages that customers (unassigned_user) are allowed to access
+const PUBLIC_PAGES = new Set(['RequestAuthorization', 'Home', 'SignReport']);
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -52,9 +56,17 @@ const AuthenticatedApp = () => {
           key={path}
           path={`/${path}`}
           element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
+            PUBLIC_PAGES.has(path) ? (
+              <LayoutWrapper currentPageName={path}>
+                <Page />
+              </LayoutWrapper>
+            ) : (
+              <StaffOnlyRoute>
+                <LayoutWrapper currentPageName={path}>
+                  <Page />
+                </LayoutWrapper>
+              </StaffOnlyRoute>
+            )
           }
         />
       ))}
