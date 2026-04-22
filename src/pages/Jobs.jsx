@@ -40,8 +40,9 @@ export default function Jobs() {
         const user = await base44.auth.me();
         setCurrentUser(user);
         
-        if (user.user_type === 'service_customer') {
-          navigate(createPageUrl('Home'));
+        // StaffOnlyRoute handles redirect; this is a belt-and-suspenders fallback
+        if (!user.user_type || user.user_type === 'unassigned_user') {
+          navigate(createPageUrl('RequestAuthorization'), { replace: true });
         }
       } catch (error) {
         navigate(createPageUrl('Home'));
@@ -425,8 +426,8 @@ export default function Jobs() {
                 </div>
               )}
             </div>
-            <p className="text-xs text-slate-500 mb-3">Ctrl+Click to multi-select items</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <p className="text-xs text-slate-500 mb-3">Tap to select, then drag to assign. Long-press or Ctrl+Click to multi-select.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {/* Orphaned Authorizations */}
               {orphanedAuths.length > 0 && (
                 <Droppable droppableId="orphan-auths" isDropDisabled={true}>
@@ -593,46 +594,46 @@ export default function Jobs() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-4 mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
                         {job.jobNumber ? (
-                          <Badge variant="outline" className="font-mono text-xs">
+                          <Badge variant="outline" className="font-mono text-xs flex-shrink-0">
                             {job.jobNumber}
                           </Badge>
                         ) : (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-6 px-2 text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200"
+                            className="h-6 px-2 text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 flex-shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               generateJobNumberMutation.mutate(job.id);
                             }}
                             disabled={generateJobNumberMutation.isPending}
                           >
-                            {generateJobNumberMutation.isPending ? 'Generating...' : 'Generate Job #'}
+                            {generateJobNumberMutation.isPending ? 'Generating...' : 'Gen #'}
                           </Button>
                         )}
-                        <h3 className="font-semibold text-slate-900">
+                        <h3 className="font-semibold text-slate-900 truncate">
                           {getCustomerName(job.customer_id)}
                         </h3>
-                        <Badge className={statusColors[getJobStatus(job)]}>
+                        <Badge className={`${statusColors[getJobStatus(job)]} text-xs flex-shrink-0`}>
                           {getJobStatus(job).replace(/_/g, ' ')}
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-700 mb-2">
+                      <p className="text-sm text-slate-700 truncate">
                         {getJobTitle(job)}
                       </p>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-slate-900">
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-base font-semibold text-slate-900">
                         ${getJobValue(job).toFixed(2)}
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                      <div className="flex items-center gap-1 text-xs text-slate-500 justify-end">
                         <Calendar className="w-3 h-3" />
-                        {format(new Date(job.date), 'MMM d, yyyy')}
+                        {format(new Date(job.date), 'MMM d')}
                       </div>
                     </div>
                   </div>
@@ -642,24 +643,24 @@ export default function Jobs() {
                       variant="outline"
                       size="sm"
                       onClick={() => handlePrintComprehensiveReport(job)}
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-blue-600 hover:text-blue-700 text-xs"
                       title="Print comprehensive job report"
                     >
-                      <Printer className="w-4 h-4 mr-1" />
-                      Print Complete Report
+                      <Printer className="w-4 h-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Print Report</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(job)}
-                      className="text-red-400 hover:text-red-600"
+                      className="text-red-400 hover:text-red-600 h-8 w-8"
                       title="Delete job and all related items"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                     {/* Authorization */}
                     <Link 
                       to={job.authorization ? `${createPageUrl('Authorizations')}?edit=${job.authorization.id}` : createPageUrl('Authorizations')}

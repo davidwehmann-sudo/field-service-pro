@@ -31,9 +31,9 @@ export default function Dashboard() {
         const user = await base44.auth.me();
         setCurrentUser(user);
         
-        // Block customers from dashboard
-        if (user.user_type === 'service_customer') {
-          navigate(createPageUrl('Home'));
+        // Unassigned users are redirected by StaffOnlyRoute, this is a fallback
+        if (!user.user_type || user.user_type === 'unassigned_user') {
+          navigate(createPageUrl('RequestAuthorization'), { replace: true });
         }
       } catch (error) {
         navigate(createPageUrl('Home'));
@@ -65,7 +65,7 @@ export default function Dashboard() {
 
   // Calculate stats with memoization
   const stats = useMemo(() => {
-    const draftReports = serviceReports.filter(r => r.status === 'draft').length;
+    const draftReports = serviceReports.filter(r => r.status === 'open').length;
     const unpaidInvoices = invoices.filter(i => i.status !== 'paid');
     const unpaidTotal = unpaidInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
     const pendingParts = partsOrders.filter(p => p.status === 'needed' || p.status === 'ordered').length;
@@ -93,13 +93,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 mt-1">Welcome back, here's what's happening</p>
-          {currentUser && (
-            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs font-mono text-blue-900">
-                <strong>Preview User:</strong> {currentUser.email} | <strong>Type:</strong> {currentUser.user_type || 'not set'} | <strong>Name:</strong> {currentUser.full_name || 'not set'}
-              </p>
-            </div>
-          )}
+
         </div>
         <Link to={createPageUrl('ServiceReports') + '?new=true'}>
           <Button className="bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/25">
@@ -122,7 +116,7 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard 
-            title="Draft Reports" 
+            title="Open Reports" 
             value={stats.draftReports}
             subtitle="Need completion"
             icon={FileText}

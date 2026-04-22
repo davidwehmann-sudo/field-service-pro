@@ -521,8 +521,8 @@ CHARGES:
 
       {/* Filters */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-3">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Search invoices..."
@@ -531,16 +531,18 @@ CHARGES:
               className="pl-10"
             />
           </div>
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="draft">Draft</TabsTrigger>
-              <TabsTrigger value="sent">Sent</TabsTrigger>
-              <TabsTrigger value="partially_paid">Partial</TabsTrigger>
-              <TabsTrigger value="paid">Paid</TabsTrigger>
-              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="overflow-x-auto -mx-1 px-1 pb-1">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="min-w-max w-full sm:w-auto">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="draft">Draft</TabsTrigger>
+                <TabsTrigger value="sent">Sent</TabsTrigger>
+                <TabsTrigger value="partially_paid">Partial</TabsTrigger>
+                <TabsTrigger value="paid">Paid</TabsTrigger>
+                <TabsTrigger value="overdue">Overdue</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -651,89 +653,67 @@ CHARGES:
                   </div>
                   
                    <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-slate-900 truncate">
                           {getCustomerName(invoice.customer_id)}
                         </h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-xs text-slate-500">
                           {invoice.invoice_number && (
-                            <span className="flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
+                            <span className="flex items-center gap-1 truncate">
+                              <FileText className="w-3 h-3 flex-shrink-0" />
                               {invoice.invoice_number}
                             </span>
                           )}
                           {invoice.invoice_date && (
-                            <>
-                              <span className="text-slate-300">•</span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {format(new Date(invoice.invoice_date), 'MMM d, yyyy')}
-                              </span>
-                            </>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 flex-shrink-0" />
+                              {format(new Date(invoice.invoice_date), 'MMM d, yyyy')}
+                            </span>
                           )}
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                        <Badge className={statusColors[invoice.status]}>
+                      <div className="text-right flex-shrink-0">
+                        <Badge className={`${statusColors[invoice.status]} text-xs`}>
                           {invoice.status}
                         </Badge>
-                        <p className="text-xl font-bold text-slate-900 mt-2">
+                        <p className="text-lg font-bold text-slate-900 mt-1">
                           ${(invoice.total_amount || 0).toFixed(2)}
                         </p>
-                        {invoice.discount_percent > 0 && (
-                          <p className="text-xs text-green-600">
-                            {invoice.discount_percent}% discount
-                          </p>
-                        )}
-                        {invoice.manual_price_override && (
-                          <p className="text-xs text-purple-600">
-                            Manual override
-                          </p>
-                        )}
                         {invoice.ag_exempt && (
-                          <p className="text-xs text-green-600 font-medium">
-                            🌾 Ag Exempt
-                          </p>
+                          <p className="text-xs text-green-600 font-medium">🌾 Ag Exempt</p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                    <Button 
                      variant="ghost" 
                      size="icon"
+                     className="h-8 w-8"
                      onClick={() => handlePrintInvoice(invoice.id)}
                      title="Download/Print PDF"
                    >
                      <Printer className="w-4 h-4 text-slate-600" />
                    </Button>
-                   {invoice.status !== 'paid' && (
-                     <Button 
-                       variant="ghost" 
-                       size="icon"
-                       onClick={() => handleGeneratePaymentLink(invoice)}
-                       title="Copy payment link"
-                     >
-                       <LinkIcon className="w-4 h-4 text-purple-500" />
-                     </Button>
-                   )}
                    <Button 
                      variant="ghost" 
                      size="icon"
+                     className="h-8 w-8 hidden sm:flex"
                      onClick={() => handleSendEmail(invoice)}
                      title="Send invoice via email"
                    >
                      <Send className="w-4 h-4 text-blue-500" />
                    </Button>
-
                     {invoice.status !== 'paid' && (
                       <Button 
                         variant="ghost" 
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => { setPayingInvoice(invoice); setShowPayment(true); }}
+                        title="Record payment"
                       >
                         <CreditCard className="w-4 h-4 text-green-500" />
                       </Button>
@@ -741,7 +721,9 @@ CHARGES:
                     <Button 
                       variant="ghost" 
                       size="icon"
+                      className="h-8 w-8"
                       onClick={() => setInvoiceToDelete(invoice)}
+                      title="Delete"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
@@ -786,7 +768,7 @@ CHARGES:
               />
             )}
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="invoice_number">Invoice Number</Label>
                 <Input 
@@ -825,7 +807,7 @@ CHARGES:
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="invoice_date">Invoice Date</Label>
                 <Input 
@@ -848,7 +830,7 @@ CHARGES:
 
             <div className="border-t pt-4">
               <h3 className="font-semibold mb-3">Charges</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="labor_total">Labor Total ($)</Label>
                   <Input 
@@ -884,7 +866,7 @@ CHARGES:
 
             <div className="border-t pt-4">
               <h3 className="font-semibold mb-3">Adjustments</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="discount_percent">Discount (%)</Label>
                   <Input 
@@ -960,7 +942,7 @@ CHARGES:
                 </div>
               )}
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="tax_rate">Tax Rate (%)</Label>
                   <Input 

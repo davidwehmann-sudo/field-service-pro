@@ -319,7 +319,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="p-4 lg:p-8">
+        <main className="p-4 lg:p-8 pb-24 lg:pb-8">
           {children}
         </main>
 

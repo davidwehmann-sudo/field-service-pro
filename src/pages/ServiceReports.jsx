@@ -46,7 +46,13 @@ export default function ServiceReports() {
   const reportId = urlParams.get('id');
   const shouldOpenNew = urlParams.get('new') === 'true';
   const preselectedCustomer = urlParams.get('customer');
-  const isMobile = window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['serviceReports'],
@@ -239,8 +245,8 @@ export default function ServiceReports() {
 
       {/* Filters */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-3">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Search reports..."
@@ -249,14 +255,16 @@ export default function ServiceReports() {
               className="pl-10"
             />
           </div>
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="open">Open</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="invoiced">Invoiced</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="overflow-x-auto -mx-1 px-1">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="all" className="flex-1 sm:flex-none">All</TabsTrigger>
+                <TabsTrigger value="open" className="flex-1 sm:flex-none">Open</TabsTrigger>
+                <TabsTrigger value="completed" className="flex-1 sm:flex-none">Done</TabsTrigger>
+                <TabsTrigger value="invoiced" className="flex-1 sm:flex-none">Invoiced</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -381,54 +389,50 @@ export default function ServiceReports() {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-slate-900 truncate">
                           {getCustomerName(report.customer_id)}
                         </h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-sm text-slate-500">
                           {report.equipment_type && (
-                            <span>{report.equipment_type}</span>
-                          )}
-                          {report.equipment_make && report.equipment_model && (
-                            <span className="text-slate-300">•</span>
+                            <span className="truncate">{report.equipment_type}</span>
                           )}
                           {(report.equipment_make || report.equipment_model) && (
-                            <span>{[report.equipment_make, report.equipment_model].filter(Boolean).join(' ')}</span>
+                            <span className="truncate hidden sm:inline">{[report.equipment_make, report.equipment_model].filter(Boolean).join(' ')}</span>
                           )}
                         </div>
                         {report.service_date && (
-                          <div className="flex items-center gap-1 mt-1 text-sm text-slate-400">
+                          <div className="flex items-center gap-1 mt-1 text-xs text-slate-400">
                             <Calendar className="w-3 h-3" />
                             {format(new Date(report.service_date), 'MMM d, yyyy')}
                           </div>
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
                         {report.is_internal && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            <Building2 className="w-3 h-3 mr-1" />
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                             Internal
                           </Badge>
                         )}
-                        <Badge className={statusColors[report.status]}>
+                        <Badge className={`${statusColors[report.status]} text-xs`}>
                           {report.status}
                         </Badge>
                       </div>
                     </div>
 
                     {report.complaint && (
-                      <p className="text-sm text-slate-600 mt-2 line-clamp-1">
+                      <p className="text-xs text-slate-500 mt-1.5 line-clamp-1 hidden sm:block">
                         {report.complaint}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     {report.status === 'completed' && (
                       <Link to={createPageUrl('Invoices') + `?from_report=${report.id}`}>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-9 sm:w-9">
                           <Receipt className="w-4 h-4 text-green-500" />
                         </Button>
                       </Link>
@@ -439,6 +443,7 @@ export default function ServiceReports() {
                         size="icon"
                         onClick={() => setViewingOriginalNotes(report)}
                         title="View Original Notes"
+                        className="h-9 w-9"
                       >
                         <Eye className="w-4 h-4 text-blue-500" />
                       </Button>
@@ -447,6 +452,7 @@ export default function ServiceReports() {
                       variant="ghost" 
                       size="icon"
                       onClick={() => setReportToDelete(report)}
+                      className="h-9 w-9"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>

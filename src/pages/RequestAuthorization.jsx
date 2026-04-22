@@ -320,8 +320,8 @@ export default function RequestAuthorization() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="col-span-2 sm:col-span-1">
                   <Label>City</Label>
                   <Input 
                     value={formData.billing_city}
@@ -334,7 +334,7 @@ export default function RequestAuthorization() {
                     value={formData.billing_state}
                     onChange={(e) => handleChange('billing_state', e.target.value)}
                     maxLength={2}
-                    placeholder="CA"
+                    placeholder="TX"
                   />
                 </div>
                 <div>
