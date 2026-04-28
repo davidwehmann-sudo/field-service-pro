@@ -181,27 +181,27 @@ export default function ServiceReports() {
     });
   }, [reports, search, statusFilter, customerFilter, equipmentFilter, startDate, endDate, getCustomerName]);
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingReport?.id) {
-      updateMutation.mutate({ id: editingReport.id, data });
+      await updateMutation.mutateAsync({ id: editingReport.id, data });
     } else {
-      createMutation.mutate(data);
+      await createMutation.mutateAsync(data);
     }
   };
 
   const handleComplete = async (data) => {
-    // First complete the report
     const completedData = { ...data, status: 'completed' };
+    let savedReportId;
     if (editingReport?.id) {
       await updateMutation.mutateAsync({ id: editingReport.id, data: completedData });
+      savedReportId = editingReport.id;
     } else {
-      await createMutation.mutateAsync(completedData);
+      const created = await createMutation.mutateAsync(completedData);
+      savedReportId = created?.id;
     }
     
-    // Then auto-generate invoice
-    const reportId = editingReport?.id || data.id;
-    if (reportId) {
-      const url = createPageUrl('Invoices') + `?from_report=${reportId}&auto_generate=true`;
+    if (savedReportId) {
+      const url = createPageUrl('Invoices') + `?from_report=${savedReportId}&auto_generate=true`;
       window.location.href = url;
     }
   };
