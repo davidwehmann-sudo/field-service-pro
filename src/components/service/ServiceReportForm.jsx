@@ -157,11 +157,24 @@ export default function ServiceReportForm({
     
     const autoSave = debounce(async () => {
       setAutoSaveStatus('saving');
+      const numericOrNull = (val) => (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) ? parseFloat(val) : null;
+      const fee = formData.destination_fee || {};
       try {
-        // Save directly to database without triggering navigation
         await base44.entities.ServiceReport.update(report.id, {
           ...formData,
-          equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
+          equipment_hours: numericOrNull(formData.equipment_hours),
+          destination_fee: {
+            ...fee,
+            mileage: numericOrNull(fee.mileage),
+            mileage_rate: numericOrNull(fee.mileage_rate),
+            travel_hours: numericOrNull(fee.travel_hours),
+            travel_rate: numericOrNull(fee.travel_rate),
+            condition_surcharge: numericOrNull(fee.condition_surcharge),
+            fuel_surcharge_percent: numericOrNull(fee.fuel_surcharge_percent),
+            fuel_surcharge_amount: numericOrNull(fee.fuel_surcharge_amount),
+            diesel_price_per_gallon: numericOrNull(fee.diesel_price_per_gallon),
+            total: numericOrNull(fee.total),
+          },
         });
         setAutoSaveStatus('saved');
         
@@ -420,10 +433,24 @@ Generate the best report possible with available information.`,
   }, [checkMissingLitigationFields]);
 
   const handleSave = useCallback(async (status = 'open') => {
+    const numericOrNull = (val) => (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) ? parseFloat(val) : null;
+    const fee = formData.destination_fee || {};
     const data = {
       ...formData,
       status,
-      equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
+      equipment_hours: numericOrNull(formData.equipment_hours),
+      destination_fee: {
+        ...fee,
+        mileage: numericOrNull(fee.mileage),
+        mileage_rate: numericOrNull(fee.mileage_rate),
+        travel_hours: numericOrNull(fee.travel_hours),
+        travel_rate: numericOrNull(fee.travel_rate),
+        condition_surcharge: numericOrNull(fee.condition_surcharge),
+        fuel_surcharge_percent: numericOrNull(fee.fuel_surcharge_percent),
+        fuel_surcharge_amount: numericOrNull(fee.fuel_surcharge_amount),
+        diesel_price_per_gallon: numericOrNull(fee.diesel_price_per_gallon),
+        total: numericOrNull(fee.total),
+      },
     };
     
     try {
@@ -443,10 +470,24 @@ Generate the best report possible with available information.`,
 
   const handleProceedAnyway = useCallback(async () => {
     setShowLitigationWarning(false);
+    const numericOrNull = (val) => (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) ? parseFloat(val) : null;
+    const fee = formData.destination_fee || {};
     const data = {
       ...formData,
       status: 'completed',
-      equipment_hours: formData.equipment_hours ? parseFloat(formData.equipment_hours) : null,
+      equipment_hours: numericOrNull(formData.equipment_hours),
+      destination_fee: {
+        ...fee,
+        mileage: numericOrNull(fee.mileage),
+        mileage_rate: numericOrNull(fee.mileage_rate),
+        travel_hours: numericOrNull(fee.travel_hours),
+        travel_rate: numericOrNull(fee.travel_rate),
+        condition_surcharge: numericOrNull(fee.condition_surcharge),
+        fuel_surcharge_percent: numericOrNull(fee.fuel_surcharge_percent),
+        fuel_surcharge_amount: numericOrNull(fee.fuel_surcharge_amount),
+        diesel_price_per_gallon: numericOrNull(fee.diesel_price_per_gallon),
+        total: numericOrNull(fee.total),
+      },
     };
     
     try {
