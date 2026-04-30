@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Loader2, Wrench, AlertCircle } from "lucide-react";
+import { CheckCircle, Loader2, Wrench, AlertCircle, Printer, FileDown } from "lucide-react";
 import SignaturePad from '@/components/ui/SignaturePad';
 import NatureOfServiceInput from '@/components/authorization/NatureOfServiceInput';
 import { format } from 'date-fns';
@@ -136,10 +136,17 @@ export default function RequestAuthorization() {
         notes: data.notes
       });
     },
-    onSuccess: () => {
+    onSuccess: async (createdAuth) => {
       queryClient.invalidateQueries({ queryKey: ['authorizations'] });
       setSubmitted(true);
       toast.success('Authorization request submitted successfully!');
+      // Email confirmation with PDF to customer and company
+      try {
+        await base44.functions.invoke('sendAuthorizationEmail', { authorization_id: createdAuth.id });
+      } catch (e) {
+        console.error('Failed to send authorization email', e);
+        toast.error('Authorization saved, but confirmation email could not be sent.');
+      }
     },
     onError: (error) => {
       toast.error('Failed to submit authorization request');
@@ -222,7 +229,7 @@ export default function RequestAuthorization() {
               </p>
             </div>
             <p className="text-sm text-slate-500 mt-8">
-              Your request has been received. We'll contact you within 24 hours to discuss the service and provide an authorization estimate.
+              Your request has been received. We'll contact you within 24 hours to discuss the service and provide an authorization estimate. A copy has been emailed to you.
             </p>
           </CardContent>
         </Card>
@@ -249,6 +256,29 @@ export default function RequestAuthorization() {
               Logged in as {currentUser.email}
             </p>
           }
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await base44.functions.invoke('generateBlankAuthorizationForm', {});
+                  const blob = new Blob([res.data], { type: 'application/pdf' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'service-authorization-blank.pdf';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch (e) {
+                  toast.error('Could not generate blank form');
+                }
+              }}
+              className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 underline underline-offset-4"
+            >
+              <Printer className="w-4 h-4" />
+              Print blank form to fill out by hand
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
