@@ -469,14 +469,35 @@ export default function RequestAuthorization() {
             </CardContent>
           </Card>
 
-          {/* Parts Payment */}
+          {/* Parts Deposit */}
           <Card className="border-0 shadow-lg border-l-4 border-l-amber-500">
             <CardHeader className="bg-amber-50">
               <CardTitle className="text-xl flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-600" />
-                Parts Payment Requirements
+                Parts Deposit
               </CardTitle>
             </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900 space-y-2">
+                <p className="font-semibold">Important Notice Regarding Parts:</p>
+                <p>
+                  In many cases, parts required to complete a repair must be ordered and paid for before service can continue.
+                  A <strong>parts deposit</strong> equal to the cost of required parts will be collected prior to ordering.
+                  Work will not proceed until the parts deposit has been received.
+                </p>
+                <p className="text-amber-800 text-xs">
+                  This protects both parties — it ensures parts are secured for your job and allows us to keep your machine at the top of the service queue.
+                </p>
+              </div>
+              <div>
+                <Label>Additional Notes on Parts / Deposit <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Textarea
+                  value={formData.parts_payment_note}
+                  onChange={(e) => handleChange('parts_payment_note', e.target.value)}
+                  placeholder="E.g., customer approved up to $X for parts before ordering, specific parts already on hand, etc."
+                  rows={3} />
+              </div>
+            </CardContent>
             
 
 
