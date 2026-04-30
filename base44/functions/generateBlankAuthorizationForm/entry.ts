@@ -3,7 +3,7 @@ import { jsPDF } from 'npm:jspdf@2.5.2';
 
 const COMPANY_NAME = 'Wehmann Equipment Service';
 const COMPANY_PHONE = '(Your Phone)';
-const COMPANY_EMAIL = 'service@wehmann.com';
+const COMPANY_EMAIL = 'office@wehmanntexas.com';
 
 Deno.serve(async (req) => {
   try {

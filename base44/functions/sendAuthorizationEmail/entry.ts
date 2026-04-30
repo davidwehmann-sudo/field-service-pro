@@ -3,7 +3,7 @@ import { jsPDF } from 'npm:jspdf@2.5.2';
 
 const COMPANY_NAME = 'Wehmann Equipment Service';
 const COMPANY_PHONE = '(Your Phone)';
-const COMPANY_EMAIL = 'service@wehmann.com';
+const COMPANY_EMAIL = 'office@wehmanntexas.com';
 const COMPANY_ADDRESS = '';
 
 function buildAuthorizationPDF(data) {
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
     }
 
     // Email company
-    if (COMPANY_EMAIL && COMPANY_EMAIL !== 'service@wehmann.com') {
+    if (COMPANY_EMAIL) {
       promises.push(
         base44.asServiceRole.integrations.Core.SendEmail({
           to: COMPANY_EMAIL,
