@@ -477,7 +477,7 @@ export default function RequestAuthorization() {
                 Parts Payment Requirements
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-4 hidden">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
