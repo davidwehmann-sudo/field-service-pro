@@ -477,31 +477,31 @@ export default function RequestAuthorization() {
                 Parts Payment Requirements
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-4 hidden">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="parts_payment_required"
-                  checked={formData.parts_payment_required}
-                  onChange={(e) => handleChange('parts_payment_required', e.target.checked)}
-                  className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500" />
-                
-                <Label htmlFor="parts_payment_required" className="cursor-pointer">
-                  Parts must be paid upfront before service continues
-                </Label>
-              </div>
-              {formData.parts_payment_required &&
-              <div>
-                  <Label>Payment Requirements Note</Label>
-                  <Textarea
-                  value={formData.parts_payment_note}
-                  onChange={(e) => handleChange('parts_payment_note', e.target.value)}
-                  placeholder="Specify payment terms or estimated parts cost..."
-                  rows={3} />
-                
-                </div>
-              }
-            </CardContent>
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
           </Card>
 
           {/* Additional Notes */}
