@@ -439,7 +439,7 @@ export default function RequestAuthorization() {
                   <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-amber-900 mb-1">Security Notice</p>
-                    <p className="text-xs text-amber-800">Please do not include gate codes, access codes, combinations, key locations, or other security information on this form. We do not keep records of this nature for security reasons. Please get with 
+                    <p className="text-xs text-amber-800">Please do not include gate codes, access codes, combinations, key locations, or other security information on this form. We do not keep records of this nature for security reasons. Please only share this info with 
 
 
                     </p>
