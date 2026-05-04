@@ -12,6 +12,8 @@ import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from "sonner";
+import CreateInvoiceButton from '@/components/jobs/CreateInvoiceButton';
+import JobTotalsBar from '@/components/jobs/JobTotalsBar';
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
@@ -74,6 +76,11 @@ export default function Jobs() {
   const { data: jobsData = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-created_date'),
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['invoices'],
+    queryFn: () => base44.entities.Invoice.list(),
   });
 
   const createEmptyJobMutation = useMutation({
@@ -638,7 +645,8 @@ export default function Jobs() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-2 mb-3">
+                  <div className="flex justify-end gap-2 mb-3 flex-wrap">
+                    <CreateInvoiceButton job={job} existingInvoices={invoices} />
                     <Button
                       variant="outline"
                       size="sm"
@@ -659,6 +667,8 @@ export default function Jobs() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
+
+                  <JobTotalsBar job={job} />
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                     {/* Authorization */}

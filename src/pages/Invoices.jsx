@@ -59,6 +59,7 @@ export default function Invoices() {
   const fromReportId = urlParams.get('from_report');
   const shouldOpenNew = urlParams.get('new') === 'true';
   const autoGenerate = urlParams.get('auto_generate') === 'true';
+  const openInvoiceId = urlParams.get('open_invoice_id');
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices'],
@@ -195,6 +196,18 @@ export default function Invoices() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [fromReportId, serviceReports, partsOrders, shouldOpenNew, autoGenerate, generateInvoiceNumber]);
+
+  // Open a specific invoice by ID (e.g. after creating from Jobs page)
+  useEffect(() => {
+    if (openInvoiceId && invoices.length > 0) {
+      const invoice = invoices.find(inv => inv.id === openInvoiceId);
+      if (invoice) {
+        setEditingInvoice(invoice);
+        setShowForm(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [openInvoiceId, invoices]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Invoice.create(data),
@@ -345,6 +358,7 @@ export default function Invoices() {
       invoice_number: formData.get('invoice_number') || generateInvoiceNumber(),
       customer_id: formData.get('customer_id'),
       service_report_id: formData.get('service_report_id') || null,
+      job_id: formData.get('job_id') || null,
       invoice_date: formData.get('invoice_date'),
       due_date: formData.get('due_date'),
       labor_total: laborTotal,
@@ -988,6 +1002,7 @@ CHARGES:
             </div>
 
             <input type="hidden" name="service_report_id" value={editingInvoice?.service_report_id || ''} />
+            <input type="hidden" name="job_id" value={editingInvoice?.job_id || ''} />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button 
