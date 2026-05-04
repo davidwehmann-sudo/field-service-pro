@@ -1,0 +1,300 @@
+{
+  "name": "ServiceReport",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Reference to parent job"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Reference to customer"
+    },
+    "is_internal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is internal work (not billable to customer)"
+    },
+    "service_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "equipment_type": {
+      "type": "string",
+      "description": "Type of equipment serviced"
+    },
+    "equipment_make": {
+      "type": "string"
+    },
+    "equipment_model": {
+      "type": "string"
+    },
+    "equipment_serial": {
+      "type": "string"
+    },
+    "equipment_hours": {
+      "type": "number",
+      "description": "Hour meter reading"
+    },
+    "complaint": {
+      "type": "string",
+      "description": "Customer complaint or reason for service"
+    },
+    "original_technician_notes": {
+      "type": "string",
+      "description": "Original unformatted technician notes (preserved for legal/audit)"
+    },
+    "activity_log": {
+      "type": "array",
+      "description": "Chronological log of all technician contributions. Append-only \u2014 never overwrite existing entries.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique entry ID"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this entry was created"
+          },
+          "user_name": {
+            "type": "string",
+            "description": "Display name of the technician"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "User ID of the technician"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "notes",
+              "photos",
+              "labor",
+              "parts",
+              "status",
+              "diagnostic",
+              "other"
+            ],
+            "description": "Category of this log entry"
+          },
+          "content": {
+            "type": "object",
+            "description": "The actual data for this entry (text, photo URLs, labor items, etc.)"
+          }
+        }
+      }
+    },
+    "final_summary": {
+      "type": "string",
+      "description": "Lead technician's final summary for invoicing \u2014 reviewed and written when closing the report"
+    },
+    "time_entries": {
+      "type": "array",
+      "description": "Time tracking entries for this service",
+      "items": {
+        "type": "object",
+        "properties": {
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hours": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "technician": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cat_diagnostic": {
+      "type": "object",
+      "description": "Caterpillar 6-Step Diagnostic Process",
+      "properties": {
+        "step1_verify_complaint": {
+          "type": "string"
+        },
+        "step2_initial_inspection": {
+          "type": "string"
+        },
+        "step3_list_causes": {
+          "type": "string"
+        },
+        "step4_analyze_causes": {
+          "type": "string"
+        },
+        "step5_repair": {
+          "type": "string"
+        },
+        "step6_verify_repair": {
+          "type": "string"
+        }
+      }
+    },
+    "work_performed": {
+      "type": "string",
+      "description": "Detailed work performed \u2014 CAT Step 7 documentation"
+    },
+    "service_items": {
+      "type": "array",
+      "description": "Billable service line items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "hours": {
+            "type": "number"
+          },
+          "rate": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "destination_fee": {
+      "type": "object",
+      "description": "Destination/travel fee details",
+      "properties": {
+        "mileage": {
+          "type": "number"
+        },
+        "mileage_rate": {
+          "type": "number"
+        },
+        "travel_hours": {
+          "type": "number"
+        },
+        "travel_rate": {
+          "type": "number"
+        },
+        "location_condition": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "remote",
+            "difficult_access",
+            "hazardous"
+          ]
+        },
+        "condition_surcharge": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      }
+    },
+    "photos_initial": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photos of equipment upon arrival"
+    },
+    "photos_failure": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photos of failed components"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "General service photos"
+    },
+    "fluid_samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "sample_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fluid_analysis_results_url": {
+      "type": "string"
+    },
+    "photos_fluid_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "location_data": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "accuracy": {
+          "type": "number"
+        }
+      }
+    },
+    "safety_precision_notes": {
+      "type": "string"
+    },
+    "customer_signature": {
+      "type": "string"
+    },
+    "technician_signature": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "completed",
+        "invoiced"
+      ],
+      "default": "open"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "calendar_event_id": {
+      "type": "string"
+    },
+    "service_company": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "customer_id",
+    "service_date",
+    "equipment_type"
+  ]
+}

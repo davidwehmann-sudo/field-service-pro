@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Eye, Building2, Sparkles, DollarSign, Check, Cloud } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Save, Eye, Building2, Sparkles, DollarSign, Check, Cloud, Activity, FileText, ClipboardList } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { debounce } from 'lodash';
@@ -23,35 +24,24 @@ import FieldBenefitInfo from '@/components/service/FieldBenefitInfo';
 import LocationCapture from '@/components/service/LocationCapture';
 import ServiceReportReview from '@/components/service/ServiceReportReview';
 import LitigationProtectionWarning from '@/components/service/LitigationProtectionWarning';
+import ActivityTimeline from '@/components/service/ActivityTimeline';
+import AddActivityEntry from '@/components/service/AddActivityEntry';
+import FinalSummaryPanel from '@/components/service/FinalSummaryPanel';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 const EQUIPMENT_TYPES = [
-  'Auger',
-  'Baler',
-  'Bulldozer',
-  'Combine Harvester',
-  'Compressor',
-  'Crane',
-  'Cultivator',
-  'Disc Harrow',
-  'Excavator',
-  'Forklift',
-  'Generator',
-  'Grain Cart',
-  'Grain Dryer',
-  'Irrigation System',
-  'Loader',
-  'Plow',
-  'Planter',
-  'Pump',
-  'Semi Truck',
-  'Sprayer',
-  'Tractor',
-  'Trailer',
-  'Other'
+  'Auger','Baler','Bulldozer','Combine Harvester','Compressor','Crane',
+  'Cultivator','Disc Harrow','Excavator','Forklift','Generator','Grain Cart',
+  'Grain Dryer','Irrigation System','Loader','Plow','Planter','Pump',
+  'Semi Truck','Sprayer','Tractor','Trailer','Other'
 ];
+
+function numericOrNull(val) {
+  if (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) return parseFloat(val);
+  return null;
+}
 
 export default function ServiceReportForm({ 
   report, 
@@ -71,7 +61,10 @@ export default function ServiceReportForm({
   const [showLitigationWarning, setShowLitigationWarning] = useState(false);
   const [missingLitigationFields, setMissingLitigationFields] = useState([]);
   const [showReview, setShowReview] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saving' | 'saved' | 'error'
+  const [autoSaveStatus, setAutoSaveStatus] = useState('saved');
+  const [activeTab, setActiveTab] = useState('details');
+  // Live activity log state (kept separate from formData to support real-time updates)
+  const [activityLog, setActivityLog] = useState(report?.activity_log || []);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
@@ -79,16 +72,10 @@ export default function ServiceReportForm({
   });
 
   const [formData, setFormData] = useState(() => {
-    // Load from localStorage if available
     const saved = localStorage.getItem(storageKey);
     if (saved && !report?.id) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // Ignore parse errors
-      }
+      try { return JSON.parse(saved); } catch (e) {}
     }
-    
     return {
       job_id: '',
       customer_id: '',
@@ -106,63 +93,71 @@ export default function ServiceReportForm({
       work_performed: '',
       service_items: [],
       destination_fee: {
-        mileage: '',
-        mileage_rate: '0.65',
-        travel_hours: '',
-        travel_rate: '75',
-        location_condition: 'standard',
-        condition_surcharge: 0,
-        total: 0
+        mileage: '', mileage_rate: '0.65', travel_hours: '',
+        travel_rate: '75', location_condition: 'standard',
+        condition_surcharge: 0, total: 0
       },
-      photos: [],
-      photos_initial: [],
-      photos_failure: [],
-      fluid_samples: [],
-      fluid_analysis_results_url: '',
-      photos_fluid_evidence: [],
-      location_data: null,
-      safety_precision_notes: '',
-      customer_signature: '',
-      technician_signature: '',
-      notes: '',
-      status: 'open',
+      photos: [], photos_initial: [], photos_failure: [],
+      fluid_samples: [], fluid_analysis_results_url: '', photos_fluid_evidence: [],
+      location_data: null, safety_precision_notes: '',
+      customer_signature: '', technician_signature: '',
+      notes: '', status: 'open', final_summary: '',
+      activity_log: [],
       ...report
     };
   });
 
-  // Load current user
+  // Load user
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {}
-    };
-    loadUser();
+    base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  // Auto-save to localStorage
+  // Real-time subscription for activity log updates from other technicians
+  useEffect(() => {
+    if (!report?.id) return;
+    const unsubscribe = base44.entities.ServiceReport.subscribe((event) => {
+      if (event.id === report.id && (event.type === 'update')) {
+        const newLog = event.data?.activity_log || [];
+        setActivityLog(newLog);
+        // Also sync activity_log in formData so save includes latest
+        setFormData(prev => ({ ...prev, activity_log: newLog }));
+      }
+    });
+    return unsubscribe;
+  }, [report?.id]);
+
+  // Auto-save to localStorage (for new reports / offline)
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem(storageKey, JSON.stringify(formData));
     }, 1000);
-
     return () => clearTimeout(timer);
   }, [formData, storageKey]);
 
-  // Auto-save to backend (debounced)
+  // Auto-save FORM fields to backend (debounced) — does NOT overwrite activity_log
   useEffect(() => {
-    // Only auto-save existing reports, not new ones
     if (!report?.id) return;
-    
     const autoSave = debounce(async () => {
       setAutoSaveStatus('saving');
-      const numericOrNull = (val) => (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) ? parseFloat(val) : null;
       const fee = formData.destination_fee || {};
       try {
+        // Only save non-log fields to avoid race conditions with activity entries
         await base44.entities.ServiceReport.update(report.id, {
-          ...formData,
+          customer_id: formData.customer_id,
+          job_id: formData.job_id,
+          is_internal: formData.is_internal,
+          service_date: formData.service_date,
+          equipment_type: formData.equipment_type,
+          equipment_make: formData.equipment_make,
+          equipment_model: formData.equipment_model,
+          equipment_serial: formData.equipment_serial,
           equipment_hours: numericOrNull(formData.equipment_hours),
+          complaint: formData.complaint,
+          technician_notes: formData.technician_notes,
+          time_entries: formData.time_entries,
+          cat_diagnostic: formData.cat_diagnostic,
+          work_performed: formData.work_performed,
+          service_items: formData.service_items,
           destination_fee: {
             ...fee,
             mileage: numericOrNull(fee.mileage),
@@ -175,19 +170,26 @@ export default function ServiceReportForm({
             diesel_price_per_gallon: numericOrNull(fee.diesel_price_per_gallon),
             total: numericOrNull(fee.total),
           },
+          photos: formData.photos,
+          photos_initial: formData.photos_initial,
+          photos_failure: formData.photos_failure,
+          fluid_samples: formData.fluid_samples,
+          fluid_analysis_results_url: formData.fluid_analysis_results_url,
+          photos_fluid_evidence: formData.photos_fluid_evidence,
+          location_data: formData.location_data,
+          safety_precision_notes: formData.safety_precision_notes,
+          customer_signature: formData.customer_signature,
+          technician_signature: formData.technician_signature,
+          notes: formData.notes,
+          final_summary: formData.final_summary,
+          original_technician_notes: formData.original_technician_notes,
         });
         setAutoSaveStatus('saved');
-        
-        // Reset to neutral after 2 seconds
-        setTimeout(() => setAutoSaveStatus('saved'), 2000);
       } catch (error) {
         setAutoSaveStatus('error');
-        console.error('Auto-save failed:', error);
       }
-    }, 2000); // Wait 2 seconds after last change
-
+    }, 2000);
     autoSave();
-
     return () => autoSave.cancel();
   }, [formData, report?.id]);
 
@@ -195,120 +197,37 @@ export default function ServiceReportForm({
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleFormatNotes = useCallback(async () => {
-    if (!formData.technician_notes?.trim()) {
-      toast.error('Please enter technician notes first');
-      return;
-    }
-
-    setFormattingNotes(true);
-    try {
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Format these technician notes professionally with categories (Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing). Use bullet points, **bold** for action verbs, *italics* for specs/measurements. Preserve all technical details:
-
-${formData.technician_notes}`
-      });
-
-      if (result) {
-        handleChange('technician_notes', result);
-        toast.success('Notes formatted successfully');
-      }
-    } catch (error) {
-      toast.error('Formatting failed: ' + error.message);
-    } finally {
-      setFormattingNotes(false);
-    }
-  }, [formData.technician_notes, handleChange]);
+  // Called when AddActivityEntry saves a new entry
+  const handleEntryAdded = useCallback((entry) => {
+    setActivityLog(prev => [...prev, entry]);
+    setFormData(prev => ({ ...prev, activity_log: [...(prev.activity_log || []), entry] }));
+  }, []);
 
   const handleFormatAndCompile = useCallback(async () => {
     if (!formData.technician_notes?.trim()) {
       toast.error('Please enter technician notes first');
       return;
     }
-
     setFormattingNotes(true);
     setAiProcessing(true);
-    
     try {
-      // Preserve original notes if not already saved
       if (!formData.original_technician_notes) {
-        setFormData(prev => ({ 
-          ...prev, 
-          original_technician_notes: formData.technician_notes 
-        }));
+        setFormData(prev => ({ ...prev, original_technician_notes: formData.technician_notes }));
       }
-
-      // Step 1: Format notes
-      toast.info('Step 1: Formatting notes...');
+      toast.info('Formatting notes...');
       const formatResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Format these technician notes professionally with categories (Disassembly, Inspection, Adjustments, Repairs, Reassembly, Testing). Use bullet points, **bold** for action verbs, *italics* for specs/measurements. Preserve all technical details:
-
-${formData.technician_notes}`
+        prompt: `Format these technician notes professionally with categories. Use bullet points, **bold** for action verbs, *italics* for specs. Preserve all technical details:\n\n${formData.technician_notes}`
       });
-
       let formattedNotes = formData.technician_notes;
       if (formatResult) {
         formattedNotes = formatResult;
         setFormData(prev => ({ ...prev, technician_notes: formattedNotes }));
         toast.success('Notes formatted ✓');
       }
-
       setFormattingNotes(false);
-
-      // Step 2: Compile report using formatted notes
-      toast.info('Step 2: Compiling full report...');
+      toast.info('Compiling report...');
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a field service technician documentation assistant. Generate a complete service report using the official Caterpillar 7-Step Diagnostic Process.
-
-CATERPILLAR 7-STEP PROCESS:
-1. Verify Customer Complaint
-2. Conduct Initial Inspection (pictures as necessary)
-3. List Possible Causes
-4. Analyze Possible Causes / Determine Root Cause
-5. Repair Root Cause
-6. Verify Repair (pictures as necessary)
-7. Document [concern], [analysis], & [repair] in Service Report (this report itself)
-
-IMPORTANT: Review ALL technician notes comprehensively. Consider the complete context from all notes entered, not just the latest addition.
-
-Current Information:
-- ALL Technician Notes: ${formattedNotes}
-- Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}
-- Customer Complaint: ${formData.complaint}
-- Photos Provided: ${formData.photos?.length || 0}
-- Equipment Hours: ${formData.equipment_hours || 'Not provided'}
-- Existing Diagnostic Work: ${Object.values(formData.cat_diagnostic || {}).filter(v => v).length > 0 ? 'Yes - update/refine existing entries' : 'No - generate fresh'}
-
-ALWAYS provide:
-1. step1_verify_complaint - Confirm and verify the customer's complaint
-2. step2_initial_inspection - Initial inspection findings (note if pictures were taken)
-3. step3_list_causes - List all possible causes identified
-4. step4_analyze_causes - Analysis of causes and determination of root cause
-5. step5_repair - Repairs performed to address root cause
-6. step6_verify_repair - Verification testing and results (note if pictures taken)
-7. work_performed - Comprehensive documentation summary covering concern, analysis, and repair (CAT Step 7)
-9. billable_service_items - Break down work into distinct billable segments. IMPORTANT: Combine related operations on the SAME line to reduce line count:
-   - "Remove and reinstall hydraulic pump" (not separate remove/install lines)
-   - "Remove and replace damaged cylinder seal" (combines remove + replace for damaged part)
-   - "Remove, repair, and reinstall fuel injector" (combines all steps)
-   Use combined descriptions whenever removal and reinstallation go together. Only separate if truly independent tasks.
-   CRITICAL: When combining operations, estimate hours for ALL combined steps (e.g., "Remove and reinstall pump" should include time for both removal AND reinstallation).
-
-SELF-AUDIT: Before finalizing, verify:
-- All tech notes have been considered
-- Diagnostic steps follow CAT 7-Step Process
-- Work performed aligns with diagnostic findings
-- Billable items cover all work mentioned
-- No contradictions in the report
-
-IF additional information would significantly improve the report, list it in suggested_additional_info. ALWAYS suggest specific safety/precision measurements that should be documented based on the work performed, such as:
-- Component weights (with lift factors if applicable)
-- Torque specifications applied vs. manufacturer specs
-- Clearance measurements (dial indicators, micrometers)
-- Calibrated tool usage (torque wrenches, load cells)
-- Pressure readings, temperatures, or other precision measurements
-
-Generate the best report possible with available information.`,
+        prompt: `Generate a complete CAT 7-Step service report. Notes: ${formattedNotes}. Equipment: ${formData.equipment_type} ${formData.equipment_make} ${formData.equipment_model}. Complaint: ${formData.complaint}.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -321,26 +240,15 @@ Generate the best report possible with available information.`,
             work_performed: { type: "string" },
             billable_service_items: {
               type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  description: { type: "string" },
-                  hours: { type: "number" }
-                }
-              }
+              items: { type: "object", properties: { description: { type: "string" }, hours: { type: "number" } } }
             },
-            suggested_additional_info: { 
-              type: "array",
-              items: { type: "string" }
-            }
+            suggested_additional_info: { type: "array", items: { type: "string" } }
           }
         }
       });
-
       setFormData(prev => ({
         ...prev,
         cat_diagnostic: {
-          ...prev.cat_diagnostic,
           step1_verify_complaint: result.step1_verify_complaint,
           step2_initial_inspection: result.step2_initial_inspection,
           step3_list_causes: result.step3_list_causes,
@@ -350,16 +258,12 @@ Generate the best report possible with available information.`,
         },
         work_performed: result.work_performed,
         service_items: result.billable_service_items?.map(item => ({
-          description: item.description,
-          estimated_hours: item.hours,
-          hours: '',
-          rate: prev.service_items?.[0]?.rate || 0,
-          total: 0
+          description: item.description, estimated_hours: item.hours,
+          hours: '', rate: prev.service_items?.[0]?.rate || 0, total: 0
         })) || prev.service_items || []
       }));
-      
       setAiSuggestions(result.suggested_additional_info?.length > 0 ? result.suggested_additional_info : null);
-      toast.success('Report compiled successfully ✓');
+      toast.success('Report compiled ✓');
     } catch (error) {
       toast.error('Processing failed: ' + error.message);
     } finally {
@@ -369,60 +273,32 @@ Generate the best report possible with available information.`,
   }, [formData]);
 
   const totals = useMemo(() => {
-    const serviceTotal = (formData.service_items || []).reduce(
-      (sum, item) => sum + (item.total || 0), 0
-    );
+    const serviceTotal = (formData.service_items || []).reduce((sum, item) => sum + (item.total || 0), 0);
     const destinationTotal = formData.destination_fee?.total || 0;
     return { serviceTotal, destinationTotal, grandTotal: serviceTotal + destinationTotal };
   }, [formData.service_items, formData.destination_fee]);
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id);
-  }, [jobs, formData.customer_id]);
+  const filteredJobs = useMemo(() =>
+    jobs.filter(j => !formData.customer_id || j.customer_id === formData.customer_id),
+    [jobs, formData.customer_id]
+  );
 
   const checkMissingLitigationFields = useCallback(() => {
     const missing = [];
-    
-    // Check photos
-    if (!formData.photos_initial || formData.photos_initial.length === 0) {
-      missing.push('photos_initial');
-    }
-    if (!formData.photos_failure || formData.photos_failure.length === 0) {
-      missing.push('photos_failure');
-    }
-    
-    // Check fluid sampling (only if any fluid sample data exists)
-    const hasFluidData = formData.fluid_samples?.length > 0 || 
-                        formData.fluid_analysis_results_url || 
-                        formData.photos_fluid_evidence?.length > 0;
-    
+    if (!formData.photos_initial?.length) missing.push('photos_initial');
+    if (!formData.photos_failure?.length) missing.push('photos_failure');
+    const hasFluidData = formData.fluid_samples?.length > 0 || formData.fluid_analysis_results_url || formData.photos_fluid_evidence?.length > 0;
     if (hasFluidData) {
-      if (!formData.fluid_samples || formData.fluid_samples.length === 0) {
-        missing.push('fluid_samples');
-      }
-      if (!formData.fluid_analysis_results_url) {
-        missing.push('fluid_analysis_results_url');
-      }
-      if (!formData.photos_fluid_evidence || formData.photos_fluid_evidence.length === 0) {
-        missing.push('photos_fluid_evidence');
-      }
+      if (!formData.fluid_samples?.length) missing.push('fluid_samples');
+      if (!formData.fluid_analysis_results_url) missing.push('fluid_analysis_results_url');
+      if (!formData.photos_fluid_evidence?.length) missing.push('photos_fluid_evidence');
     }
-    
-    // Check location
-    if (!formData.location_data) {
-      missing.push('location_data');
-    }
-    
-    // Check customer signature
-    if (!formData.customer_signature) {
-      missing.push('customer_signature');
-    }
-    
+    if (!formData.location_data) missing.push('location_data');
+    if (!formData.customer_signature) missing.push('customer_signature');
     return missing;
   }, [formData]);
 
   const handleReviewClick = useCallback(() => {
-    // Check for missing litigation protection fields before review
     const missing = checkMissingLitigationFields();
     if (missing.length > 0) {
       setMissingLitigationFields(missing);
@@ -432,11 +308,11 @@ Generate the best report possible with available information.`,
     setShowReview(true);
   }, [checkMissingLitigationFields]);
 
-  const handleSave = useCallback(async (status = 'open') => {
-    const numericOrNull = (val) => (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) ? parseFloat(val) : null;
+  const buildSaveData = useCallback((status) => {
     const fee = formData.destination_fee || {};
-    const data = {
+    return {
       ...formData,
+      activity_log: activityLog, // always use the latest live log
       status,
       equipment_hours: numericOrNull(formData.equipment_hours),
       destination_fee: {
@@ -452,51 +328,37 @@ Generate the best report possible with available information.`,
         total: numericOrNull(fee.total),
       },
     };
-    
+  }, [formData, activityLog]);
+
+  const handleSave = useCallback(async (status = 'open') => {
+    const data = buildSaveData(status);
     try {
       if (status === 'completed') {
         await onComplete(data);
       } else {
         await onSave(data);
       }
-      // Clear localStorage after successful save
       localStorage.removeItem(storageKey);
       setShowReview(false);
     } catch (error) {
-      // Keep in localStorage if save fails
       console.error('Save failed, data preserved locally');
     }
-  }, [formData, onSave, onComplete, storageKey]);
+  }, [buildSaveData, onSave, onComplete, storageKey]);
+
+  const handleMarkComplete = useCallback(async () => {
+    const missing = checkMissingLitigationFields();
+    if (missing.length > 0) {
+      setMissingLitigationFields(missing);
+      setShowLitigationWarning(true);
+    } else {
+      setShowReview(true);
+    }
+  }, [checkMissingLitigationFields]);
 
   const handleProceedAnyway = useCallback(async () => {
     setShowLitigationWarning(false);
-    const numericOrNull = (val) => (val !== '' && val !== null && val !== undefined && !isNaN(parseFloat(val))) ? parseFloat(val) : null;
-    const fee = formData.destination_fee || {};
-    const data = {
-      ...formData,
-      status: 'completed',
-      equipment_hours: numericOrNull(formData.equipment_hours),
-      destination_fee: {
-        ...fee,
-        mileage: numericOrNull(fee.mileage),
-        mileage_rate: numericOrNull(fee.mileage_rate),
-        travel_hours: numericOrNull(fee.travel_hours),
-        travel_rate: numericOrNull(fee.travel_rate),
-        condition_surcharge: numericOrNull(fee.condition_surcharge),
-        fuel_surcharge_percent: numericOrNull(fee.fuel_surcharge_percent),
-        fuel_surcharge_amount: numericOrNull(fee.fuel_surcharge_amount),
-        diesel_price_per_gallon: numericOrNull(fee.diesel_price_per_gallon),
-        total: numericOrNull(fee.total),
-      },
-    };
-    
-    try {
-      await onComplete(data);
-      localStorage.removeItem(storageKey);
-    } catch (error) {
-      console.error('Save failed, data preserved locally');
-    }
-  }, [formData, onComplete, storageKey]);
+    setShowReview(true);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -507,62 +369,56 @@ Generate the best report possible with available information.`,
         </Button>
         <div className="flex-1">
           <h2 className="text-xl font-bold text-slate-900">
-            {report?.id ? 'Edit Service Report' : 'New Service Report'}
+            {report?.id ? 'Service Report' : 'New Service Report'}
           </h2>
-          <p className="text-sm text-slate-500">Fill in the service details</p>
+          <p className="text-sm text-slate-500">
+            {activityLog.length > 0 ? `${activityLog.length} activity entries` : 'Multi-tech activity log'}
+          </p>
         </div>
         <OfflineIndicator />
         {report?.id && (
           <div className="flex items-center gap-2">
             {autoSaveStatus === 'saving' && (
               <Badge variant="outline" className="gap-1.5 text-slate-600">
-                <Cloud className="w-3 h-3 animate-pulse" />
-                Saving...
+                <Cloud className="w-3 h-3 animate-pulse" />Saving...
               </Badge>
             )}
             {autoSaveStatus === 'saved' && (
               <Badge variant="outline" className="gap-1.5 text-green-600 border-green-200 bg-green-50">
-                <Check className="w-3 h-3" />
-                Saved
+                <Check className="w-3 h-3" />Saved
               </Badge>
             )}
             {autoSaveStatus === 'error' && (
               <Badge variant="outline" className="gap-1.5 text-red-600 border-red-200 bg-red-50">
-                Error saving
+                Save error
               </Badge>
             )}
           </div>
         )}
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => handleSave('open')}
-            disabled={isSaving}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Save as Open
+          <Button variant="outline" onClick={() => handleSave('open')} disabled={isSaving}>
+            <Save className="w-4 h-4 mr-2" />Save
           </Button>
-          <Button 
+          <Button
             className="bg-green-600 hover:bg-green-700"
             onClick={handleReviewClick}
             disabled={isSaving || !formData.customer_id}
           >
-            <Eye className="w-4 h-4 mr-2" />
-            Review & Complete
+            <Eye className="w-4 h-4 mr-2" />Review & Complete
           </Button>
         </div>
       </div>
 
-      {/* Totals Summary Bar */}
+      {/* Totals Bar */}
       <div className="bg-slate-900 text-white rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <div>
-            <p className="text-xs text-slate-400">Service Items</p>
+            <p className="text-xs text-slate-400">Labor</p>
             <p className="text-lg font-semibold">${totals.serviceTotal.toFixed(2)}</p>
           </div>
           <div className="text-slate-600">+</div>
           <div>
-            <p className="text-xs text-slate-400">Destination</p>
+            <p className="text-xs text-slate-400">Travel</p>
             <p className="text-lg font-semibold">${totals.destinationTotal.toFixed(2)}</p>
           </div>
           <div className="text-slate-600">=</div>
@@ -573,339 +429,293 @@ Generate the best report possible with available information.`,
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Customer & Equipment */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Customer & Equipment</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Customer *</Label>
-              <CustomerSelect 
-                customers={customers}
-                value={formData.customer_id}
-                onChange={(val) => handleChange('customer_id', val)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-slate-600" />
-                <div>
-                  <Label className="text-sm font-medium">Internal Work</Label>
-                  <p className="text-xs text-slate-500">For company equipment/non-billable</p>
-                </div>
-              </div>
-              <Switch
-                checked={formData.is_internal}
-                onCheckedChange={(val) => handleChange('is_internal', val)}
-              />
-            </div>
-
-            <div>
-              <Label>Link to Job (Optional)</Label>
-              <Select 
-                value={formData.job_id || 'none'}
-                onValueChange={(val) => handleChange('job_id', val === 'none' ? '' : val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Create new job or link existing" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Create New Job</SelectItem>
-                  {filteredJobs.map(job => (
-                    <SelectItem key={job.id} value={job.id}>
-                      {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Service Date</Label>
-              <Input 
-                type="date"
-                value={formData.service_date}
-                onChange={(e) => handleChange('service_date', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Equipment Type</Label>
-              <Select 
-                value={formData.equipment_type}
-                onValueChange={(val) => handleChange('equipment_type', val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EQUIPMENT_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Make</Label>
-                <Input 
-                  value={formData.equipment_make}
-                  onChange={(e) => handleChange('equipment_make', e.target.value)}
-                  placeholder="Caterpillar"
-                />
-              </div>
-              <div>
-                <Label>Model</Label>
-                <Input 
-                  value={formData.equipment_model}
-                  onChange={(e) => handleChange('equipment_model', e.target.value)}
-                  placeholder="D6T"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Serial Number</Label>
-                <Input 
-                  value={formData.equipment_serial}
-                  onChange={(e) => handleChange('equipment_serial', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Hour Meter</Label>
-                <Input 
-                  type="number"
-                  value={formData.equipment_hours}
-                  onChange={(e) => handleChange('equipment_hours', e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Technician Notes - Always Visible */}
-        <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              Technician Notes
-              <Badge variant="outline" className="text-xs font-normal">Keep adding notes as you work</Badge>
-            </CardTitle>
-            <div className="flex gap-2">
-              {formData.original_technician_notes && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowOriginalNotes(true)}
-                  className="gap-2 text-blue-600"
-                >
-                  <Eye className="w-4 h-4" />
-                  Original
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleFormatAndCompile}
-                disabled={formattingNotes || aiProcessing || !formData.technician_notes?.trim()}
-                className="gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                {formattingNotes ? 'Formatting...' : aiProcessing ? 'Compiling...' : 'Format & Compile'}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Textarea 
-              value={formData.technician_notes}
-              onChange={(e) => handleChange('technician_notes', e.target.value)}
-              placeholder="Keep adding notes as you work: observations, measurements, parts used, tests performed, etc. AI will consider ALL notes when compiling the report..."
-              rows={8}
-              className="font-mono text-sm"
-            />
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-slate-500">
-                💡 Add notes continuously. Click AI Compile anytime to update report sections based on ALL accumulated notes
-              </p>
-              {formData.original_technician_notes && (
-                <Button
-                  size="sm"
-                  variant="link"
-                  onClick={() => setShowOriginalNotes(true)}
-                  className="text-xs text-blue-600 h-auto p-0"
-                >
-                  View unmodified original
-                </Button>
-              )}
-            </div>
-            {aiSuggestions && aiSuggestions.length > 0 && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 mb-2">✓ Report compiled! Additional info would help:</p>
-                    <ul className="space-y-1 text-sm text-blue-800">
-                      {aiSuggestions.map((suggestion, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-blue-600">•</span>
-                          <span>{suggestion}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="text-xs text-blue-700 mt-2">
-                      Report sections updated below. Add more notes and re-compile to refine.
-                    </p>
-                  </div>
-                </div>
-              </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full grid grid-cols-3 mb-2">
+          <TabsTrigger value="details" className="gap-1.5">
+            <ClipboardList className="w-4 h-4" />
+            <span className="hidden sm:inline">Details</span>
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-1.5">
+            <Activity className="w-4 h-4" />
+            <span className="hidden sm:inline">Activity Log</span>
+            {activityLog.length > 0 && (
+              <Badge className="ml-1 bg-blue-600 text-white text-xs px-1.5 py-0 h-4">
+                {activityLog.length}
+              </Badge>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </TabsTrigger>
+          <TabsTrigger value="finalize" className="gap-1.5">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Final Summary</span>
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Customer Complaint */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Customer Complaint</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea 
-              value={formData.complaint}
-              onChange={(e) => handleChange('complaint', e.target.value)}
-              placeholder="What issue is the customer experiencing? Include any relevant history..."
-              rows={6}
-            />
-          </CardContent>
-        </Card>
+        {/* ── TAB 1: DETAILS ── */}
+        <TabsContent value="details" className="space-y-6">
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Customer & Equipment */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader><CardTitle className="text-lg">Customer & Equipment</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Customer *</Label>
+                  <CustomerSelect customers={customers} value={formData.customer_id} onChange={(val) => handleChange('customer_id', val)} />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-slate-600" />
+                    <div>
+                      <Label className="text-sm font-medium">Internal Work</Label>
+                      <p className="text-xs text-slate-500">For company equipment/non-billable</p>
+                    </div>
+                  </div>
+                  <Switch checked={formData.is_internal} onCheckedChange={(val) => handleChange('is_internal', val)} />
+                </div>
+                <div>
+                  <Label>Link to Job (Optional)</Label>
+                  <Select value={formData.job_id || 'none'} onValueChange={(val) => handleChange('job_id', val === 'none' ? '' : val)}>
+                    <SelectTrigger><SelectValue placeholder="Create new job or link existing" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Create New Job</SelectItem>
+                      {filteredJobs.map(job => (
+                        <SelectItem key={job.id} value={job.id}>
+                          {job.job_number} - {customers.find(c => c.id === job.customer_id)?.company_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Service Date</Label>
+                  <Input type="date" value={formData.service_date} onChange={(e) => handleChange('service_date', e.target.value)} />
+                </div>
+                <div>
+                  <Label>Equipment Type</Label>
+                  <Select value={formData.equipment_type} onValueChange={(val) => handleChange('equipment_type', val)}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {EQUIPMENT_TYPES.map(type => (<SelectItem key={type} value={type}>{type}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label>Make</Label><Input value={formData.equipment_make} onChange={(e) => handleChange('equipment_make', e.target.value)} placeholder="Caterpillar" /></div>
+                  <div><Label>Model</Label><Input value={formData.equipment_model} onChange={(e) => handleChange('equipment_model', e.target.value)} placeholder="D6T" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label>Serial Number</Label><Input value={formData.equipment_serial} onChange={(e) => handleChange('equipment_serial', e.target.value)} /></div>
+                  <div><Label>Hour Meter</Label><Input type="number" value={formData.equipment_hours} onChange={(e) => handleChange('equipment_hours', e.target.value)} /></div>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Time Tracker */}
-        <TimeTracker
-          entries={formData.time_entries || []}
-          onChange={(entries) => handleChange('time_entries', entries)}
-          currentUser={currentUser}
-        />
-      </div>
+            {/* Quick Notes + AI Compile */}
+            <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Technician Notes
+                  <Badge variant="outline" className="text-xs font-normal">Draft workspace</Badge>
+                </CardTitle>
+                <div className="flex gap-2">
+                  {formData.original_technician_notes && (
+                    <Button size="sm" variant="ghost" onClick={() => setShowOriginalNotes(true)} className="gap-2 text-blue-600">
+                      <Eye className="w-4 h-4" />Original
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={handleFormatAndCompile}
+                    disabled={formattingNotes || aiProcessing || !formData.technician_notes?.trim()}
+                    className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    {formattingNotes ? 'Formatting...' : aiProcessing ? 'Compiling...' : 'Format & Compile'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={formData.technician_notes}
+                  onChange={(e) => handleChange('technician_notes', e.target.value)}
+                  placeholder="Raw notes workspace — use Activity Log tab to post updates that other techs can see in real-time..."
+                  rows={8}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  💡 This is a draft workspace. Post to Activity Log for multi-tech collaboration.
+                </p>
+                {aiSuggestions?.length > 0 && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900 mb-2">✓ Report compiled! Additional info would help:</p>
+                        <ul className="space-y-1 text-sm text-blue-800">
+                          {aiSuggestions.map((s, i) => <li key={i} className="flex gap-2"><span className="text-blue-600">•</span>{s}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Location Verification - Near Time Tracking */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <FieldBenefitInfo field="location_data">
-            <CardTitle className="text-lg flex items-center gap-2">
-              📍 Service Location Verification
-            </CardTitle>
-          </FieldBenefitInfo>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-600 mb-3">
-            Automatically proves you were on-site at a specific time
-          </p>
-          <LocationCapture
-            value={formData.location_data}
-            onChange={(data) => handleChange('location_data', data)}
-          />
-        </CardContent>
-      </Card>
+          {/* Customer Complaint */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader><CardTitle className="text-lg">Customer Complaint</CardTitle></CardHeader>
+            <CardContent>
+              <Textarea value={formData.complaint} onChange={(e) => handleChange('complaint', e.target.value)}
+                placeholder="What issue is the customer experiencing?" rows={4} />
+            </CardContent>
+          </Card>
 
-      {/* CAT 7-Step Diagnostic with Integrated Evidence */}
-      <CatDiagnosticForm 
-        diagnostic={formData.cat_diagnostic || {}}
-        onChange={(val) => handleChange('cat_diagnostic', val)}
-        photosInitial={formData.photos_initial || []}
-        onPhotosInitialChange={(photos) => handleChange('photos_initial', photos)}
-        photos={formData.photos || []}
-        onPhotosChange={(photos) => handleChange('photos', photos)}
-        photosFailure={formData.photos_failure || []}
-        onPhotosFailureChange={(photos) => handleChange('photos_failure', photos)}
-        safetyPrecisionNotes={formData.safety_precision_notes || ''}
-        onSafetyPrecisionNotesChange={(notes) => handleChange('safety_precision_notes', notes)}
-        fluidSamples={formData.fluid_samples || []}
-        fluidAnalysisUrl={formData.fluid_analysis_results_url || ''}
-        fluidPhotos={formData.photos_fluid_evidence || []}
-        onFluidDataChange={(data) => {
-          handleChange('fluid_samples', data.samples);
-          handleChange('fluid_analysis_results_url', data.analysisUrl);
-          handleChange('photos_fluid_evidence', data.photos);
-        }}
-      />
+          {/* Time Tracker */}
+          <TimeTracker entries={formData.time_entries || []} onChange={(entries) => handleChange('time_entries', entries)} currentUser={currentUser} />
 
-
-
-
-
-      {/* Service Items / Billing */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            Billable Service Items
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ServiceItemsEditor 
-            items={formData.service_items || []}
-            onChange={(items) => handleChange('service_items', items)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Destination Fee */}
-      <DestinationFeeEditor 
-        fee={formData.destination_fee || {}}
-        onChange={(fee) => handleChange('destination_fee', fee)}
-      />
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Signatures */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Signatures</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <FieldBenefitInfo field="customer_signature">
-                <Label className="mb-2 block font-semibold">Customer Signature *</Label>
+          {/* Location */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <FieldBenefitInfo field="location_data">
+                <CardTitle className="text-lg">📍 Service Location Verification</CardTitle>
               </FieldBenefitInfo>
-              <p className="text-xs text-slate-600 mb-3">
-                ✍️ Customer acknowledges work completion
-              </p>
-              <SignaturePad 
-                initialValue={formData.customer_signature}
-                onSave={(sig) => handleChange('customer_signature', sig)}
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">Technician Signature</Label>
-              <p className="text-xs text-slate-600 mb-3">
-                ✍️ Technician confirms work performed
-              </p>
-              <SignaturePad 
-                initialValue={formData.technician_signature}
-                onSave={(sig) => handleChange('technician_signature', sig)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600 mb-3">Automatically proves you were on-site at a specific time</p>
+              <LocationCapture value={formData.location_data} onChange={(data) => handleChange('location_data', data)} />
+            </CardContent>
+          </Card>
 
-        {/* Notes */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Additional Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea 
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              placeholder="Any additional notes, follow-up needed, recommendations, etc."
-              rows={10}
+          {/* CAT Diagnostic */}
+          <CatDiagnosticForm
+            diagnostic={formData.cat_diagnostic || {}}
+            onChange={(val) => handleChange('cat_diagnostic', val)}
+            photosInitial={formData.photos_initial || []}
+            onPhotosInitialChange={(photos) => handleChange('photos_initial', photos)}
+            photos={formData.photos || []}
+            onPhotosChange={(photos) => handleChange('photos', photos)}
+            photosFailure={formData.photos_failure || []}
+            onPhotosFailureChange={(photos) => handleChange('photos_failure', photos)}
+            safetyPrecisionNotes={formData.safety_precision_notes || ''}
+            onSafetyPrecisionNotesChange={(notes) => handleChange('safety_precision_notes', notes)}
+            fluidSamples={formData.fluid_samples || []}
+            fluidAnalysisUrl={formData.fluid_analysis_results_url || ''}
+            fluidPhotos={formData.photos_fluid_evidence || []}
+            onFluidDataChange={(data) => {
+              handleChange('fluid_samples', data.samples);
+              handleChange('fluid_analysis_results_url', data.analysisUrl);
+              handleChange('photos_fluid_evidence', data.photos);
+            }}
+          />
+
+          {/* Service Items */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-600" />Billable Service Items
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ServiceItemsEditor items={formData.service_items || []} onChange={(items) => handleChange('service_items', items)} />
+            </CardContent>
+          </Card>
+
+          {/* Destination Fee */}
+          <DestinationFeeEditor fee={formData.destination_fee || {}} onChange={(fee) => handleChange('destination_fee', fee)} />
+
+          {/* Signatures */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="border-0 shadow-sm">
+              <CardHeader><CardTitle className="text-lg">Signatures</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <FieldBenefitInfo field="customer_signature">
+                    <Label className="mb-2 block font-semibold">Customer Signature *</Label>
+                  </FieldBenefitInfo>
+                  <SignaturePad initialValue={formData.customer_signature} onSave={(sig) => handleChange('customer_signature', sig)} />
+                </div>
+                <div>
+                  <Label className="mb-2 block">Technician Signature</Label>
+                  <SignaturePad initialValue={formData.technician_signature} onSave={(sig) => handleChange('technician_signature', sig)} />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm">
+              <CardHeader><CardTitle className="text-lg">Additional Notes</CardTitle></CardHeader>
+              <CardContent>
+                <Textarea value={formData.notes} onChange={(e) => handleChange('notes', e.target.value)}
+                  placeholder="Additional notes, follow-up needed, recommendations..." rows={10} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ── TAB 2: ACTIVITY LOG ── */}
+        <TabsContent value="activity" className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <strong>Multi-tech Activity Log</strong> — Each entry is saved independently. Multiple technicians can contribute simultaneously without overwriting each other. Updates appear in real-time.
+          </div>
+
+          {/* Add Entry Panel */}
+          {report?.id ? (
+            <AddActivityEntry
+              reportId={report.id}
+              currentUser={currentUser}
+              onEntryAdded={handleEntryAdded}
             />
-          </CardContent>
-        </Card>
-      </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              💾 Save the report first to start adding activity log entries.
+            </div>
+          )}
+
+          {/* Timeline */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-600" />
+                Activity Timeline
+                <Badge variant="outline" className="text-xs">{activityLog.length} entries</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ActivityTimeline
+                entries={activityLog}
+                currentUserName={currentUser?.full_name || currentUser?.email}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── TAB 3: FINAL SUMMARY ── */}
+        <TabsContent value="finalize" className="space-y-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+            <strong>Lead Technician Final Summary</strong> — Review the activity log above, then write a clean summary for the invoice. Use Auto-generate to draft from the log entries.
+          </div>
+
+          <FinalSummaryPanel
+            reportId={report?.id}
+            value={formData.final_summary}
+            activityLog={activityLog}
+            onChange={(val) => handleChange('final_summary', val)}
+            onMarkComplete={handleMarkComplete}
+            isSaving={isSaving}
+          />
+
+          {/* Show activity log for reference */}
+          {activityLog.length > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-600">Activity Log Reference</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ActivityTimeline
+                  entries={activityLog}
+                  currentUserName={currentUser?.full_name || currentUser?.email}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <ServiceReportReview
         report={formData}
@@ -915,21 +725,12 @@ Generate the best report possible with available information.`,
         onComplete={() => handleSave('completed')}
         isSaving={isSaving}
       />
-
-      <OriginalNotesViewer
-        report={formData}
-        open={showOriginalNotes}
-        onOpenChange={setShowOriginalNotes}
-      />
-
+      <OriginalNotesViewer report={formData} open={showOriginalNotes} onOpenChange={setShowOriginalNotes} />
       <LitigationProtectionWarning
         open={showLitigationWarning}
         onOpenChange={setShowLitigationWarning}
         missingFields={missingLitigationFields}
-        onProceed={() => {
-          setShowLitigationWarning(false);
-          setShowReview(true);
-        }}
+        onProceed={handleProceedAnyway}
         onGoBack={() => setShowLitigationWarning(false)}
       />
     </div>
