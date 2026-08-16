@@ -1,0 +1,50 @@
+{
+  "name": "AgExemption",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Reference to customer"
+    },
+    "certificate_number": {
+      "type": "string",
+      "description": "Ag exemption certificate number"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the exemption was issued"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the exemption expires"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expired",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Current status of the exemption"
+    },
+    "certificate_url": {
+      "type": "string",
+      "description": "URL to uploaded exemption certificate document"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this exemption belongs to"
+    }
+  },
+  "required": [
+    "customer_id",
+    "certificate_number",
+    "expiration_date"
+  ]
+}

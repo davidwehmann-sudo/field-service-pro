@@ -1,0 +1,71 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Reference to parent job"
+    },
+    "authorization_id": {
+      "type": "string",
+      "description": "Reference to authorization (if prepayment)"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Reference to invoice (if final payment)"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Reference to customer"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payment was received"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payment amount"
+    },
+    "payment_type": {
+      "type": "string",
+      "enum": [
+        "prepayment_parts",
+        "prepayment_labor",
+        "prepayment_general",
+        "final_payment",
+        "partial_payment"
+      ],
+      "description": "Type of payment"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "check",
+        "card",
+        "transfer",
+        "other"
+      ],
+      "description": "How payment was made"
+    },
+    "reference_number": {
+      "type": "string",
+      "description": "Check number, transaction ID, etc."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Payment notes or memo"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this payment belongs to"
+    }
+  },
+  "required": [
+    "customer_id",
+    "payment_date",
+    "amount",
+    "payment_type"
+  ]
+}

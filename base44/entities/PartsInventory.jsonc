@@ -1,0 +1,84 @@
+{
+  "name": "PartsInventory",
+  "type": "object",
+  "properties": {
+    "part_number": {
+      "type": "string",
+      "description": "Manufacturer part number"
+    },
+    "part_description": {
+      "type": "string"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "repair_part",
+        "consumable",
+        "tool",
+        "other"
+      ],
+      "default": "repair_part",
+      "description": "Type of inventory item"
+    },
+    "cross_compatible_part_numbers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alternative part numbers that are cross-compatible with this part"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo of part or SKU tag"
+    },
+    "quantity_on_hand": {
+      "type": "number",
+      "default": 0
+    },
+    "location": {
+      "type": "string",
+      "enum": [
+        "storage",
+        "truck_1",
+        "truck_2",
+        "truck_3",
+        "non_stock"
+      ],
+      "default": "storage",
+      "description": "Where the part is stored"
+    },
+    "unit_cost": {
+      "type": "number"
+    },
+    "reorder_level": {
+      "type": "number",
+      "description": "Quantity threshold for reordering"
+    },
+    "verification_source": {
+      "type": "string",
+      "description": "Where part specification was verified (legacy field - prefer using PartVerification entity)"
+    },
+    "verification_details": {
+      "type": "string",
+      "description": "Specific reference for verification (legacy field - prefer using PartVerification entity)"
+    },
+    "verification_photo_url": {
+      "type": "string",
+      "description": "Photo/screenshot of verification (legacy field - prefer using PartVerification entity)"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this part belongs to"
+    }
+  },
+  "required": [
+    "part_number",
+    "part_description"
+  ]
+}

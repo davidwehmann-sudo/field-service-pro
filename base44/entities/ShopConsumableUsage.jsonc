@@ -1,0 +1,40 @@
+{
+  "name": "ShopConsumableUsage",
+  "type": "object",
+  "properties": {
+    "item_name": {
+      "type": "string",
+      "description": "Name of the consumable item"
+    },
+    "part_number": {
+      "type": "string",
+      "description": "Part number if it exists in inventory"
+    },
+    "quantity_used": {
+      "type": "number",
+      "description": "Amount used"
+    },
+    "date_used": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the consumable was used"
+    },
+    "used_by": {
+      "type": "string",
+      "description": "Technician who used the consumable"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes about usage"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this usage belongs to"
+    }
+  },
+  "required": [
+    "item_name",
+    "quantity_used",
+    "date_used"
+  ]
+}

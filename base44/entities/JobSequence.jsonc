@@ -1,0 +1,22 @@
+{
+  "name": "JobSequence",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Year for this sequence (e.g., 2026)"
+    },
+    "last_number": {
+      "type": "number",
+      "default": 0,
+      "description": "Last generated sequence number for this year"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this sequence belongs to"
+    }
+  },
+  "required": [
+    "year"
+  ]
+}

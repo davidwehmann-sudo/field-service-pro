@@ -1,0 +1,75 @@
+{
+  "name": "OwnVehicle",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Vehicle name/identifier (e.g., 'Truck 1', 'Van Blue')"
+    },
+    "vehicle_owner": {
+      "type": "string",
+      "enum": [
+        "company",
+        "personal"
+      ],
+      "default": "company",
+      "description": "Whether the vehicle is company-owned or personally owned"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Owner name (for personally-owned vehicles)"
+    },
+    "make": {
+      "type": "string",
+      "description": "Vehicle manufacturer (e.g., Ford, Chevy)"
+    },
+    "model": {
+      "type": "string",
+      "description": "Vehicle model"
+    },
+    "year": {
+      "type": "number",
+      "description": "Year of manufacture"
+    },
+    "vin": {
+      "type": "string",
+      "description": "Vehicle Identification Number"
+    },
+    "license_plate": {
+      "type": "string",
+      "description": "License plate number"
+    },
+    "current_mileage": {
+      "type": "number",
+      "description": "Current odometer reading"
+    },
+    "primary_operator": {
+      "type": "string",
+      "description": "Primary operator assigned to this vehicle"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "in_maintenance",
+        "retired"
+      ],
+      "default": "active",
+      "description": "Vehicle operational status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Service history, known issues, etc."
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this vehicle belongs to"
+    }
+  },
+  "required": [
+    "name",
+    "make",
+    "model",
+    "year"
+  ]
+}

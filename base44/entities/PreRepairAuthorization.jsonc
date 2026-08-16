@@ -1,0 +1,108 @@
+{
+  "name": "PreRepairAuthorization",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Reference to parent job"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Reference to customer"
+    },
+    "service_report_id": {
+      "type": "string",
+      "description": "Associated service report (if created)"
+    },
+    "billing_contact_name": {
+      "type": "string",
+      "description": "Name of party responsible for payment"
+    },
+    "billing_contact_company": {
+      "type": "string"
+    },
+    "billing_contact_phone": {
+      "type": "string"
+    },
+    "billing_contact_email": {
+      "type": "string"
+    },
+    "billing_address": {
+      "type": "string"
+    },
+    "billing_city": {
+      "type": "string"
+    },
+    "billing_state": {
+      "type": "string"
+    },
+    "billing_zip": {
+      "type": "string"
+    },
+    "on_site_contact_name": {
+      "type": "string",
+      "description": "On-site contact person"
+    },
+    "on_site_contact_phone": {
+      "type": "string"
+    },
+    "nature_of_service": {
+      "type": "string",
+      "description": "Detailed description of what needs to be fixed/serviced"
+    },
+    "service_type": {
+      "type": "string",
+      "enum": [
+        "check_and_advise",
+        "consultation",
+        "diagnostic",
+        "repair",
+        "preventive_maintenance",
+        "emergency_service"
+      ],
+      "description": "Type of service being authorized"
+    },
+    "equipment_info": {
+      "type": "string",
+      "description": "Brief equipment identification"
+    },
+    "parts_payment_required": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether parts must be paid for upfront before service can continue"
+    },
+    "parts_payment_note": {
+      "type": "string",
+      "description": "Additional notes about parts payment requirements"
+    },
+    "customer_initials": {
+      "type": "string",
+      "description": "Customer initials acknowledging billing structure"
+    },
+    "authorization_signature": {
+      "type": "string",
+      "description": "Base64 signature data"
+    },
+    "authorization_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "authorized",
+        "service_started",
+        "completed"
+      ],
+      "default": "draft"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "customer_id",
+    "billing_contact_name"
+  ]
+}

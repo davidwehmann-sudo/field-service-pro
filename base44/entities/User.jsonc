@@ -1,0 +1,41 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "service_customer",
+        "service_technician",
+        "parts_specialist",
+        "service_admin",
+        "bookkeeper",
+        "software_engineer"
+      ],
+      "description": "User's role in the system"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company name for customer users"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "service_companies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of service company names this user manages"
+    },
+    "current_company": {
+      "type": "string",
+      "description": "The currently selected service company"
+    }
+  },
+  "required": [
+    "user_type",
+    "company",
+    "phone"
+  ]
+}

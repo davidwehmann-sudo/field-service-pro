@@ -1,0 +1,101 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Reference to parent job"
+    },
+    "invoice_number": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string"
+    },
+    "service_report_id": {
+      "type": "string"
+    },
+    "invoice_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "labor_total": {
+      "type": "number"
+    },
+    "travel_total": {
+      "type": "number"
+    },
+    "parts_total": {
+      "type": "number"
+    },
+    "discount_percent": {
+      "type": "number",
+      "default": 0,
+      "description": "Percentage discount applied to subtotal"
+    },
+    "manual_price_override": {
+      "type": "number",
+      "description": "Manual override of total amount (bypasses all calculations)"
+    },
+    "tax_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_amount": {
+      "type": "number"
+    },
+    "ag_exempt": {
+      "type": "boolean",
+      "default": false,
+      "description": "Agricultural exemption - if true, sales tax is not applied"
+    },
+    "total_amount": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "partially_paid"
+      ],
+      "default": "draft"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "check",
+        "card",
+        "transfer",
+        "other"
+      ]
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_reference": {
+      "type": "string",
+      "description": "Check number, transaction ID, etc."
+    },
+    "notes": {
+      "type": "string"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this invoice belongs to"
+    }
+  },
+  "required": [
+    "customer_id",
+    "invoice_date",
+    "total_amount"
+  ]
+}

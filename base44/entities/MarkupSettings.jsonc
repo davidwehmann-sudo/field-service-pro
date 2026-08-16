@@ -1,0 +1,31 @@
+{
+  "name": "MarkupSettings",
+  "type": "object",
+  "properties": {
+    "max_markup": {
+      "type": "number",
+      "default": 40,
+      "description": "Maximum markup % for very cheap parts (ceiling)"
+    },
+    "min_markup": {
+      "type": "number",
+      "default": 15,
+      "description": "Minimum markup % for expensive parts (floor)"
+    },
+    "k": {
+      "type": "number",
+      "default": 0.01,
+      "description": "Steepness of sigmoid curve (higher = sharper transition)"
+    },
+    "inflection": {
+      "type": "number",
+      "default": 200,
+      "description": "Cost midpoint where markup transition occurs"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company these settings belong to"
+    }
+  },
+  "required": []
+}

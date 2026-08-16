@@ -1,0 +1,117 @@
+{
+  "name": "PartsOrder",
+  "type": "object",
+  "properties": {
+    "submission_batch_id": {
+      "type": "string",
+      "description": "Groups multiple parts ordered together in one submission"
+    },
+    "assignment_type": {
+      "type": "string",
+      "enum": [
+        "service_report",
+        "counter_sale",
+        "cash_sale",
+        "inventory",
+        "internal_vehicle"
+      ],
+      "description": "How this part is assigned"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Reference to parent job"
+    },
+    "service_report_id": {
+      "type": "string",
+      "description": "Associated service report"
+    },
+    "customer_id": {
+      "type": "string"
+    },
+    "own_vehicle_id": {
+      "type": "string",
+      "description": "Reference to internal vehicle (if repair is on own vehicle)"
+    },
+    "part_number": {
+      "type": "string"
+    },
+    "part_description": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number"
+    },
+    "unit_cost": {
+      "type": "number"
+    },
+    "shipping_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Total shipping cost for this part order (divided per unit, added to unit cost before markup)"
+    },
+    "markup_percent": {
+      "type": "number",
+      "default": 25
+    },
+    "supplier": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "needed",
+        "ordered",
+        "received",
+        "installed"
+      ],
+      "default": "needed"
+    },
+    "order_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "Receipt photo or document URL"
+    },
+    "assigned_technician": {
+      "type": "string",
+      "description": "Technician performing the work (for internal vehicle repairs)"
+    },
+    "labor_cost": {
+      "type": "number",
+      "description": "Labor cost for installing this part"
+    },
+    "paid_by": {
+      "type": "string",
+      "enum": [
+        "company",
+        "technician",
+        "third_party"
+      ],
+      "description": "Who paid for this part (company, personally-owned vehicle owner, or third party)"
+    },
+    "verification_source": {
+      "type": "string",
+      "description": "Where part specification was verified (e.g., 'Caterpillar SIS', 'John Deere Service Advisor', 'OEM Manual')"
+    },
+    "verification_details": {
+      "type": "string",
+      "description": "Specific reference (page number, section, digital link) for verification"
+    },
+    "verification_photo_url": {
+      "type": "string",
+      "description": "Photo/screenshot of parts book or manual showing specification"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assignment_type",
+    "part_description",
+    "quantity",
+    "verification_source",
+    "verification_details"
+  ]
+}

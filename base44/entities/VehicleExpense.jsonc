@@ -1,0 +1,74 @@
+{
+  "name": "VehicleExpense",
+  "type": "object",
+  "properties": {
+    "expense_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of expense"
+    },
+    "vehicle_name": {
+      "type": "string",
+      "description": "Vehicle identifier (Truck 1, Van 2, etc.)"
+    },
+    "own_vehicle_id": {
+      "type": "string",
+      "description": "Reference to vehicle (if available)"
+    },
+    "expense_type": {
+      "type": "string",
+      "enum": [
+        "fuel",
+        "maintenance",
+        "repair",
+        "upgrade",
+        "insurance",
+        "registration",
+        "other"
+      ],
+      "description": "Type of vehicle expense"
+    },
+    "description": {
+      "type": "string",
+      "description": "What was purchased or done"
+    },
+    "vendor": {
+      "type": "string",
+      "description": "Where the expense occurred"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Cost of expense"
+    },
+    "odometer": {
+      "type": "number",
+      "description": "Vehicle odometer reading"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "Receipt photo or document URL"
+    },
+    "paid_by": {
+      "type": "string",
+      "enum": [
+        "company",
+        "owner",
+        "third_party"
+      ],
+      "description": "Who paid for this expense (company, personally-owned vehicle owner, or third party)"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this expense belongs to"
+    }
+  },
+  "required": [
+    "expense_date",
+    "vehicle_name",
+    "expense_type",
+    "amount"
+  ]
+}

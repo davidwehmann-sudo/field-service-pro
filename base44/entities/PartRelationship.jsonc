@@ -1,0 +1,36 @@
+{
+  "name": "PartRelationship",
+  "type": "object",
+  "properties": {
+    "from_part_number": {
+      "type": "string",
+      "description": "The original part number"
+    },
+    "to_part_number": {
+      "type": "string",
+      "description": "The related part number (substitute, supersession, or upgrade)"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "substitution",
+        "supersession",
+        "upgrade"
+      ],
+      "description": "Type of relationship: substitution (interchangeable), supersession (newer version replaces old), upgrade (improved version)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional context about the relationship"
+    },
+    "service_company": {
+      "type": "string",
+      "description": "Which service company this relationship belongs to"
+    }
+  },
+  "required": [
+    "from_part_number",
+    "to_part_number",
+    "relationship_type"
+  ]
+}
